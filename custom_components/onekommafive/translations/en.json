@@ -1,0 +1,101 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "1KOMMA5° Login",
+        "description": "Enter your 1KOMMA5° account credentials.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
+      },
+      "system": {
+        "title": "Select system",
+        "description": "Choose the 1KOMMA5° system you want to integrate.",
+        "data": {
+          "system_id": "System"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the 1KOMMA5° API.",
+      "invalid_auth": "Invalid credentials.",
+      "unknown": "Unknown error."
+    },
+    "abort": {
+      "already_configured": "This system is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pv_power": {
+        "name": "PV power"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "battery_soc": {
+        "name": "Battery charge"
+      },
+      "grid_power": {
+        "name": "Grid power"
+      },
+      "consumption_power": {
+        "name": "Total consumption"
+      },
+      "household_power": {
+        "name": "Household consumption"
+      },
+      "ev_chargers_power": {
+        "name": "EV charging power"
+      },
+      "heat_pumps_power": {
+        "name": "Heat pump power"
+      },
+      "acs_power": {
+        "name": "Air conditioning power"
+      },
+      "self_sufficiency": {
+        "name": "Self-sufficiency"
+      },
+      "current_electricity_price": {
+        "name": "Current electricity price"
+      },
+      "average_electricity_price": {
+        "name": "Average electricity price"
+      },
+      "lowest_electricity_price": {
+        "name": "Lowest electricity price"
+      },
+      "highest_electricity_price": {
+        "name": "Highest electricity price"
+      },
+      "ev_target_soc": {
+        "name": "Target battery level"
+      },
+      "ev_charging_mode": {
+        "name": "Charging mode"
+      }
+    },
+    "switch": {
+      "ems_auto_mode": {
+        "name": "EMS auto mode"
+      }
+    },
+    "select": {
+      "ev_charging_mode": {
+        "name": "Charging mode",
+        "state": {
+          "SMART_CHARGE": "Smart Charge",
+          "QUICK_CHARGE": "Quick Charge",
+          "SOLAR_CHARGE": "Solar Charge"
+        }
+      }
+    },
+    "number": {
+      "ev_current_soc": {
+        "name": "Vehicle battery level (manual)"
+      }
+    }
+  }
+}
