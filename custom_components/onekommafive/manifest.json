@@ -7,6 +7,5 @@
   "documentation": "https://github.com/mrebbert/1komma5-ha",
   "issue_tracker": "https://github.com/mrebbert/1komma5-ha/issues",
   "iot_class": "cloud_polling",
-  "homeassistant": "2024.2.0",
-  "requirements": ["onekommafive @ git+https://github.com/mrebbert/1komma5-api.git"]
+  "requirements": ["onekommafive@git+https://github.com/mrebbert/1komma5-api.git"]
 }

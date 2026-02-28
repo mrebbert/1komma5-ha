@@ -86,9 +86,9 @@
       "ev_charging_mode": {
         "name": "Lademodus",
         "state": {
-          "SMART_CHARGE": "Smart Charge",
-          "QUICK_CHARGE": "Schnellladen",
-          "SOLAR_CHARGE": "Solar Charge"
+          "smart_charge": "Smart Charge",
+          "quick_charge": "Schnellladen",
+          "solar_charge": "Solar Charge"
         }
       }
     },
