@@ -1,11 +1,11 @@
 {
   "domain": "onekommafive",
   "name": "1KOMMA5°",
-  "version": "0.1.0",
   "codeowners": ["@mrebbert"],
   "config_flow": true,
   "documentation": "https://github.com/mrebbert/1komma5-ha",
-  "issue_tracker": "https://github.com/mrebbert/1komma5-ha/issues",
   "iot_class": "cloud_polling",
-  "requirements": ["onekommafive@git+https://github.com/mrebbert/1komma5-api.git"]
+  "issue_tracker": "https://github.com/mrebbert/1komma5-ha/issues",
+  "requirements": ["onekommafive@git+https://github.com/mrebbert/1komma5-api.git"],
+  "version": "0.1.0"
 }
