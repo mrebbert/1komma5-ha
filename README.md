@@ -210,6 +210,7 @@ I do not have the means to test this integration broadly across different hardwa
 | Hybrid Inverter | Sungrow SH6.0RT-V112 |
 | Battery | Sungrow SBR256 |
 | Wallbox | go-e homeFix 11 kW |
+| EV | Volkswagen ID.4 |
 | Heat pump | Stiebel Eltron WPL-A010 Hk400 Premium |
 | Smart meter | DTSU666 |
 
