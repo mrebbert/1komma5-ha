@@ -62,9 +62,17 @@ For every unidirectional power sensor an accompanying energy sensor (kWh) is aut
 
 > **Note:** `Batterieleistung` and `Netzleistung` are bidirectional (positive/negative) and therefore excluded — their respective directions are already covered by `Netzbezug Energie` and `Eingespeiste Energie`.
 
-### Price Forecast
+### Price Forecast & Cheapest Hour
 
-The **Aktueller Strompreis** sensor carries a rolling 24-hour price forecast as the `forecast` attribute — compatible with [`apexcharts-card`](https://github.com/RomRider/apexcharts-card) and other custom cards that follow the Tibber/ENTSO-E format:
+The **Aktueller Strompreis** sensor carries several attributes updated every hour:
+
+| Attribute | Description |
+|-----------|-------------|
+| `forecast` | Rolling 24-hour price forecast (list, see below) |
+| `cheapest_future_hour` | ISO-8601 start timestamp of the cheapest upcoming slot |
+| `cheapest_future_price` | Price (EUR/kWh) of that slot |
+
+The `forecast` list is compatible with [`apexcharts-card`](https://github.com/RomRider/apexcharts-card) and other custom cards that follow the Tibber/ENTSO-E format:
 
 ```yaml
 forecast:
@@ -75,6 +83,18 @@ forecast:
     end:   "2026-02-28T14:30:00+00:00"
     price: 0.279300
   ...  # up to 96 slots (15-minute resolution)
+
+cheapest_future_hour: "2026-02-28T22:00:00+00:00"
+cheapest_future_price: 0.198400
+```
+
+**Example automation:** start a dishwasher when the cheapest hour is reached:
+
+```yaml
+trigger:
+  - platform: template
+    value_template: >
+      {{ now().isoformat() >= state_attr('sensor.1komma5_aktueller_strompreis', 'cheapest_future_hour') }}
 ```
 
 ### Controls
