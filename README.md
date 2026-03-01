@@ -202,3 +202,15 @@ Credentials are stored securely in the Home Assistant config entry.
 ## Disclaimer
 
 This project is not affiliated with or endorsed by 1KOMMA5°. The API is undocumented and may change without notice.
+
+I do not have the means to test this integration broadly across different hardware configurations — a lot of it is "it works for me". My personal setup is:
+
+| Component | Model |
+|-----------|-------|
+| Hybrid Inverter | Sungrow SH6.0RT-V112 |
+| Battery | Sungrow SBR256 |
+| Wallbox | go-e homeFix 11 kW |
+| Heat pump | Stiebel Eltron WPL-A010 Hk400 Premium |
+| Smart meter | DTSU666 |
+
+For example, I do not have an air conditioning unit — yet the API returns AC values for my system. This appears to be a mock provided by the 1KOMMA5° backend for devices that are not physically present.
