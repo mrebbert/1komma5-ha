@@ -5,6 +5,15 @@
 [![Validate](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/validate.yml?label=Validate&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/validate.yml)
 [![License](https://img.shields.io/github/license/mrebbert/1komma5-ha?style=for-the-badge)](LICENSE)
 
+> [!WARNING]
+> **Early Beta — 100% Vibe Coded.** This integration was built entirely with AI assistance and has had very limited real-world testing. Expect rough edges, breaking changes and the occasional hallucinated feature. Use at your own risk.
+
+## Credits
+
+Large parts of this project are inspired by and based on the work of [Alex Birkner](https://github.com/BirknerAlex) and his [hacs_1komma5grad](https://github.com/BirknerAlex/hacs_1komma5grad) integration. Many thanks for paving the way!
+
+---
+
 Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the [1KOMMA5° Heartbeat](https://www.1komma5grad.com/) home energy platform. Exposes your PV system, battery storage, heat pump, EV charger and dynamic electricity prices as sensors and controls.
 
 > **Note:** This is an unofficial integration based on a reverse-engineered API. It may break if 1KOMMA5° changes their backend.
