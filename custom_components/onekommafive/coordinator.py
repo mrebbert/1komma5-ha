@@ -99,9 +99,10 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
     def _fetch_price_data(self) -> PriceData:
         """Fetch price data synchronously.
 
-        Always covers a rolling 24-hour window starting now so the forecast
-        never runs out near midnight.  When the window spans two calendar days
-        the API is called twice and the results are merged.
+        Always fetches today and tomorrow so the forecast covers up to 30 hours
+        (e.g. 16:00 today → 23:59 tomorrow).  Tomorrow's prices may not yet be
+        available early in the day — the second API call is silently skipped in
+        that case.
         """
         now = datetime.datetime.now()
         window_end = now + datetime.timedelta(hours=24)
@@ -113,7 +114,7 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
         all_in_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs_and_vat)
         grid_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs)
 
-        # If the 24-hour window crosses into tomorrow, fetch tomorrow's prices too
+        # Always try to fetch tomorrow's prices to maximise the forecast horizon
         if window_end.date() > now.date():
             tomorrow_start = (now + datetime.timedelta(days=1)).replace(
                 hour=0, minute=0, second=0, microsecond=0
@@ -130,7 +131,7 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
 
         current_price = self._get_current_price(all_in_prices)
         current_price_with_grid_costs = self._get_current_price(grid_prices)
-        forecast = self._build_forecast(all_in_prices, horizon_hours=24)
+        forecast = self._build_forecast(all_in_prices, horizon_hours=30)
 
         return PriceData(
             market_prices=market_prices,
