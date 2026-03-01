@@ -3,7 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/mrebbert/1komma5-ha?style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://hacs.xyz)
 [![Validate](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/validate.yml?label=Validate&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/validate.yml)
-[![License](https://img.shields.io/github/license/mrebbert/1komma5-ha?style=for-the-badge)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 > [!WARNING]
 > **Early Beta — 100% Vibe Coded.** This integration was built entirely with AI assistance and has had very limited real-world testing. Expect rough edges, breaking changes and the occasional hallucinated feature. Use at your own risk.
