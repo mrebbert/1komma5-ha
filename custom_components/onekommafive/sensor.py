@@ -327,7 +327,13 @@ class OneKomma5PriceSensor(OneKomma5PriceEntity, SensorEntity):
             return None
         if self.coordinator.data is None:
             return None
-        return {"forecast": self.coordinator.data.forecast}
+        forecast = self.coordinator.data.forecast
+        attrs: dict[str, Any] = {"forecast": forecast}
+        if forecast:
+            cheapest = min(forecast, key=lambda s: s["price"])
+            attrs["cheapest_future_hour"] = cheapest["start"]
+            attrs["cheapest_future_price"] = cheapest["price"]
+        return attrs
 
 
 class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
