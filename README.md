@@ -1,5 +1,7 @@
 # 1KOMMA5° Home Assistant Integration
 
+<img src="custom_components/onekommafive/brand/icon.png" align="right" width="100" alt="1KOMMA5° logo">
+
 [![GitHub Release](https://img.shields.io/github/v/release/mrebbert/1komma5-ha?style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://hacs.xyz)
 [![Validate](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/validate.yml?label=Validate&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/validate.yml)
@@ -211,7 +213,7 @@ I do not have the means to test this integration broadly across different hardwa
 | Battery | Sungrow SBR256 |
 | Wallbox | go-e homeFix 11 kW |
 | EV | Volkswagen ID.4 |
-| Heat pump | Stiebel Eltron WPL-A010 Hk400 Premium |
+| Heat pump | Stiebel Eltron WPL-A 10 HK 400 Premium |
 | Smart meter | DTSU666 |
 
 For example, I do not have an air conditioning unit — yet the API returns AC values for my system. This appears to be a mock provided by the 1KOMMA5° backend for devices that are not physically present.
