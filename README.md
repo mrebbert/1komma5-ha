@@ -88,6 +88,49 @@ cheapest_future_hour: "2026-02-28T22:00:00+00:00"
 cheapest_future_price: 0.198400
 ```
 
+**Visualisation with [apexcharts-card](https://github.com/RomRider/apexcharts-card):**
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 24h
+span:
+  start: hour
+now:
+  show: true
+  label: Jetzt
+header:
+  show: true
+  title: Strompreis (24h)
+  show_states: true
+  colorize_states: true
+yaxis:
+  - min: auto
+    decimals: 4
+series:
+  - entity: sensor.SYSTEMNAME_aktueller_strompreis
+    name: Strompreis
+    unit: EUR/kWh
+    float_precision: 4
+    type: column
+    data_generator: |
+      return entity.attributes.forecast.map(e => [
+        new Date(e.start).getTime(),
+        e.price
+      ]);
+    color_threshold:
+      - value: 0
+        color: "#4caf50"
+      - value: 0.25
+        color: "#ff9800"
+      - value: 0.35
+        color: "#f44336"
+    show:
+      legend_value: false
+      name_in_header: false
+```
+
+> Replace `SYSTEMNAME` with your actual entity ID — find it under **Settings → Devices & Services → 1KOMMA5°** on the "Aktueller Strompreis" entity. Adjust the `color_threshold` values to match your tariff.
+
 **Example automation:** start a dishwasher when the cheapest hour is reached:
 
 ```yaml
