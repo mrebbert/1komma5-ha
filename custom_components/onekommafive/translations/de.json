@@ -40,6 +40,12 @@
       "grid_power": {
         "name": "Netzleistung"
       },
+      "grid_consumption_power": {
+        "name": "Netzbezug"
+      },
+      "grid_feed_in_power": {
+        "name": "Netzeinspeisung"
+      },
       "consumption_power": {
         "name": "Gesamtverbrauch"
       },

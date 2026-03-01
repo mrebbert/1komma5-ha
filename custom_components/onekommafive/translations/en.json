@@ -40,6 +40,12 @@
       "grid_power": {
         "name": "Grid power"
       },
+      "grid_consumption_power": {
+        "name": "Grid import"
+      },
+      "grid_feed_in_power": {
+        "name": "Grid export"
+      },
       "consumption_power": {
         "name": "Total consumption"
       },

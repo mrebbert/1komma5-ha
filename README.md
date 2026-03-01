@@ -30,6 +30,8 @@ Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the 
 | Batterieleistung | Battery charge (+) / discharge (−) | W | 30 s |
 | Batterieladung | Battery state of charge | % | 30 s |
 | Netzleistung | Grid import (+) / export (−) | W | 30 s |
+| Netzbezug | Raw grid import power (always ≥ 0) | W | 30 s |
+| Netzeinspeisung | Raw grid export / feed-in power (always ≥ 0) | W | 30 s |
 | Gesamtverbrauch | Total site consumption | W | 30 s |
 | Haushaltsverbrauch | Base consumption (excl. smart devices) | W | 30 s |
 | Ladeleistung Fahrzeuge | Aggregated EV charger power | W | 30 s |
