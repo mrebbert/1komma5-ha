@@ -64,6 +64,30 @@
       "self_sufficiency": {
         "name": "Self-sufficiency"
       },
+      "pv_power_energy": {
+        "name": "PV energy"
+      },
+      "grid_consumption_power_energy": {
+        "name": "Grid import energy"
+      },
+      "grid_feed_in_power_energy": {
+        "name": "Grid export energy"
+      },
+      "consumption_power_energy": {
+        "name": "Total consumption energy"
+      },
+      "household_power_energy": {
+        "name": "Household energy"
+      },
+      "ev_chargers_power_energy": {
+        "name": "EV charging energy"
+      },
+      "heat_pumps_power_energy": {
+        "name": "Heat pump energy"
+      },
+      "acs_power_energy": {
+        "name": "Air conditioning energy"
+      },
       "current_electricity_price": {
         "name": "Current electricity price"
       },

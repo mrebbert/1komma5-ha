@@ -3,23 +3,40 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, UnitOfPower
-from homeassistant.core import HomeAssistant
+from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import OneKomma5ConfigEntry
 from .coordinator import LiveData, PriceData
 from .entity import OneKomma5Entity, OneKomma5EVEntity, OneKomma5PriceEntity
 
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
+
+# Power sensors for which an energy counterpart (kWh) is created.
+# Bidirectional sensors (battery_power, grid_power) are excluded intentionally —
+# grid_consumption_power / grid_feed_in_power already cover those directions.
+ENERGY_SENSOR_KEYS = frozenset({
+    "pv_power",
+    "grid_consumption_power",
+    "grid_feed_in_power",
+    "consumption_power",
+    "household_power",
+    "ev_chargers_power",
+    "heat_pumps_power",
+    "acs_power",
+})
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -230,6 +247,13 @@ async def async_setup_entry(
         for desc in LIVE_SENSORS
     )
 
+    # Energy sensors (trapezoidal integration of power sensors)
+    entities.extend(
+        OneKomma5EnergySensor(live_coordinator, system_id, system_name, desc)
+        for desc in LIVE_SENSORS
+        if desc.key in ENERGY_SENSOR_KEYS
+    )
+
     # Price sensors
     entities.extend(
         OneKomma5PriceSensor(price_coordinator, system_id, system_name, desc)
@@ -331,6 +355,67 @@ class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
         if ev is None:
             return None
         return self.entity_description.value_fn(ev)
+
+
+class OneKomma5EnergySensor(OneKomma5Entity, RestoreSensor):
+    """Energy sensor (kWh) derived from a power sensor via trapezoidal integration.
+
+    The accumulated value is persisted across restarts via RestoreSensor.
+    Only positive power contributions are counted so the state class
+    TOTAL_INCREASING is never violated.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_suggested_display_precision = 3
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        description: OneKomma5SensorDescription,
+    ) -> None:
+        """Initialize the energy sensor."""
+        super().__init__(coordinator, system_id, system_name, f"{description.key}_energy")
+        self._power_fn = description.value_fn
+        self._attr_translation_key = f"{description.key}_energy"
+        self._kwh: float = 0.0
+        self._last_power: float | None = None
+        self._last_time: datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore accumulated energy after HA restart."""
+        await super().async_added_to_hass()
+        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
+            try:
+                self._kwh = float(restored.native_value)
+            except (TypeError, ValueError):
+                self._kwh = 0.0
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Integrate power (W) over elapsed time and accumulate kWh."""
+        if self.coordinator.data is None:
+            return
+        power_w = self._power_fn(self.coordinator.data)
+        if power_w is None:
+            return
+        now = dt_util.utcnow()
+        if self._last_power is not None and self._last_time is not None:
+            dt_hours = (now - self._last_time).total_seconds() / 3600
+            avg_w = (self._last_power + power_w) / 2
+            if avg_w > 0:
+                self._kwh += avg_w * dt_hours / 1000
+        self._last_power = power_w
+        self._last_time = now
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float:
+        """Return the accumulated energy in kWh."""
+        return round(self._kwh, 3)
 
 
 def _get_ev_label(ev: Any) -> str:

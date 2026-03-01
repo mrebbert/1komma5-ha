@@ -64,6 +64,30 @@
       "self_sufficiency": {
         "name": "Autarkiegrad"
       },
+      "pv_power_energy": {
+        "name": "PV-Energie"
+      },
+      "grid_consumption_power_energy": {
+        "name": "Netzbezug Energie"
+      },
+      "grid_feed_in_power_energy": {
+        "name": "Eingespeiste Energie"
+      },
+      "consumption_power_energy": {
+        "name": "Gesamtverbrauch Energie"
+      },
+      "household_power_energy": {
+        "name": "Haushaltsverbrauch Energie"
+      },
+      "ev_chargers_power_energy": {
+        "name": "Ladeenergie Fahrzeuge"
+      },
+      "heat_pumps_power_energy": {
+        "name": "Wärmepumpenenergie"
+      },
+      "acs_power_energy": {
+        "name": "Klimaanlagenenergie"
+      },
       "current_electricity_price": {
         "name": "Aktueller Strompreis"
       },

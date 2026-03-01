@@ -22,7 +22,7 @@ Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the 
 
 ## Features
 
-### Sensors
+### Power Sensors
 
 | Entity | Description | Unit | Update |
 |--------|-------------|------|--------|
@@ -44,6 +44,23 @@ Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the 
 | Höchster Strompreis | Today's highest all-in price | EUR/kWh | 1 h |
 | Ziel-Akkustand | EV target SoC | % | 30 s |
 | Lademodus (Sensor) | Current EV charging mode | — | 30 s |
+
+### Energy Sensors
+
+For every unidirectional power sensor an accompanying energy sensor (kWh) is automatically created. Energy is calculated via **trapezoidal integration** of the 30-second power samples and persisted across Home Assistant restarts. These sensors use `state_class: total_increasing` and are therefore directly compatible with the **Energy Dashboard**.
+
+| Entity | Description | Unit |
+|--------|-------------|------|
+| PV-Energie | Cumulative solar energy produced | kWh |
+| Netzbezug Energie | Cumulative energy drawn from grid | kWh |
+| Eingespeiste Energie | Cumulative energy fed into grid | kWh |
+| Gesamtverbrauch Energie | Cumulative total site consumption | kWh |
+| Haushaltsverbrauch Energie | Cumulative base consumption | kWh |
+| Ladeenergie Fahrzeuge | Cumulative EV charging energy | kWh |
+| Wärmepumpenenergie | Cumulative heat pump energy | kWh |
+| Klimaanlagenenergie | Cumulative AC energy | kWh |
+
+> **Note:** `Batterieleistung` and `Netzleistung` are bidirectional (positive/negative) and therefore excluded — their respective directions are already covered by `Netzbezug Energie` and `Eingespeiste Energie`.
 
 ### Price Forecast
 
