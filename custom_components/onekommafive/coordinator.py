@@ -178,15 +178,14 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
         return slots
 
     def _get_current_price(self, prices: dict[str, float]) -> float | None:
-        """Return the price for the latest slot at or before the current full hour.
+        """Return the price for the active 15-minute slot (latest start ≤ now).
 
-        The API uses ISO-8601 timestamps without seconds, e.g. '2024-06-01T14:00Z'.
-        fromisoformat() handles all common variants after replacing the Z suffix.
+        The API provides 15-minute resolution data, so we pick the slot whose
+        start timestamp is the most recent one at or before the current time.
         """
         if not prices:
             return None
         now = datetime.datetime.now(tz=datetime.timezone.utc)
-        current_hour = now.replace(minute=0, second=0, microsecond=0)
 
         best_value: float | None = None
         best_time: datetime.datetime | None = None
@@ -196,7 +195,7 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
                 slot_time = datetime.datetime.fromisoformat(key.replace("Z", "+00:00"))
                 if slot_time.tzinfo is None:
                     slot_time = slot_time.replace(tzinfo=datetime.timezone.utc)
-                if slot_time <= current_hour and (best_time is None or slot_time > best_time):
+                if slot_time <= now and (best_time is None or slot_time > best_time):
                     best_time = slot_time
                     best_value = value
             except ValueError:
