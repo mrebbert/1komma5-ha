@@ -40,7 +40,7 @@ Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the 
 | Wärmepumpenleistung | Aggregated heat pump power | W | 30 s |
 | Klimaanlagenleistung | Aggregated AC power | W | 30 s |
 | Autarkiegrad | Self-sufficiency ratio | % | 30 s |
-| Aktueller Strompreis | Current all-in electricity price | EUR/kWh | 1 h |
+| Aktueller Strompreis | Current all-in price (active 15-min slot) | EUR/kWh | 1 h |
 | Durchschnittlicher Strompreis | Today's average all-in price | EUR/kWh | 1 h |
 | Niedrigster Strompreis | Today's lowest all-in price | EUR/kWh | 1 h |
 | Höchster Strompreis | Today's highest all-in price | EUR/kWh | 1 h |
@@ -74,7 +74,7 @@ The **Aktueller Strompreis** sensor carries several attributes updated every hou
 | `cheapest_future_hour` | ISO-8601 start timestamp of the cheapest upcoming slot |
 | `cheapest_future_price` | Price (EUR/kWh) of that slot |
 
-The `forecast` list covers up to **30 hours** ahead (today + all of tomorrow) and is compatible with [`apexcharts-card`](https://github.com/RomRider/apexcharts-card) and other custom cards that follow the Tibber/ENTSO-E format:
+The sensor value always reflects the **active 15-minute slot** (latest slot whose start ≤ now), not just the price at the top of the hour. The `forecast` list covers up to **30 hours** ahead (today + all of tomorrow) and is compatible with [`apexcharts-card`](https://github.com/RomRider/apexcharts-card) and other custom cards that follow the Tibber/ENTSO-E format:
 
 ```yaml
 forecast:
