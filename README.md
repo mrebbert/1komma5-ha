@@ -160,6 +160,35 @@ One set of entities is created per connected EV charger.
 | Abfahrtzeit | Time | Set the daily primary departure time |
 | Fahrzeug-Akkustand (manuell) | Number (0–100 %) | Manually report current SoC (SMART_CHARGE only) |
 
+#### Example automation: keep manual SoC in sync
+
+The **Fahrzeug-Akkustand (manuell)** entity expects the current battery level to be reported manually to the 1KOMMA5° system. If your EV integration (e.g. Volkswagen WeConnect, Tesla, etc.) already exposes a sensor with the current battery level, you can automate this with the following automation.
+
+> **Prerequisite:** You need a sensor that provides the current battery level of your vehicle as a numeric percentage value. Not all EV integrations expose this.
+
+```yaml
+alias: "EV SoC sync: vehicle sensor → 1KOMMA5°"
+trigger:
+  - platform: state
+    entity_id: sensor.EV_BATTERY_SENSOR
+condition:
+  - condition: template
+    value_template: >
+      {{ states('sensor.EV_BATTERY_SENSOR') | is_number }}
+  - condition: template
+    value_template: >
+      {{ not is_state('number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell', 'unavailable') }}
+action:
+  - service: number.set_value
+    target:
+      entity_id: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
+    data:
+      value: "{{ states('sensor.EV_BATTERY_SENSOR') | int }}"
+mode: single
+```
+
+Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor entity ID and `CAR_IDENTIFIER` with your EV charger prefix. The second condition ensures the automation only runs in `SMART_CHARGE` mode — the entity is unavailable otherwise.
+
 ### EMS Controls
 
 | Entity | Type | Description |
