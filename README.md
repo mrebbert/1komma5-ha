@@ -44,8 +44,6 @@ Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the 
 | Durchschnittlicher Strompreis | Today's average all-in price | EUR/kWh | 1 h |
 | Niedrigster Strompreis | Today's lowest all-in price | EUR/kWh | 1 h |
 | Höchster Strompreis | Today's highest all-in price | EUR/kWh | 1 h |
-| Ziel-Akkustand | EV target SoC | % | 30 s |
-| Lademodus (Sensor) | Current EV charging mode | — | 30 s |
 
 ### Energy Sensors
 
@@ -142,15 +140,31 @@ trigger:
       {{ now().isoformat() >= state_attr('sensor.1komma5_aktueller_strompreis', 'cheapest_future_hour') }}
 ```
 
-### Controls
+### EV Charger
+
+One set of entities is created per connected EV charger.
+
+#### Sensors
+
+| Entity | Description | Unit | Update |
+|--------|-------------|------|--------|
+| Ziel-Akkustand | Current target SoC | % | 30 s |
+| Lademodus (Sensor) | Active charging mode | — | 30 s |
+
+#### Controls
+
+| Entity | Type | Description |
+|--------|------|-------------|
+| Lademodus | Select | Set charging mode (SMART_CHARGE / QUICK_CHARGE / SOLAR_CHARGE) |
+| Ziel-Akkustand | Number (0–100 %) | Set the desired target SoC |
+| Abfahrtzeit | Time | Set the daily primary departure time |
+| Fahrzeug-Akkustand (manuell) | Number (0–100 %) | Manually report current SoC (SMART_CHARGE only) |
+
+### EMS Controls
 
 | Entity | Type | Description |
 |--------|------|-------------|
 | EMS Automatikmodus | Switch | Toggle EMS auto / manual mode |
-| Lademodus | Select | Set EV charging mode (SMART_CHARGE / QUICK_CHARGE / SOLAR_CHARGE) |
-| Fahrzeug-Akkustand (manuell) | Number | Manually report current EV SoC (SMART_CHARGE mode only) |
-| Ziel-Akkustand | Number | Set the desired target SoC for the EV |
-| Abfahrtzeit | Time | Set the daily primary departure time for smart charging |
 
 ---
 
