@@ -1,0 +1,221 @@
+views:
+  - type: sections
+    path: ''
+    max_columns: 2
+    dense_section_placement: true
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Netz- und PV-Leistung
+            heading_style: title
+            icon: mdi:transmission-tower
+          - type: gauge
+            entity: sensor.markus_rebbert_netzleistung
+            max: 13000
+            needle: true
+            severity:
+              green: -7000
+              yellow: 0
+              red: 2500
+            min: -7000
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: gauge
+            entity: sensor.markus_rebbert_pv_leistung
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: tile
+            entity: sensor.markus_rebbert_netzbezug
+            vertical: false
+            features_position: bottom
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: tile
+            entity: sensor.markus_rebbert_netzeinspeisung
+            vertical: false
+            features_position: bottom
+      - type: grid
+        cards:
+          - chart_type: bar
+            period: day
+            type: statistics-graph
+            entities:
+              - sensor.markus_rebbert_pv_energie
+              - sensor.markus_rebbert_netzbezug_energie
+              - sensor.markus_rebbert_eingespeiste_energie
+            stat_types:
+              - change
+            title: Energiebezug und -einspeisung
+            grid_options:
+              columns: 12
+              rows: 4
+            days_to_show: 7
+      - type: grid
+        cards:
+          - type: heading
+            heading: Verbrauch
+            heading_style: title
+          - type: gauge
+            entity: sensor.markus_rebbert_gesamtverbrauch
+            max: 15000
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: gauge
+            entity: sensor.markus_rebbert_haushaltsverbrauch
+            grid_options:
+              columns: 3
+              rows: auto
+            max: 3600
+            name: Haushalt
+          - type: gauge
+            entity: sensor.markus_rebbert_warmepumpenleistung
+            grid_options:
+              columns: 3
+              rows: auto
+            name: Wärmepumpe
+            max: 3500
+          - type: gauge
+            entity: sensor.markus_rebbert_ladeleistung_fahrzeuge
+            max: 11000
+            grid_options:
+              columns: 3
+              rows: auto
+            name: Wallbox
+          - type: gauge
+            entity: sensor.markus_rebbert_klimaanlagenleistung
+            name: Klimaanlage
+            grid_options:
+              columns: 3
+              rows: auto
+      - type: grid
+        cards:
+          - chart_type: bar
+            period: day
+            type: statistics-graph
+            entities:
+              - sensor.markus_rebbert_gesamtverbrauch_energie
+              - sensor.markus_rebbert_haushaltsverbrauch_energie
+              - sensor.markus_rebbert_ladeenergie_fahrzeuge
+              - >-
+                sensor.heat_pumps_energy_consumption_8ef7677c_c8c7_413a_9f13_20a3f202f811
+            stat_types:
+              - change
+            hide_legend: false
+            logarithmic_scale: false
+            title: Gesamtverbrauch Energie
+            days_to_show: 7
+            grid_options:
+              columns: 12
+              rows: 6
+        column_span: 1
+      - type: grid
+        cards:
+          - type: heading
+            heading: Batterieleistung
+            heading_style: title
+            icon: mdi:solar-panel
+          - type: gauge
+            entity: sensor.markus_rebbert_batterieleistung
+            min: -7200
+            max: 7200
+            severity:
+              green: 4500
+              yellow: 0
+              red: -7200
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: gauge
+            entity: sensor.markus_rebbert_batterieladung
+            needle: true
+            severity:
+              green: 75
+              yellow: 25
+              red: 0
+            grid_options:
+              columns: 6
+              rows: auto
+      - type: grid
+        cards:
+          - type: heading
+            heading: Dynamische Strompreise
+            heading_style: title
+          - type: entity
+            entity: sensor.cheapest_future_hour
+            name: Günstigste Zeit
+          - type: entity
+            entity: sensor.cheapest_future_price
+            name: Günstigster Preis
+          - graph: line
+            type: sensor
+            entity: sensor.markus_rebbert_aktueller_strompreis
+            detail: 1
+            name: Aktuell
+          - graph: line
+            type: sensor
+            entity: sensor.markus_rebbert_durchschnittlicher_strompreis
+            detail: 1
+            name: Durchschnitt
+          - graph: line
+            type: sensor
+            entity: sensor.markus_rebbert_niedrigster_strompreis
+            detail: 1
+            name: Niedrigster
+          - graph: line
+            type: sensor
+            entity: sensor.markus_rebbert_hochster_strompreis
+            detail: 1
+            name: Höchster
+    title: Netz
+    icon: mdi:transmission-tower
+    cards: []
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: switch.markus_rebbert_ems_automatikmodus
+        name: EMS Automatik
+        show_entity_picture: false
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.markus_rebbert_autarkiegrad
+        icon: mdi:sun-clock
+  - type: sections
+    max_columns: 4
+    icon: mdi:car-electric
+    path: ''
+    sections:
+      - type: grid
+        cards:
+          - type: entity
+            entity: select.volkswagen_id_4_lademodus
+            grid_options:
+              columns: 9
+              rows: 2
+          - type: entity
+            entity: number.volkswagen_id_4_fahrzeug_akkustand_manuell
+            name: Akkustand (manuell)
+            grid_options:
+              columns: 9
+              rows: 2
+          - type: entity
+            entity: time.volkswagen_id_4_abfahrtzeit
+            name: Tägliche Abfahrtzeit
+            grid_options:
+              columns: 9
+              rows: 2
+          - type: entity
+            entity: sensor.volkswagen_id_4_ziel_akkustand
+            icon: mdi:battery-80
+            grid_options:
+              columns: 9
+              rows: 2
+        column_span: 1
