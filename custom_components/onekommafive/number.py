@@ -30,14 +30,16 @@ async def async_setup_entry(
 
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
+            ev_id = ev.id()
+            ev_label = _get_ev_label(ev)
             entities.append(
                 OneKomma5EVSoCNumber(
-                    live_coordinator,
-                    ev,
-                    system_id,
-                    system_name,
-                    ev.id(),
-                    _get_ev_label(ev),
+                    live_coordinator, ev, system_id, system_name, ev_id, ev_label,
+                )
+            )
+            entities.append(
+                OneKomma5EVTargetSoCNumber(
+                    live_coordinator, ev, system_id, system_name, ev_id, ev_label,
                 )
             )
 
@@ -94,6 +96,48 @@ class OneKomma5EVSoCNumber(OneKomma5EVEntity, NumberEntity):
             _LOGGER.warning("EV charger %s not found, cannot set SoC", self._ev_id)
             return
         await self.hass.async_add_executor_job(ev.set_current_soc, value)
+        await self.coordinator.async_request_refresh()
+
+
+class OneKomma5EVTargetSoCNumber(OneKomma5EVEntity, NumberEntity):
+    """Number entity to set the EV target state-of-charge."""
+
+    _attr_translation_key = "ev_target_soc_number"
+    _attr_device_class = NumberDeviceClass.BATTERY
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 100.0
+    _attr_native_step = 1.0
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(
+        self,
+        coordinator: Any,
+        ev_charger: Any,
+        system_id: str,
+        system_name: str,
+        ev_id: str,
+        ev_label: str,
+    ) -> None:
+        """Initialize the number entity."""
+        super().__init__(coordinator, system_id, system_name, ev_id, ev_label, "target_soc_number")
+        self._ev_charger = ev_charger
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current target SoC."""
+        ev = self._get_ev()
+        if ev is None:
+            return None
+        return ev.target_soc()
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the target SoC."""
+        ev = self._get_ev()
+        if ev is None:
+            _LOGGER.warning("EV charger %s not found, cannot set target SoC", self._ev_id)
+            return
+        await self.hass.async_add_executor_job(ev.set_target_soc, value)
         await self.coordinator.async_request_refresh()
 
 

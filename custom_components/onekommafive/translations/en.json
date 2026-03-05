@@ -125,6 +125,14 @@
     "number": {
       "ev_current_soc": {
         "name": "Vehicle battery level (manual)"
+      },
+      "ev_target_soc_number": {
+        "name": "Target battery level"
+      }
+    },
+    "time": {
+      "ev_departure_time": {
+        "name": "Departure time"
       }
     }
   }

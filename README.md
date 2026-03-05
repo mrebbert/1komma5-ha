@@ -148,7 +148,9 @@ trigger:
 |--------|------|-------------|
 | EMS Automatikmodus | Switch | Toggle EMS auto / manual mode |
 | Lademodus | Select | Set EV charging mode (SMART_CHARGE / QUICK_CHARGE / SOLAR_CHARGE) |
-| Fahrzeug-Akkustand (manuell) | Number | Manually report EV SoC (SMART_CHARGE mode only) |
+| Fahrzeug-Akkustand (manuell) | Number | Manually report current EV SoC (SMART_CHARGE mode only) |
+| Ziel-Akkustand | Number | Set the desired target SoC for the EV |
+| Abfahrtzeit | Time | Set the daily primary departure time for smart charging |
 
 ---
 
