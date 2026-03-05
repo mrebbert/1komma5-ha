@@ -39,4 +39,31 @@ A focused view for controlling the EV charger, showing:
 3. Paste the content of [`dashboard.yaml`](dashboard.yaml)
 4. **Adapt all entity IDs** to match your installation — replace `SYSTEM_NAME` with your own system name prefix (visible on each entity in **Settings → Devices & Services → 1KOMMA5°**)
 
-> The `cheapest_future_hour` and `cheapest_future_price` entities referenced in the price section are template sensors — see the [price forecast documentation](../README.md#price-forecast--cheapest-hour) for setup instructions.
+### Template sensors for cheapest hour & price
+
+The `cheapest_future_hour` and `cheapest_future_price` entities used in the price section are template sensors that read from the `Aktueller Strompreis` attributes. Add the following to your `configuration.yaml` (or a dedicated template file):
+
+```yaml
+template:
+  - sensor:
+      - name: "Cheapest future hour"
+        unique_id: cheapest_future_hour
+        icon: mdi:clock-outline
+        availability: >
+          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour') is not none }}
+        state: >
+          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour')
+            | as_datetime | as_timestamp | timestamp_custom('%d.%m. %H:%M') }}
+
+      - name: "Cheapest future price"
+        unique_id: cheapest_future_price
+        icon: mdi:currency-eur
+        unit_of_measurement: EUR/kWh
+        availability: >
+          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_price') is not none }}
+        state: >
+          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_price')
+            | round(4) }}
+```
+
+Replace `SYSTEM_NAME` with your system name prefix, then restart Home Assistant.
