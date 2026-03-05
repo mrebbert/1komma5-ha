@@ -101,8 +101,7 @@ views:
               - sensor.SYSTEM_NAME_gesamtverbrauch_energie
               - sensor.SYSTEM_NAME_haushaltsverbrauch_energie
               - sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
-              - >-
-                sensor.heat_pumps_energy_consumption_8ef7677c_c8c7_413a_9f13_20a3f202f811
+              - sensor.SYSTEM_NAME_warmepumpenenergie
             stat_types:
               - change
             hide_legend: false
