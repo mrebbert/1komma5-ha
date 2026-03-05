@@ -11,7 +11,7 @@ views:
             heading_style: title
             icon: mdi:transmission-tower
           - type: gauge
-            entity: sensor.markus_rebbert_netzleistung
+            entity: sensor.SYSTEM_NAME_netzleistung
             max: 13000
             needle: true
             severity:
@@ -23,19 +23,19 @@ views:
               columns: 6
               rows: auto
           - type: gauge
-            entity: sensor.markus_rebbert_pv_leistung
+            entity: sensor.SYSTEM_NAME_pv_leistung
             grid_options:
               columns: 6
               rows: auto
           - type: tile
-            entity: sensor.markus_rebbert_netzbezug
+            entity: sensor.SYSTEM_NAME_netzbezug
             vertical: false
             features_position: bottom
             grid_options:
               columns: 6
               rows: 1
           - type: tile
-            entity: sensor.markus_rebbert_netzeinspeisung
+            entity: sensor.SYSTEM_NAME_netzeinspeisung
             vertical: false
             features_position: bottom
       - type: grid
@@ -44,9 +44,9 @@ views:
             period: day
             type: statistics-graph
             entities:
-              - sensor.markus_rebbert_pv_energie
-              - sensor.markus_rebbert_netzbezug_energie
-              - sensor.markus_rebbert_eingespeiste_energie
+              - sensor.SYSTEM_NAME_pv_energie
+              - sensor.SYSTEM_NAME_netzbezug_energie
+              - sensor.SYSTEM_NAME_eingespeiste_energie
             stat_types:
               - change
             title: Energiebezug und -einspeisung
@@ -60,34 +60,34 @@ views:
             heading: Verbrauch
             heading_style: title
           - type: gauge
-            entity: sensor.markus_rebbert_gesamtverbrauch
+            entity: sensor.SYSTEM_NAME_gesamtverbrauch
             max: 15000
             grid_options:
               columns: 12
               rows: auto
           - type: gauge
-            entity: sensor.markus_rebbert_haushaltsverbrauch
+            entity: sensor.SYSTEM_NAME_haushaltsverbrauch
             grid_options:
               columns: 3
               rows: auto
             max: 3600
             name: Haushalt
           - type: gauge
-            entity: sensor.markus_rebbert_warmepumpenleistung
+            entity: sensor.SYSTEM_NAME_warmepumpenleistung
             grid_options:
               columns: 3
               rows: auto
             name: Wärmepumpe
             max: 3500
           - type: gauge
-            entity: sensor.markus_rebbert_ladeleistung_fahrzeuge
+            entity: sensor.SYSTEM_NAME_ladeleistung_fahrzeuge
             max: 11000
             grid_options:
               columns: 3
               rows: auto
             name: Wallbox
           - type: gauge
-            entity: sensor.markus_rebbert_klimaanlagenleistung
+            entity: sensor.SYSTEM_NAME_klimaanlagenleistung
             name: Klimaanlage
             grid_options:
               columns: 3
@@ -98,9 +98,9 @@ views:
             period: day
             type: statistics-graph
             entities:
-              - sensor.markus_rebbert_gesamtverbrauch_energie
-              - sensor.markus_rebbert_haushaltsverbrauch_energie
-              - sensor.markus_rebbert_ladeenergie_fahrzeuge
+              - sensor.SYSTEM_NAME_gesamtverbrauch_energie
+              - sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+              - sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
               - >-
                 sensor.heat_pumps_energy_consumption_8ef7677c_c8c7_413a_9f13_20a3f202f811
             stat_types:
@@ -120,7 +120,7 @@ views:
             heading_style: title
             icon: mdi:solar-panel
           - type: gauge
-            entity: sensor.markus_rebbert_batterieleistung
+            entity: sensor.SYSTEM_NAME_batterieleistung
             min: -7200
             max: 7200
             severity:
@@ -131,7 +131,7 @@ views:
               columns: 6
               rows: auto
           - type: gauge
-            entity: sensor.markus_rebbert_batterieladung
+            entity: sensor.SYSTEM_NAME_batterieladung
             needle: true
             severity:
               green: 75
@@ -153,22 +153,22 @@ views:
             name: Günstigster Preis
           - graph: line
             type: sensor
-            entity: sensor.markus_rebbert_aktueller_strompreis
+            entity: sensor.SYSTEM_NAME_aktueller_strompreis
             detail: 1
             name: Aktuell
           - graph: line
             type: sensor
-            entity: sensor.markus_rebbert_durchschnittlicher_strompreis
+            entity: sensor.SYSTEM_NAME_durchschnittlicher_strompreis
             detail: 1
             name: Durchschnitt
           - graph: line
             type: sensor
-            entity: sensor.markus_rebbert_niedrigster_strompreis
+            entity: sensor.SYSTEM_NAME_niedrigster_strompreis
             detail: 1
             name: Niedrigster
           - graph: line
             type: sensor
-            entity: sensor.markus_rebbert_hochster_strompreis
+            entity: sensor.SYSTEM_NAME_hochster_strompreis
             detail: 1
             name: Höchster
     title: Netz
@@ -179,14 +179,14 @@ views:
         show_name: true
         show_state: true
         show_icon: true
-        entity: switch.markus_rebbert_ems_automatikmodus
+        entity: switch.SYSTEM_NAME_ems_automatikmodus
         name: EMS Automatik
         show_entity_picture: false
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
-        entity: sensor.markus_rebbert_autarkiegrad
+        entity: sensor.SYSTEM_NAME_autarkiegrad
         icon: mdi:sun-clock
   - type: sections
     max_columns: 4

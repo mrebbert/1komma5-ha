@@ -37,6 +37,6 @@ A focused view for controlling the EV charger, showing:
 1. In Home Assistant go to **Settings → Dashboards → Add Dashboard** (or open an existing one in edit mode)
 2. Click the ⋮ menu → **Edit Dashboard** → **Raw configuration editor**
 3. Paste the content of [`dashboard.yaml`](dashboard.yaml)
-4. **Adapt all entity IDs** to match your installation — replace `markus_rebbert` with your own system name prefix (visible on each entity in **Settings → Devices & Services → 1KOMMA5°**)
+4. **Adapt all entity IDs** to match your installation — replace `SYSTEM_NAME` with your own system name prefix (visible on each entity in **Settings → Devices & Services → 1KOMMA5°**)
 
 > The `cheapest_future_hour` and `cheapest_future_price` entities referenced in the price section are template sensors — see the [price forecast documentation](../README.md#price-forecast--cheapest-hour) for setup instructions.
