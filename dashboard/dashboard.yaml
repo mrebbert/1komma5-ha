@@ -196,24 +196,24 @@ views:
       - type: grid
         cards:
           - type: entity
-            entity: select.volkswagen_id_4_lademodus
+            entity: select.CAR_IDENTIFIER_lademodus
             grid_options:
               columns: 9
               rows: 2
           - type: entity
-            entity: number.volkswagen_id_4_fahrzeug_akkustand_manuell
+            entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
             name: Akkustand (manuell)
             grid_options:
               columns: 9
               rows: 2
           - type: entity
-            entity: time.volkswagen_id_4_abfahrtzeit
+            entity: time.CAR_IDENTIFIER_abfahrtzeit
             name: Tägliche Abfahrtzeit
             grid_options:
               columns: 9
               rows: 2
           - type: entity
-            entity: sensor.volkswagen_id_4_ziel_akkustand
+            entity: sensor.CAR_IDENTIFIER_ziel_akkustand
             icon: mdi:battery-80
             grid_options:
               columns: 9

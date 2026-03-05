@@ -37,7 +37,12 @@ A focused view for controlling the EV charger, showing:
 1. In Home Assistant go to **Settings → Dashboards → Add Dashboard** (or open an existing one in edit mode)
 2. Click the ⋮ menu → **Edit Dashboard** → **Raw configuration editor**
 3. Paste the content of [`dashboard.yaml`](dashboard.yaml)
-4. **Adapt all entity IDs** to match your installation — replace `SYSTEM_NAME` with your own system name prefix (visible on each entity in **Settings → Devices & Services → 1KOMMA5°**)
+4. Replace the two placeholders throughout the YAML:
+
+| Placeholder | Replace with | Where to find it |
+|-------------|-------------|-----------------|
+| `SYSTEM_NAME` | Your system name prefix | **Settings → Devices & Services → 1KOMMA5°**, visible on any entity ID |
+| `CAR_IDENTIFIER` | Your EV entity prefix | Same location, visible on EV charger entities (e.g. `volkswagen_id_4`) |
 
 ### Template sensors for cheapest hour & price
 
