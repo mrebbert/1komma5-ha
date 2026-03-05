@@ -168,6 +168,14 @@ One set of entities is created per connected EV charger.
 
 ---
 
+## Example Dashboard
+
+The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant dashboard with two views — one for energy & grid data and one for EV charger control. All cards are native HA types, no extra frontend components needed.
+
+→ [Dashboard README with screenshots](dashboard/README.md)
+
+---
+
 ## Installation
 
 ### Via HACS (recommended)
