@@ -64,29 +64,26 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
 
     @property
     def native_value(self) -> datetime.time | None:
-        """Return the currently set departure time."""
+        """Return the current primary departure time."""
         ev = self._get_ev()
         if ev is None:
             return None
-        value = ev.primary_departure_time()
+        value = ev.primary_schedule_departure_time()
         if value is None:
             return None
-        if isinstance(value, datetime.time):
-            return value
-        # Handle string format "HH:MM" or "HH:MM:SS" returned by some API versions
         try:
-            return datetime.time.fromisoformat(str(value))
+            return datetime.time.fromisoformat(value)  # "HH:MM" → datetime.time
         except ValueError:
-            _LOGGER.warning("Could not parse departure time value: %s", value)
+            _LOGGER.warning("Could not parse departure time: %s", value)
             return None
 
     async def async_set_value(self, value: datetime.time) -> None:
-        """Set the primary departure time."""
+        """Send the new departure time to the API."""
         ev = self._get_ev()
         if ev is None:
             _LOGGER.warning("EV charger %s not found, cannot set departure time", self._ev_id)
             return
-        await self.hass.async_add_executor_job(ev.set_primary_departure_time, value)
+        await self.hass.async_add_executor_job(ev.set_primary_departure_time, value.strftime("%H:%M"))
         await self.coordinator.async_request_refresh()
 
 
