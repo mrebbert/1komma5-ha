@@ -194,27 +194,13 @@ views:
     sections:
       - type: grid
         cards:
-          - type: entity
-            entity: select.CAR_IDENTIFIER_lademodus
-            grid_options:
-              columns: 9
-              rows: 2
-          - type: entity
-            entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
-            name: Akkustand (manuell)
-            grid_options:
-              columns: 9
-              rows: 2
-          - type: entity
-            entity: time.CAR_IDENTIFIER_abfahrtzeit
-            name: Tägliche Abfahrtzeit
-            grid_options:
-              columns: 9
-              rows: 2
-          - type: entity
-            entity: sensor.CAR_IDENTIFIER_ziel_akkustand
-            icon: mdi:battery-80
-            grid_options:
-              columns: 9
-              rows: 2
+          - type: entities
+            entities:
+              - entity: select.CAR_IDENTIFIER_lademodus
+              - entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
+                name: Akkustand aktuell
+              - entity: number.CAR_IDENTIFIER_ziel_akkustand
+                name: Zielakkustand
+              - entity: time.CAR_IDENTIFIER_abfahrtzeit
+                name: tägliche Abfahrtzeit
         column_span: 1
