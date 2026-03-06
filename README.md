@@ -7,12 +7,6 @@
 [![Validate](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/validate.yml?label=Validate&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-## Credits
-
-Large parts of this project are inspired by and based on the work of [Alex Birkner](https://github.com/BirknerAlex) and his [hacs_1komma5grad](https://github.com/BirknerAlex/hacs_1komma5grad) integration. Many thanks for paving the way!
-
----
-
 Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the [1KOMMA5° Heartbeat](https://www.1komma5grad.com/) home energy platform. Exposes your PV system, battery storage, heat pump, EV charger and dynamic electricity prices as sensors and controls.
 
 > **Note:** This is an unofficial integration based on a reverse-engineered API, built 100% vibe coded with AI assistance. It may break if 1KOMMA5° changes their backend. Use at your own risk.
@@ -267,3 +261,9 @@ I do not have the means to test this integration broadly across different hardwa
 | Smart meter | DTSU666 |
 
 For example, I do not have an air conditioning unit — yet the API returns AC values for my system. This appears to be a mock provided by the 1KOMMA5° backend for devices that are not physically present.
+
+---
+
+## Credits
+
+Large parts of this project are inspired by and based on the work of [Alex Birkner](https://github.com/BirknerAlex) and his [hacs_1komma5grad](https://github.com/BirknerAlex/hacs_1komma5grad) integration. Many thanks for paving the way!
