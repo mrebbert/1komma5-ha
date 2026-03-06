@@ -6,6 +6,6 @@
   "documentation": "https://github.com/mrebbert/1komma5-ha",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/mrebbert/1komma5-ha/issues",
-  "requirements": ["onekommafive@git+https://github.com/mrebbert/1komma5-api.git"],
+  "requirements": ["onekommafive==0.1.9"],
   "version": "0.1.17"
 }
