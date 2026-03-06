@@ -1,6 +1,6 @@
 # Example Dashboard
 
-This directory contains an example Home Assistant dashboard for the 1KOMMA5° integration. All cards use **native Home Assistant card types** — no custom frontend components required.
+This directory contains an example Home Assistant dashboard for the 1KOMMA5° integration. Most cards use native Home Assistant card types. The **Dynamische Strompreise** section additionally requires the [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom card (available via HACS).
 
 ## Views
 
@@ -17,7 +17,7 @@ The main view is split into two columns and covers:
 | Verbrauch | Total consumption gauge plus individual gauges for household, heat pump, wallbox and AC |
 | Energiebezug und -einspeisung | 7-day bar chart (daily delta) for PV energy, grid import and grid export |
 | Gesamtverbrauch Energie | 7-day bar chart (daily delta) for total, household, EV and heat pump energy |
-| Dynamische Strompreise | Cheapest future hour and price; line graphs for current, average, lowest and highest electricity price |
+| Dynamische Strompreise | Cheapest future hour and price; line graphs for current, average, lowest and highest electricity price; 30h price forecast bar chart (apexcharts-card) |
 
 The view also shows two **badges** in the header: EMS auto mode switch and self-sufficiency ratio.
 

@@ -27,6 +27,8 @@ views:
             grid_options:
               columns: 6
               rows: auto
+            needle: true
+            max: 6880
           - type: tile
             entity: sensor.SYSTEM_NAME_netzbezug
             vertical: false
@@ -65,6 +67,11 @@ views:
             grid_options:
               columns: 12
               rows: auto
+            needle: true
+            severity:
+              green: 0
+              yellow: 1000
+              red: 5000
           - type: gauge
             entity: sensor.SYSTEM_NAME_haushaltsverbrauch
             grid_options:
@@ -123,12 +130,13 @@ views:
             min: -7200
             max: 7200
             severity:
-              green: 4500
+              green: 3500
               yellow: 0
               red: -7200
             grid_options:
               columns: 6
               rows: auto
+            needle: true
           - type: gauge
             entity: sensor.SYSTEM_NAME_batterieladung
             needle: true
@@ -170,6 +178,53 @@ views:
             entity: sensor.SYSTEM_NAME_hochster_strompreis
             detail: 1
             name: Höchster
+          - type: custom:apexcharts-card
+            graph_span: 30h
+            span:
+              start: hour
+            now:
+              show: true
+              label: Jetzt
+            header:
+              show: true
+              title: Strompreis (30h)
+              show_states: true
+              colorize_states: true
+            yaxis:
+              - min: auto
+                decimals: 4
+            series:
+              - entity: sensor.SYSTEM_NAME_aktueller_strompreis
+                name: Strompreis
+                unit: EUR/kWh
+                float_precision: 4
+                type: column
+                data_generator: |
+                  return entity.attributes.forecast.map(e => [
+                    new Date(e.start).getTime(),
+                    e.price
+                  ]);
+                color_threshold:
+                  - value: 0
+                    color: '#4caf50'
+                  - value: 0.22
+                    color: '#ff9800'
+                  - value: 0.33
+                    color: '#f44336'
+                show:
+                  in_header: false
+                  legend_value: false
+                  name_in_header: false
+              - entity: sensor.SYSTEM_NAME_aktueller_strompreis
+                name: Aktuell
+                unit: EUR/kWh
+                float_precision: 4
+                type: line
+                stroke_width: 0
+                show:
+                  in_header: true
+                  legend_value: true
+                  name_in_header: true
     title: Netz
     icon: mdi:transmission-tower
     cards: []
@@ -197,10 +252,16 @@ views:
           - type: entities
             entities:
               - entity: select.CAR_IDENTIFIER_lademodus
+          - type: entities
+            entities:
               - entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
                 name: Akkustand aktuell
               - entity: number.CAR_IDENTIFIER_ziel_akkustand
                 name: Zielakkustand
               - entity: time.CAR_IDENTIFIER_abfahrtzeit
                 name: tägliche Abfahrtzeit
+            visibility:
+              - condition: state
+                entity: sensor.CAR_IDENTIFIER_lademodus
+                state: SMART_CHARGE
         column_span: 1
