@@ -9,7 +9,26 @@
 
 Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the [1KOMMA5° Heartbeat](https://www.1komma5grad.com/) home energy platform. Exposes your PV system, battery storage, heat pump, EV charger and dynamic electricity prices as sensors and controls.
 
-> **Note:** This is an unofficial integration based on a reverse-engineered API, built 100% vibe coded with AI assistance. It may break if 1KOMMA5° changes their backend. Use at your own risk.
+---
+
+## Disclaimer
+
+This project is not affiliated with or endorsed by 1KOMMA5°. The API is undocumented and may change without notice.
+
+This is an unofficial integration based on a reverse-engineered API, built 100% vibe coded with AI assistance. It may break if 1KOMMA5° changes their backend. Use at your own risk.
+
+I do not have the means to test this integration broadly across different hardware configurations — a lot of it is "it works for me". My personal setup is:
+
+| Component | Model |
+|-----------|-------|
+| Hybrid Inverter | Sungrow SH6.0RT-V112 |
+| Battery | Sungrow SBR256 |
+| Wallbox | go-e homeFix 11 kW |
+| EV | Volkswagen ID.4 |
+| Heat pump | Stiebel Eltron WPL-A 10 HK 400 Premium |
+| Smart meter | DTSU666 |
+
+For example, I do not have an air conditioning unit — yet the API returns AC values for my system. This appears to be a mock provided by the 1KOMMA5° backend for devices that are not physically present.
 
 ---
 
@@ -242,25 +261,6 @@ Credentials are stored securely in the Home Assistant config entry.
 | Live data interval | 30 seconds |
 | Price data interval | 1 hour |
 | HA domain | `onekommafive` |
-
----
-
-## Disclaimer
-
-This project is not affiliated with or endorsed by 1KOMMA5°. The API is undocumented and may change without notice.
-
-I do not have the means to test this integration broadly across different hardware configurations — a lot of it is "it works for me". My personal setup is:
-
-| Component | Model |
-|-----------|-------|
-| Hybrid Inverter | Sungrow SH6.0RT-V112 |
-| Battery | Sungrow SBR256 |
-| Wallbox | go-e homeFix 11 kW |
-| EV | Volkswagen ID.4 |
-| Heat pump | Stiebel Eltron WPL-A 10 HK 400 Premium |
-| Smart meter | DTSU666 |
-
-For example, I do not have an air conditioning unit — yet the API returns AC values for my system. This appears to be a mock provided by the 1KOMMA5° backend for devices that are not physically present.
 
 ---
 
