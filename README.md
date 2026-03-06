@@ -147,7 +147,7 @@ series:
 trigger:
   - platform: template
     value_template: >
-      {{ now().isoformat() >= state_attr('sensor.1komma5_aktueller_strompreis', 'cheapest_future_hour') }}
+      {{ now().isoformat() >= state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour') }}
 ```
 
 ### EV Charger
