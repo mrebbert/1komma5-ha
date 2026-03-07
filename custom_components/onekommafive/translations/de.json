@@ -105,6 +105,9 @@
       },
       "ev_charging_mode": {
         "name": "Lademodus"
+      },
+      "stable_electricity_price": {
+        "name": "Letzter gültiger Strompreis"
       }
     },
     "switch": {

@@ -150,6 +150,23 @@ trigger:
       {{ now().isoformat() >= state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour') }}
 ```
 
+### Last Valid Electricity Price & Energy Dashboard
+
+The integration automatically creates the sensor **"Last valid electricity price"** (`sensor.SYSTEM_NAME_last_valid_electricity_price`). It behaves like `Current electricity price` but holds the last known value whenever the API returns an invalid response (unavailable, 0, None) and persists it across HA restarts.
+
+**Why is this sensor more stable?**
+
+`Current electricity price` is populated directly from the API and occasionally returns `0` or `unavailable` — for example during brief API hiccups or at 15-minute slot boundaries. The HA **Energy Dashboard** uses the configured electricity price sensor for cost calculations. Even a momentary drop to 0 distorts the calculated costs for the entire period. The stable sensor prevents exactly that.
+
+#### Adding to the Energy Dashboard
+
+1. Go to **Settings → Energy → Grid**
+2. Under **Grid consumption** select the `Grid import energy` sensor
+3. As the **electricity price sensor** select `Last valid electricity price`
+4. Under **Return to grid** select the `Grid export energy` sensor and enter your feed-in tariff manually
+
+---
+
 ### EV Charger
 
 One set of entities is created per connected EV charger.

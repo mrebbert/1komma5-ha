@@ -260,6 +260,9 @@ async def async_setup_entry(
         for desc in PRICE_SENSORS
     )
 
+    # Stable price sensor (hold-last-valid)
+    entities.append(OneKomma5StablePriceSensor(price_coordinator, system_id, system_name))
+
     # EV charger sensors (one set per charger)
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
@@ -422,6 +425,63 @@ class OneKomma5EnergySensor(OneKomma5Entity, RestoreSensor):
     def native_value(self) -> float:
         """Return the accumulated energy in kWh."""
         return round(self._kwh, 3)
+
+
+class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
+    """Stable electricity price sensor with hold-last-valid logic.
+
+    Exposes the last known valid electricity price, surviving unavailable/zero
+    API responses across coordinator updates and HA restarts.
+    """
+
+    _attr_translation_key = "stable_electricity_price"
+    _attr_icon = "mdi:currency-eur"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = CURRENCY_EUR_PER_KWH
+    _attr_suggested_display_precision = 4
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        """Initialize the stable price sensor."""
+        super().__init__(coordinator, system_id, system_name, "stable_electricity_price")
+        # Initialise immediately from coordinator data so the sensor never starts at 0
+        self._stable_price: float = 0.0
+        if coordinator.data is not None:
+            price = coordinator.data.current_price
+            if price is not None and price > 0:
+                self._stable_price = price
+
+    @property
+    def stable_price(self) -> float:
+        """Return the last known valid electricity price."""
+        return self._stable_price
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to coordinator; fall back to restored state if coordinator has no price."""
+        await super().async_added_to_hass()
+        if self._stable_price == 0.0:
+            if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
+                try:
+                    restored_price = float(restored.native_value)
+                    if restored_price > 0:
+                        self._stable_price = restored_price
+                        self.async_write_ha_state()
+                except (TypeError, ValueError):
+                    pass
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Update stable price if the new value is valid."""
+        if self.coordinator.data is None:
+            return
+        price = self.coordinator.data.current_price
+        if price is not None and price > 0:
+            self._stable_price = price
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float:
+        """Return the stable electricity price."""
+        return round(self._stable_price, 6)
 
 
 def _get_ev_label(ev: Any) -> str:
