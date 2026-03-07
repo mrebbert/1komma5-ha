@@ -7,5 +7,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/mrebbert/1komma5-ha/issues",
   "requirements": ["onekommafive>=0.1.10"],
-  "version": "0.1.21"
+  "version": "0.1.22"
 }
