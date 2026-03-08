@@ -3,6 +3,23 @@ views:
     path: ''
     max_columns: 2
     dense_section_placement: true
+    title: Netz
+    icon: mdi:transmission-tower
+    cards: []
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: switch.SYSTEM_NAME_ems_automatikmodus
+        name: EMS Automatik
+        show_entity_picture: false
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_autarkiegrad
+        icon: mdi:sun-clock
     sections:
       - type: grid
         cards:
@@ -29,38 +46,34 @@ views:
               rows: auto
             needle: true
             max: 6880
-          - type: tile
-            entity: sensor.SYSTEM_NAME_netzbezug
-            vertical: false
-            features_position: bottom
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_batterieleistung
+            min: -7200
+            max: 7200
+            severity:
+              green: 3500
+              yellow: 0
+              red: -7200
             grid_options:
               columns: 6
-              rows: 1
-          - type: tile
-            entity: sensor.SYSTEM_NAME_netzeinspeisung
-            vertical: false
-            features_position: bottom
-      - type: grid
-        cards:
-          - chart_type: bar
-            period: day
-            type: statistics-graph
-            entities:
-              - sensor.SYSTEM_NAME_pv_energie
-              - sensor.SYSTEM_NAME_netzbezug_energie
-              - sensor.SYSTEM_NAME_eingespeiste_energie
-            stat_types:
-              - change
-            title: Energiebezug und -einspeisung
+              rows: auto
+            needle: true
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_batterieladung
+            needle: true
+            severity:
+              green: 75
+              yellow: 25
+              red: 0
             grid_options:
-              columns: 12
-              rows: 4
-            days_to_show: 7
+              columns: 6
+              rows: auto
       - type: grid
         cards:
           - type: heading
             heading: Verbrauch
             heading_style: title
+            icon: mdi:home-lightning-bolt-outline
           - type: gauge
             entity: sensor.SYSTEM_NAME_gesamtverbrauch
             max: 15000
@@ -101,57 +114,150 @@ views:
               rows: auto
       - type: grid
         cards:
+          - type: heading
+            icon: mdi:chart-box-outline
+            heading: Energiebezug und -einspeisung
+            heading_style: title
           - chart_type: bar
             period: day
             type: statistics-graph
             entities:
-              - sensor.SYSTEM_NAME_gesamtverbrauch_energie
-              - sensor.SYSTEM_NAME_haushaltsverbrauch_energie
-              - sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
-              - sensor.SYSTEM_NAME_warmepumpenenergie
+              - entity: sensor.SYSTEM_NAME_pv_energie
+                name: PV
+              - entity: sensor.SYSTEM_NAME_netzbezug_energie
+                name: Netzbezug
+              - entity: sensor.SYSTEM_NAME_eingespeiste_energie
+                name: Einspeisung
+            stat_types:
+              - change
+            grid_options:
+              columns: 12
+              rows: 5
+            days_to_show: 7
+          - type: heading
+            icon: mdi:calendar-today
+            heading: Energiebezug und -einspeisung - Heute
+            heading_style: title
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_netzbezug_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            grid_options:
+              columns: 12
+              rows: 2
+            name: Netzbezug
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_pv_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: PV
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_eingespeiste_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Einspeisung
+      - type: grid
+        cards:
+          - type: heading
+            icon: mdi:chart-box-outline
+            heading: Energieverbrauch
+            heading_style: title
+          - chart_type: bar
+            period: day
+            type: statistics-graph
+            entities:
+              - entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+                name: Gesamt
+              - entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+                name: Haushalt
+              - entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+                name: Wallbox
+              - entity: sensor.SYSTEM_NAME_warmepumpenenergie
+                name: Wärmepumpe
             stat_types:
               - change
             hide_legend: false
             logarithmic_scale: false
-            title: Gesamtverbrauch Energie
             days_to_show: 7
             grid_options:
               columns: 12
-              rows: 6
+              rows: 5
+          - type: heading
+            icon: mdi:calendar-today
+            heading: Energieverbrauch - Heute
+            heading_style: title
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Gesamt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Haushalt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Wallbox
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_warmepumpenenergie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Wärmepumpe
         column_span: 1
+
+  - type: sections
+    max_columns: 4
+    icon: mdi:car-electric
+    path: ev
+    sections:
       - type: grid
         cards:
-          - type: heading
-            heading: Batterieleistung
-            heading_style: title
-            icon: mdi:solar-panel
-          - type: gauge
-            entity: sensor.SYSTEM_NAME_batterieleistung
-            min: -7200
-            max: 7200
-            severity:
-              green: 3500
-              yellow: 0
-              red: -7200
-            grid_options:
-              columns: 6
-              rows: auto
-            needle: true
-          - type: gauge
-            entity: sensor.SYSTEM_NAME_batterieladung
-            needle: true
-            severity:
-              green: 75
-              yellow: 25
-              red: 0
-            grid_options:
-              columns: 6
-              rows: auto
+          - type: entities
+            entities:
+              - entity: select.CAR_IDENTIFIER_lademodus
+          - type: entities
+            entities:
+              - entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
+                name: Akkustand aktuell
+              - entity: number.CAR_IDENTIFIER_ziel_akkustand
+                name: Zielakkustand
+              - entity: time.CAR_IDENTIFIER_abfahrtzeit
+                name: tägliche Abfahrtzeit
+            visibility:
+              - condition: state
+                entity: sensor.CAR_IDENTIFIER_lademodus
+                state: SMART_CHARGE
+        column_span: 1
+
+  - type: sections
+    max_columns: 2
+    icon: mdi:currency-eur
+    path: preise-und-kosten
+    title: Preise und Kosten
+    sections:
       - type: grid
         cards:
           - type: heading
             heading: Dynamische Strompreise
             heading_style: title
+            icon: mdi:cash-multiple
           - type: entity
             entity: sensor.cheapest_future_hour
             name: Günstigste Zeit
@@ -178,6 +284,12 @@ views:
             entity: sensor.SYSTEM_NAME_hochster_strompreis
             detail: 1
             name: Höchster
+      - type: grid
+        cards:
+          - type: heading
+            icon: mdi:chart-bar
+            heading: Strompreisentwicklung
+            heading_style: title
           - type: custom:apexcharts-card
             graph_span: 30h
             span:
@@ -187,7 +299,6 @@ views:
               label: Jetzt
             header:
               show: true
-              title: Strompreis (30h)
               show_states: true
               colorize_states: true
             yaxis:
@@ -225,43 +336,105 @@ views:
                   in_header: true
                   legend_value: true
                   name_in_header: true
-    title: Netz
-    icon: mdi:transmission-tower
-    cards: []
-    badges:
-      - type: entity
-        show_name: true
-        show_state: true
-        show_icon: true
-        entity: switch.SYSTEM_NAME_ems_automatikmodus
-        name: EMS Automatik
-        show_entity_picture: false
-      - type: entity
-        show_name: true
-        show_state: true
-        show_icon: true
-        entity: sensor.SYSTEM_NAME_autarkiegrad
-        icon: mdi:sun-clock
-  - type: sections
-    max_columns: 4
-    icon: mdi:car-electric
-    path: ''
-    sections:
       - type: grid
         cards:
-          - type: entities
-            entities:
-              - entity: select.CAR_IDENTIFIER_lademodus
-          - type: entities
-            entities:
-              - entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
-                name: Akkustand aktuell
-              - entity: number.CAR_IDENTIFIER_ziel_akkustand
-                name: Zielakkustand
-              - entity: time.CAR_IDENTIFIER_abfahrtzeit
-                name: tägliche Abfahrtzeit
-            visibility:
-              - condition: state
-                entity: sensor.CAR_IDENTIFIER_lademodus
-                state: SMART_CHARGE
-        column_span: 1
+          - type: heading
+            heading: Stromkosten
+            heading_style: title
+            icon: mdi:account-arrow-right-outline
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: heading
+            icon: mdi:account-arrow-left-outline
+            heading: Einspeisung
+            heading_style: title
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Heute
+            icon: mdi:transmission-tower-import
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Heute
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Dieser Monat
+            icon: mdi:transmission-tower-import
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Dieser Monat
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten
+            period:
+              calendar:
+                period: year
+            stat_type: change
+            name: Dieses Jahr
+            icon: mdi:transmission-tower-import
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            period:
+              calendar:
+                period: year
+            stat_type: change
+            name: Dieses Jahr
+      - type: grid
+        cards:
+          - type: heading
+            heading: Monatliche Übersicht
+            heading_style: title
+            icon: mdi:cash-100
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Monatliche Stromkosten & Einspeisevergütung
+            graph_span: 1year
+            series:
+              - entity: sensor.SYSTEM_NAME_stromkosten
+                name: Stromkosten
+                color: '#e53935'
+                type: column
+                statistics:
+                  type: change
+                  period: month
+                unit: ' €'
+                float_precision: 2
+              - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                name: Einspeisevergütung
+                color: '#43a047'
+                type: column
+                statistics:
+                  type: change
+                  period: month
+                unit: ' €'
+                float_precision: 2
+            apex_config:
+              chart:
+                toolbar:
+                  show: false
+              plotOptions:
+                bar:
+                  borderRadius: 3
+                  columnWidth: "60%"
+              yaxis:
+                forceNiceScale: true
+                min: 0

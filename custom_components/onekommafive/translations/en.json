@@ -26,7 +26,25 @@
       "already_configured": "This system is already configured."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "1KOMMA5° Settings",
+        "data": {
+          "feed_in_tariff": "Feed-in tariff"
+        },
+        "data_description": {
+          "feed_in_tariff": "Revenue per exported kWh (incl. all bonuses), e.g. 0.0803 for 8.03 ct/kWh."
+        }
+      }
+    }
+  },
   "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "name": "Cheap electricity"
+      }
+    },
     "sensor": {
       "pv_power": {
         "name": "PV power"
@@ -108,6 +126,18 @@
       },
       "stable_electricity_price": {
         "name": "Last valid electricity price"
+      },
+      "electricity_cost": {
+        "name": "Electricity cost"
+      },
+      "feed_in_revenue": {
+        "name": "Feed-in revenue"
+      },
+      "battery_charge_power_energy": {
+        "name": "Battery charge energy"
+      },
+      "battery_discharge_power_energy": {
+        "name": "Battery discharge energy"
       }
     },
     "switch": {

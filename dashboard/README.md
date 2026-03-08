@@ -1,10 +1,10 @@
 # Example Dashboard
 
-This directory contains an example Home Assistant dashboard for the 1KOMMA5° integration. Most cards use native Home Assistant card types. The **Dynamische Strompreise** section additionally requires the [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom card (available via HACS).
+This directory contains an example Home Assistant dashboard for the 1KOMMA5° integration. Most cards use native Home Assistant card types. The **Strompreisentwicklung** and **Monatliche Übersicht** sections additionally require the [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom card (available via HACS).
 
 ## Views
 
-### Netz (Energy & Grid)
+### Netz (Energieverbrauch und -erzeugung)
 
 ![Energy & Grid view](1k5_energy.png)
 
@@ -12,12 +12,10 @@ The main view is split into two columns and covers:
 
 | Section | Cards |
 |---------|-------|
-| Netz- und PV-Leistung | Gauge for grid power (bidirectional, colour-coded) and PV generation; tiles for grid import and export |
-| Batterieleistung | Gauge for battery charge/discharge power and state of charge |
+| Netz- und PV-Leistung | Gauge for grid power (bidirectional, colour-coded), PV generation, battery charge/discharge and battery state of charge |
 | Verbrauch | Total consumption gauge plus individual gauges for household, heat pump, wallbox and AC |
-| Energiebezug und -einspeisung | 7-day bar chart (daily delta) for PV energy, grid import and grid export |
-| Gesamtverbrauch Energie | 7-day bar chart (daily delta) for total, household, EV and heat pump energy |
-| Dynamische Strompreise | Cheapest future hour and price; line graphs for current, average, lowest and highest electricity price; 30h price forecast bar chart (apexcharts-card) |
+| Energiebezug und -einspeisung | 7-day bar chart (daily delta) for PV energy, grid import and grid export; today's totals as statistic cards |
+| Energieverbrauch | 7-day bar chart (daily delta) for total, household, EV and heat pump energy; today's totals as statistic cards |
 
 The view also shows two **badges** in the header: EMS auto mode switch and self-sufficiency ratio.
 
@@ -28,9 +26,20 @@ The view also shows two **badges** in the header: EMS auto mode switch and self-
 A focused view for controlling the EV charger, showing:
 
 - Charging mode selector (Smart Charge / Quick Charge / Solar Charge)
-- Manual battery level input
-- Daily departure time
-- Target battery level
+- Manual battery level input, target battery level and daily departure time (visible in Smart Charge mode only)
+
+### Preise und Kosten
+
+![Prices & Costs view](1k5_costs.png)
+
+An overview of dynamic electricity prices and accumulated costs, split into four sections:
+
+| Section | Cards |
+|---------|-------|
+| Dynamische Strompreise | Cheapest future hour and price; line graphs for current, average, lowest and highest electricity price |
+| Strompreisentwicklung | 30h price forecast bar chart with colour tiers (green / orange / red), powered by apexcharts-card |
+| Stromkosten & Einspeisung | Accumulated electricity cost and feed-in revenue as statistic cards for today, this month and this year |
+| Monatliche Übersicht | Grouped monthly bar chart for electricity cost and feed-in revenue over the last 12 months (apexcharts-card) |
 
 ## Usage
 

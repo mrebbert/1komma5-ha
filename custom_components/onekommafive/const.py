@@ -11,3 +11,6 @@ PRICE_UPDATE_INTERVAL_SECONDS = 3600  # 1 hour
 
 ATTR_SYSTEM_ID = "system_id"
 ATTR_SYSTEM_NAME = "system_name"
+
+CONF_FEED_IN_TARIFF = "feed_in_tariff"
+DEFAULT_FEED_IN_TARIFF = 0.0803

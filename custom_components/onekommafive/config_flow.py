@@ -7,10 +7,23 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
 
-from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME, DOMAIN
+from .const import (
+    CONF_FEED_IN_TARIFF,
+    CONF_PASSWORD,
+    CONF_SYSTEM_ID,
+    CONF_USERNAME,
+    DEFAULT_FEED_IN_TARIFF,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +50,12 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for 1KOMMA5°."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: Any) -> "OneKomma5OptionsFlow":
+        """Return the options flow handler."""
+        return OneKomma5OptionsFlow()
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -139,6 +158,35 @@ def _system_title(system: Any) -> str:
     if info.address_city:
         return f"1KOMMA5° {info.address_city}"
     return f"1KOMMA5° {system.id()[:8]}"
+
+
+class OneKomma5OptionsFlow(OptionsFlow):
+    """Handle options for the 1KOMMA5° integration."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show the options form."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        current_tariff = self.config_entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_FEED_IN_TARIFF, default=current_tariff): NumberSelector(
+                        NumberSelectorConfig(
+                            min=0.0,
+                            max=0.5,
+                            step=0.0001,
+                            unit_of_measurement="€/kWh",
+                            mode=NumberSelectorMode.BOX,
+                        )
+                    ),
+                }
+            ),
+        )
 
 
 class CannotConnect(HomeAssistantError):

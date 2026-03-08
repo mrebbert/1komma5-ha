@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import OneKomma5ConfigEntry
+from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
 from .coordinator import LiveData, PriceData
 from .entity import OneKomma5Entity, OneKomma5EVEntity, OneKomma5PriceEntity
 
@@ -37,6 +38,7 @@ ENERGY_SENSOR_KEYS = frozenset({
     "heat_pumps_power",
     "acs_power",
 })
+
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -209,6 +211,24 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
     ),
 )
 
+# Virtual power descriptors used only for battery energy integration (not exposed as live sensors).
+BATTERY_SPLIT_DESCRIPTORS: tuple[OneKomma5SensorDescription, ...] = (
+    OneKomma5SensorDescription(
+        key="battery_charge_power",
+        translation_key="battery_charge_power_energy",
+        value_fn=lambda d: max(d.live_overview.battery_power, 0)
+        if d.live_overview.battery_power is not None
+        else None,
+    ),
+    OneKomma5SensorDescription(
+        key="battery_discharge_power",
+        translation_key="battery_discharge_power_energy",
+        value_fn=lambda d: max(-d.live_overview.battery_power, 0)
+        if d.live_overview.battery_power is not None
+        else None,
+    ),
+)
+
 EV_SENSORS: tuple[OneKomma5EVSensorDescription, ...] = (
     OneKomma5EVSensorDescription(
         key="ev_target_soc",
@@ -254,6 +274,12 @@ async def async_setup_entry(
         if desc.key in ENERGY_SENSOR_KEYS
     )
 
+    # Battery split energy sensors (charge / discharge direction)
+    entities.extend(
+        OneKomma5EnergySensor(live_coordinator, system_id, system_name, desc)
+        for desc in BATTERY_SPLIT_DESCRIPTORS
+    )
+
     # Price sensors
     entities.extend(
         OneKomma5PriceSensor(price_coordinator, system_id, system_name, desc)
@@ -261,7 +287,15 @@ async def async_setup_entry(
     )
 
     # Stable price sensor (hold-last-valid)
-    entities.append(OneKomma5StablePriceSensor(price_coordinator, system_id, system_name))
+    stable_price_sensor = OneKomma5StablePriceSensor(price_coordinator, system_id, system_name)
+    entities.append(stable_price_sensor)
+
+    # Accumulated electricity cost sensor
+    entities.append(OneKomma5CostSensor(live_coordinator, system_id, system_name, stable_price_sensor))
+
+    # Feed-in revenue sensor
+    feed_in_tariff = entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
+    entities.append(OneKomma5FeedInRevenueSensor(live_coordinator, system_id, system_name, feed_in_tariff))
 
     # EV charger sensors (one set per charger)
     if live_coordinator.data:
@@ -482,6 +516,134 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
     def native_value(self) -> float:
         """Return the stable electricity price."""
         return round(self._stable_price, 6)
+
+
+class OneKomma5CostSensor(OneKomma5Entity, RestoreSensor):
+    """Accumulated electricity cost sensor (€) derived from grid import power × dynamic price.
+
+    On each coordinator update the trapezoidal power integral is computed
+    (identical to OneKomma5EnergySensor) and multiplied by the current stable
+    price.  Guards prevent accumulation when price is unavailable or zero.
+    """
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_native_unit_of_measurement = "EUR"
+    _attr_suggested_display_precision = 2
+    _attr_translation_key = "electricity_cost"
+    _attr_icon = "mdi:currency-eur"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        stable_price_sensor: OneKomma5StablePriceSensor,
+    ) -> None:
+        """Initialize the cost sensor."""
+        super().__init__(coordinator, system_id, system_name, "electricity_cost")
+        self._stable_price_sensor = stable_price_sensor
+        self._cost: float = 0.0
+        self._last_power: float | None = None
+        self._last_time: datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore accumulated cost after HA restart."""
+        await super().async_added_to_hass()
+        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
+            try:
+                self._cost = float(restored.native_value)
+            except (TypeError, ValueError):
+                self._cost = 0.0
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Integrate grid import power over time and accumulate cost."""
+        if self.coordinator.data is None:
+            return
+        power_w = self.coordinator.data.live_overview.grid_consumption_power
+        if power_w is None:
+            return
+        now = dt_util.utcnow()
+        if self._last_power is not None and self._last_time is not None:
+            dt_hours = (now - self._last_time).total_seconds() / 3600
+            avg_w = (self._last_power + power_w) / 2
+            if avg_w > 0:
+                delta_kwh = avg_w * dt_hours / 1000
+                price = self._stable_price_sensor.stable_price
+                if price > 0:
+                    self._cost += delta_kwh * price
+        self._last_power = power_w
+        self._last_time = now
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float:
+        """Return the accumulated electricity cost in EUR."""
+        return round(self._cost, 4)
+
+
+class OneKomma5FeedInRevenueSensor(OneKomma5Entity, RestoreSensor):
+    """Accumulated feed-in revenue sensor (€) derived from grid export power × fixed tariff.
+
+    The tariff is configurable via the integration's options flow and defaults
+    to DEFAULT_FEED_IN_TARIFF.  The integration reloads on options change so
+    the sensor always starts fresh with the updated tariff.
+    """
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_native_unit_of_measurement = "EUR"
+    _attr_suggested_display_precision = 2
+    _attr_translation_key = "feed_in_revenue"
+    _attr_icon = "mdi:transmission-tower-export"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        feed_in_tariff: float,
+    ) -> None:
+        """Initialize the feed-in revenue sensor."""
+        super().__init__(coordinator, system_id, system_name, "feed_in_revenue")
+        self._feed_in_tariff = feed_in_tariff
+        self._revenue: float = 0.0
+        self._last_power: float | None = None
+        self._last_time: datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore accumulated revenue after HA restart."""
+        await super().async_added_to_hass()
+        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
+            try:
+                self._revenue = float(restored.native_value)
+            except (TypeError, ValueError):
+                self._revenue = 0.0
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Integrate grid export power over time and accumulate revenue."""
+        if self.coordinator.data is None:
+            return
+        power_w = self.coordinator.data.live_overview.grid_feed_in_power
+        if power_w is None:
+            return
+        now = dt_util.utcnow()
+        if self._last_power is not None and self._last_time is not None:
+            dt_hours = (now - self._last_time).total_seconds() / 3600
+            avg_w = (self._last_power + power_w) / 2
+            if avg_w > 0 and self._feed_in_tariff > 0:
+                delta_kwh = avg_w * dt_hours / 1000
+                self._revenue += delta_kwh * self._feed_in_tariff
+        self._last_power = power_w
+        self._last_time = now
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float:
+        """Return the accumulated feed-in revenue in EUR."""
+        return round(self._revenue, 4)
 
 
 def _get_ev_label(ev: Any) -> str:

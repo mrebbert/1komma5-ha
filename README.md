@@ -51,6 +51,7 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 | Klimaanlagenleistung | Aggregated AC power | W | 30 s |
 | Autarkiegrad | Self-sufficiency ratio | % | 30 s |
 | Aktueller Strompreis | Current all-in price (active 15-min slot) | EUR/kWh | 1 h |
+| Letzter gültiger Strompreis | Like above, but holds the last known valid value when the API returns zero or unavailable — used as stable price source for cost calculations | EUR/kWh | 1 h |
 | Durchschnittlicher Strompreis | Today's average all-in price | EUR/kWh | 1 h |
 | Niedrigster Strompreis | Today's lowest all-in price | EUR/kWh | 1 h |
 | Höchster Strompreis | Today's highest all-in price | EUR/kWh | 1 h |
@@ -69,8 +70,27 @@ For every unidirectional power sensor an accompanying energy sensor (kWh) is aut
 | Ladeenergie Fahrzeuge | Cumulative EV charging energy | kWh |
 | Wärmepumpenenergie | Cumulative heat pump energy | kWh |
 | Klimaanlagenenergie | Cumulative AC energy | kWh |
+| Batterie Ladeenergie | Cumulative energy charged into the battery (positive direction only) | kWh |
+| Batterie Entladeenergie | Cumulative energy discharged from the battery (negative direction only) | kWh |
 
-> **Note:** `Batterieleistung` and `Netzleistung` are bidirectional (positive/negative) and therefore excluded — their respective directions are already covered by `Netzbezug Energie` and `Eingespeiste Energie`.
+> **Note:** `Batterieleistung` and `Netzleistung` are bidirectional (positive/negative) and therefore excluded from the general energy sensors. The battery is covered by the dedicated `Batterie Ladeenergie` and `Batterie Entladeenergie` sensors, which split the bidirectional signal into two `total_increasing` sensors — required for the **Energy Dashboard** battery storage configuration.
+
+### Cost & Revenue Sensors
+
+Accumulated monetary sensors derived from energy flow and dynamic pricing. Both use `state_class: total` and `device_class: monetary` and are compatible with the HA **Energy Dashboard**.
+
+| Entity | Description | Unit |
+|--------|-------------|------|
+| Stromkosten | Cumulative electricity cost — integrates grid import power × current dynamic price (from *Letzter gültiger Strompreis*). Guards prevent accumulation when price is unavailable. | EUR |
+| Einspeisevergütung | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
+
+The feed-in tariff can be changed at any time under **Settings → Devices & Services → 1KOMMA5° → Configure**.
+
+### Binary Sensors
+
+| Entity | Description | Update |
+|--------|-------------|--------|
+| Günstiger Strom | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 1 h |
 
 ### Price Forecast & Cheapest Hour
 
@@ -240,6 +260,14 @@ The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant 
 4. If you have multiple systems, select the one you want to integrate
 
 Credentials are stored securely in the Home Assistant config entry.
+
+### Options
+
+After setup, additional options can be configured via **Settings → Devices & Services → 1KOMMA5° → Configure**:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Einspeisevergütung | 0.0803 €/kWh | Feed-in tariff used to calculate the *Einspeisevergütung* sensor. Set this to your actual contract rate (incl. all bonuses). |
 
 ---
 

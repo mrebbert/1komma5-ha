@@ -26,7 +26,25 @@
       "already_configured": "Dieses System ist bereits konfiguriert."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "1KOMMA5° Einstellungen",
+        "data": {
+          "feed_in_tariff": "Einspeisevergütung"
+        },
+        "data_description": {
+          "feed_in_tariff": "Vergütung pro eingespeister kWh (inkl. aller Boni), z.B. 0.0803 für 8,03 ct/kWh."
+        }
+      }
+    }
+  },
   "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "name": "Günstiger Strom"
+      }
+    },
     "sensor": {
       "pv_power": {
         "name": "PV-Leistung"
@@ -108,6 +126,18 @@
       },
       "stable_electricity_price": {
         "name": "Letzter gültiger Strompreis"
+      },
+      "electricity_cost": {
+        "name": "Stromkosten"
+      },
+      "feed_in_revenue": {
+        "name": "Einspeisevergütung"
+      },
+      "battery_charge_power_energy": {
+        "name": "Batterie Ladeenergie"
+      },
+      "battery_discharge_power_energy": {
+        "name": "Batterie Entladeenergie"
       }
     },
     "switch": {

@@ -15,6 +15,7 @@ from .coordinator import OneKomma5LiveCoordinator, OneKomma5PriceCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
     Platform.SENSOR,
     Platform.SWITCH,
     Platform.SELECT,
