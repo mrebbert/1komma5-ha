@@ -239,6 +239,10 @@ The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant 
 
 ### Via HACS (recommended)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mrebbert&repository=1komma5-ha&category=integration)
+
+Or manually:
+
 1. Open **HACS** → **Integrations** → ⋮ → **Custom repositories**
 2. Add `https://github.com/mrebbert/1komma5-ha` with category **Integration**
 3. Search for **1KOMMA5°** and install it
