@@ -3,6 +3,66 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.26] - 2026-03-21
+
+### Changed
+- Bumped `onekommafive` dependency to `>=0.1.15`
+- API library 0.1.15 adds a new endpoint for 1KOMMA5° optimizations (not yet used by this integration)
+
+## [0.1.25] - 2026-03-17
+
+### Changed
+- Bumped `onekommafive` dependency to `>=0.1.14`
+- API library 0.1.14 updates the `/systems` endpoint to v4 (no breaking changes)
+
+## [0.1.24] - 2026-03-08
+
+### Fixed
+- Options flow: replaced `NumberSelector` with plain `voluptuous` validation to fix 400 Bad Request error on HA versions < 2024.3
+
+## [0.1.23] - 2026-03-08
+
+### Added
+- **Stromkosten** sensor: accumulated grid import cost (dynamic price × kWh, integrates with HA Energy Dashboard)
+- **Einspeisevergütung** sensor: accumulated feed-in revenue (configurable tariff)
+- **Günstiger Strom** binary sensor: ON when current electricity price is below today's average
+- **Batterie Ladeenergie** / **Batterie Entladeenergie** energy sensors (split for HA Energy Dashboard)
+- Options flow: feed-in tariff configurable via integration settings (default 0.0803 €/kWh)
+- Dashboard: new "Preise und Kosten" view with cost stats and monthly apexcharts chart
+
+## [0.1.22] - 2026-03-07
+
+### Removed
+- README: removed stable electricity price section (superseded by dynamic price sensor)
+
+## [0.1.21] - 2026-03-07
+
+### Added
+- Stable electricity price sensor with hold-last-valid logic (retains last known price on API gaps)
+
+## [0.1.20] - 2026-03-06
+
+### Changed
+- Relaxed `onekommafive` dependency to `>=0.1.10` (was pinned to exact version)
+- Switched to PyPI package `onekommafive` (replaces direct GitHub dependency)
+
+## [0.1.19] - 2026-03-06
+
+### Changed
+- README: restructured with disclaimer at top and credits at bottom
+- README: added "vibe coded" note to disclaimer
+- README: use `SYSTEM_NAME` placeholder in automation example
+
+## [0.1.18] - 2026-03-06
+
+### Changed
+- Dashboard: updated with apexcharts price chart and new screenshots
+
+## [0.1.17] - 2026-03-06
+
+### Changed
+- Dashboard: updated EV view screenshot
+
 ## [0.1.16] - 2026-03-05
 
 ### Fixed
