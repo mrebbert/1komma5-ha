@@ -258,6 +258,8 @@ Or manually:
 
 ## Configuration
 
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=onekommafive)
+
 1. Go to **Settings → Devices & Services → Add Integration**
 2. Search for **1KOMMA5°**
 3. Enter your 1KOMMA5° account e-mail and password
