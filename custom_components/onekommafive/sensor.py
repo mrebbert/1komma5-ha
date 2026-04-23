@@ -16,11 +16,12 @@ from homeassistant.components.sensor import (
 from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_util
 
 from . import OneKomma5ConfigEntry
 from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
-from .coordinator import LiveData, PriceData
+from .coordinator import LiveData, PriceData, get_current_price
 from .entity import OneKomma5Entity, OneKomma5EVEntity, OneKomma5PriceEntity
 
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
@@ -183,7 +184,7 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
-        value_fn=lambda d: d.current_price,
+        value_fn=lambda d: get_current_price(d.all_in_prices) if d.all_in_prices else d.current_price,
     ),
     OneKomma5PriceSensorDescription(
         key="average_electricity_price",
@@ -350,6 +351,22 @@ class OneKomma5PriceSensor(OneKomma5PriceEntity, SensorEntity):
         super().__init__(coordinator, system_id, system_name, description.key)
         self.entity_description = description
 
+    async def async_added_to_hass(self) -> None:
+        """Register quarter-hour update for dynamic price sensors."""
+        await super().async_added_to_hass()
+        if self.entity_description.key == "current_electricity_price":
+            self.async_on_remove(
+                async_track_time_change(
+                    self.hass, self._quarter_hour_update,
+                    minute=[0, 15, 30, 45], second=[0],
+                )
+            )
+
+    @callback
+    def _quarter_hour_update(self, _now: datetime) -> None:
+        """Re-evaluate the current price slot at quarter-hour boundaries."""
+        self.async_write_ha_state()
+
     @property
     def native_value(self) -> Any:
         """Return the sensor value."""
@@ -477,12 +494,19 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
     def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
         """Initialize the stable price sensor."""
         super().__init__(coordinator, system_id, system_name, "stable_electricity_price")
-        # Initialise immediately from coordinator data so the sensor never starts at 0
         self._stable_price: float = 0.0
         if coordinator.data is not None:
-            price = coordinator.data.current_price
+            price = self._dynamic_price()
             if price is not None and price > 0:
                 self._stable_price = price
+
+    def _dynamic_price(self) -> float | None:
+        """Look up the current price dynamically from stored price data."""
+        if self.coordinator.data is None:
+            return None
+        if self.coordinator.data.all_in_prices:
+            return get_current_price(self.coordinator.data.all_in_prices)
+        return self.coordinator.data.current_price
 
     @property
     def stable_price(self) -> float:
@@ -501,13 +525,26 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
                         self.async_write_ha_state()
                 except (TypeError, ValueError):
                     pass
+        self.async_on_remove(
+            async_track_time_change(
+                self.hass, self._quarter_hour_update,
+                minute=[0, 15, 30, 45], second=[0],
+            )
+        )
+
+    @callback
+    def _quarter_hour_update(self, _now: datetime) -> None:
+        """Re-evaluate the current price slot at quarter-hour boundaries."""
+        self._update_stable_price()
 
     @callback
     def _handle_coordinator_update(self) -> None:
         """Update stable price if the new value is valid."""
-        if self.coordinator.data is None:
-            return
-        price = self.coordinator.data.current_price
+        self._update_stable_price()
+
+    def _update_stable_price(self) -> None:
+        """Update stable price from current dynamic price."""
+        price = self._dynamic_price()
         if price is not None and price > 0:
             self._stable_price = price
         self.async_write_ha_state()
