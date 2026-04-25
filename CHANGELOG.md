@@ -23,12 +23,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.23] - 2026-03-08
 
 ### Added
-- **Stromkosten** sensor: accumulated grid import cost (dynamic price × kWh, integrates with HA Energy Dashboard)
-- **Einspeisevergütung** sensor: accumulated feed-in revenue (configurable tariff)
-- **Günstiger Strom** binary sensor: ON when current electricity price is below today's average
-- **Batterie Ladeenergie** / **Batterie Entladeenergie** energy sensors (split for HA Energy Dashboard)
+- **Electricity Cost** sensor: accumulated grid import cost (dynamic price × kWh, integrates with HA Energy Dashboard)
+- **Feed-in Revenue** sensor: accumulated feed-in revenue (configurable tariff)
+- **Cheap Electricity** binary sensor: ON when current electricity price is below today's average
+- **Battery Charge Energy** / **Battery Discharge Energy** sensors (split for HA Energy Dashboard)
 - Options flow: feed-in tariff configurable via integration settings (default 0.0803 €/kWh)
-- Dashboard: new "Preise und Kosten" view with cost stats and monthly apexcharts chart
+- Dashboard: new "Prices and Costs" view with cost stats and monthly apexcharts chart
 
 ## [0.1.22] - 2026-03-07
 
@@ -92,7 +92,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.11] - 2026-03-05
 
 ### Added
-- Example dashboard with two views (Netz/energy and EV charger controls), YAML and screenshots
+- Example dashboard with two views (grid/energy and EV charger controls), YAML and screenshots
 
 ## [0.1.10] - 2026-03-05
 
@@ -138,8 +138,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.2] - 2026-03-01
 
 ### Added
-- Sensor **Netzbezug** (`grid_consumption_power`): raw grid import power (always ≥ 0), in W
-- Sensor **Netzeinspeisung** (`grid_feed_in_power`): raw grid export / feed-in power (always ≥ 0), in W
+- Sensor **Grid Import Power** (`grid_consumption_power`): raw grid import power (always ≥ 0), in W
+- Sensor **Grid Export Power** (`grid_feed_in_power`): raw grid export / feed-in power (always ≥ 0), in W
 - Requires `onekommafive` API library ≥ commit `2283880`
 
 ## [0.1.1] - 2026-03-01

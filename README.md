@@ -36,65 +36,67 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 
 ### Power Sensors
 
-| Entity | Description | Unit | Update |
-|--------|-------------|------|--------|
-| PV-Leistung | Solar generation | W | 30 s |
-| Batterieleistung | Battery charge (+) / discharge (−) | W | 30 s |
-| Batterieladung | Battery state of charge | % | 30 s |
-| Netzleistung | Grid import (+) / export (−) | W | 30 s |
-| Netzbezug | Raw grid import power (always ≥ 0) | W | 30 s |
-| Netzeinspeisung | Raw grid export / feed-in power (always ≥ 0) | W | 30 s |
-| Gesamtverbrauch | Total site consumption | W | 30 s |
-| Haushaltsverbrauch | Base consumption (excl. smart devices) | W | 30 s |
-| Ladeleistung Fahrzeuge | Aggregated EV charger power | W | 30 s |
-| Wärmepumpenleistung | Aggregated heat pump power | W | 30 s |
-| Klimaanlagenleistung | Aggregated AC power | W | 30 s |
-| Autarkiegrad | Self-sufficiency ratio | % | 30 s |
-| Aktueller Strompreis | Current all-in price (active 15-min slot) | EUR/kWh | 1 h |
-| Letzter gültiger Strompreis | Like above, but holds the last known valid value when the API returns zero or unavailable — used as stable price source for cost calculations | EUR/kWh | 1 h |
-| Durchschnittlicher Strompreis | Today's average all-in price | EUR/kWh | 1 h |
-| Niedrigster Strompreis | Today's lowest all-in price | EUR/kWh | 1 h |
-| Höchster Strompreis | Today's highest all-in price | EUR/kWh | 1 h |
+> **Note:** Entity names in Home Assistant depend on your language settings. The table below shows English names; German translations are provided via i18n.
+
+| Entity | Key | Description | Unit | Update |
+|--------|-----|-------------|------|--------|
+| PV Power | `pv_power` | Solar generation | W | 30 s |
+| Battery Power | `battery_power` | Battery charge (+) / discharge (−) | W | 30 s |
+| Battery SoC | `battery_soc` | Battery state of charge | % | 30 s |
+| Grid Power | `grid_power` | Grid import (+) / export (−) | W | 30 s |
+| Grid Import Power | `grid_consumption_power` | Raw grid import power (always ≥ 0) | W | 30 s |
+| Grid Export Power | `grid_feed_in_power` | Raw grid export / feed-in power (always ≥ 0) | W | 30 s |
+| Total Consumption | `consumption_power` | Total site consumption | W | 30 s |
+| Household Consumption | `household_power` | Base consumption (excl. smart devices) | W | 30 s |
+| EV Charger Power | `ev_chargers_power` | Aggregated EV charger power | W | 30 s |
+| Heat Pump Power | `heat_pumps_power` | Aggregated heat pump power | W | 30 s |
+| AC Power | `acs_power` | Aggregated AC power | W | 30 s |
+| Self-Sufficiency | `self_sufficiency` | Self-sufficiency ratio | % | 30 s |
+| Current Electricity Price | `current_electricity_price` | Current all-in price (active 15-min slot) | EUR/kWh | 15 min |
+| Last Valid Electricity Price | `stable_electricity_price` | Like above, but holds the last known valid value when the API returns zero or unavailable — used as stable price source for cost calculations | EUR/kWh | 15 min |
+| Average Electricity Price | `average_electricity_price` | Today's average all-in price | EUR/kWh | 1 h |
+| Lowest Electricity Price | `lowest_electricity_price` | Today's lowest all-in price | EUR/kWh | 1 h |
+| Highest Electricity Price | `highest_electricity_price` | Today's highest all-in price | EUR/kWh | 1 h |
 
 ### Energy Sensors
 
 For every unidirectional power sensor an accompanying energy sensor (kWh) is automatically created. Energy is calculated via **trapezoidal integration** of the 30-second power samples and persisted across Home Assistant restarts. These sensors use `state_class: total_increasing` and are therefore directly compatible with the **Energy Dashboard**.
 
-| Entity | Description | Unit |
-|--------|-------------|------|
-| PV-Energie | Cumulative solar energy produced | kWh |
-| Netzbezug Energie | Cumulative energy drawn from grid | kWh |
-| Eingespeiste Energie | Cumulative energy fed into grid | kWh |
-| Gesamtverbrauch Energie | Cumulative total site consumption | kWh |
-| Haushaltsverbrauch Energie | Cumulative base consumption | kWh |
-| Ladeenergie Fahrzeuge | Cumulative EV charging energy | kWh |
-| Wärmepumpenenergie | Cumulative heat pump energy | kWh |
-| Klimaanlagenenergie | Cumulative AC energy | kWh |
-| Batterie Ladeenergie | Cumulative energy charged into the battery (positive direction only) | kWh |
-| Batterie Entladeenergie | Cumulative energy discharged from the battery (negative direction only) | kWh |
+| Entity | Key | Description | Unit |
+|--------|-----|-------------|------|
+| PV Energy | `pv_power_energy` | Cumulative solar energy produced | kWh |
+| Grid Import Energy | `grid_consumption_power_energy` | Cumulative energy drawn from grid | kWh |
+| Grid Export Energy | `grid_feed_in_power_energy` | Cumulative energy fed into grid | kWh |
+| Total Consumption Energy | `consumption_power_energy` | Cumulative total site consumption | kWh |
+| Household Energy | `household_power_energy` | Cumulative base consumption | kWh |
+| EV Charging Energy | `ev_chargers_power_energy` | Cumulative EV charging energy | kWh |
+| Heat Pump Energy | `heat_pumps_power_energy` | Cumulative heat pump energy | kWh |
+| AC Energy | `acs_power_energy` | Cumulative AC energy | kWh |
+| Battery Charge Energy | `battery_charge_power_energy` | Cumulative energy charged into the battery (positive direction only) | kWh |
+| Battery Discharge Energy | `battery_discharge_power_energy` | Cumulative energy discharged from the battery (negative direction only) | kWh |
 
-> **Note:** `Batterieleistung` and `Netzleistung` are bidirectional (positive/negative) and therefore excluded from the general energy sensors. The battery is covered by the dedicated `Batterie Ladeenergie` and `Batterie Entladeenergie` sensors, which split the bidirectional signal into two `total_increasing` sensors — required for the **Energy Dashboard** battery storage configuration.
+> **Note:** Battery Power and Grid Power are bidirectional (positive/negative) and therefore excluded from the general energy sensors. The battery is covered by the dedicated Battery Charge Energy and Battery Discharge Energy sensors, which split the bidirectional signal into two `total_increasing` sensors — required for the **Energy Dashboard** battery storage configuration.
 
 ### Cost & Revenue Sensors
 
 Accumulated monetary sensors derived from energy flow and dynamic pricing. Both use `state_class: total` and `device_class: monetary` and are compatible with the HA **Energy Dashboard**.
 
-| Entity | Description | Unit |
-|--------|-------------|------|
-| Stromkosten | Cumulative electricity cost — integrates grid import power × current dynamic price (from *Letzter gültiger Strompreis*). Guards prevent accumulation when price is unavailable. | EUR |
-| Einspeisevergütung | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
+| Entity | Key | Description | Unit |
+|--------|-----|-------------|------|
+| Electricity Cost | `electricity_cost` | Cumulative electricity cost — integrates grid import power × current dynamic price (from *Last Valid Electricity Price*). Guards prevent accumulation when price is unavailable. | EUR |
+| Feed-in Revenue | `feed_in_revenue` | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
 
 The feed-in tariff can be changed at any time under **Settings → Devices & Services → 1KOMMA5° → Configure**.
 
 ### Binary Sensors
 
-| Entity | Description | Update |
-|--------|-------------|--------|
-| Günstiger Strom | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 1 h |
+| Entity | Key | Description | Update |
+|--------|-----|-------------|--------|
+| Cheap Electricity | `cheap_electricity` | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 15 min |
 
 ### Price Forecast & Cheapest Hour
 
-The **Aktueller Strompreis** sensor carries several attributes updated every hour:
+The **Current Electricity Price** sensor carries several attributes updated every hour:
 
 | Attribute | Description |
 |-----------|-------------|
@@ -127,10 +129,10 @@ span:
   start: hour
 now:
   show: true
-  label: Jetzt
+  label: Now
 header:
   show: true
-  title: Strompreis (24h)
+  title: Electricity Price (24h)
   show_states: true
   colorize_states: true
 yaxis:
@@ -138,7 +140,7 @@ yaxis:
     decimals: 4
 series:
   - entity: sensor.SYSTEMNAME_aktueller_strompreis
-    name: Strompreis
+    name: Electricity Price
     unit: EUR/kWh
     float_precision: 4
     type: column
@@ -159,7 +161,7 @@ series:
       name_in_header: false
 ```
 
-> Replace `SYSTEMNAME` with your actual entity ID — find it under **Settings → Devices & Services → 1KOMMA5°** on the "Aktueller Strompreis" entity. Adjust the `color_threshold` values to match your tariff.
+> Replace `SYSTEMNAME` with your actual entity ID — find it under **Settings → Devices & Services → 1KOMMA5°** on the "Current Electricity Price" entity. Adjust the `color_threshold` values to match your tariff.
 
 **Example automation:** start a dishwasher when the cheapest hour is reached:
 
@@ -176,23 +178,23 @@ One set of entities is created per connected EV charger.
 
 #### Sensors
 
-| Entity | Description | Unit | Update |
-|--------|-------------|------|--------|
-| Ziel-Akkustand | Current target SoC | % | 30 s |
-| Lademodus (Sensor) | Active charging mode | — | 30 s |
+| Entity | Key | Description | Unit | Update |
+|--------|-----|-------------|------|--------|
+| Target SoC | `ev_target_soc` | Current target SoC | % | 30 s |
+| Charging Mode (Sensor) | `ev_charging_mode` | Active charging mode | — | 30 s |
 
 #### Controls
 
-| Entity | Type | Description |
-|--------|------|-------------|
-| Lademodus | Select | Set charging mode (SMART_CHARGE / QUICK_CHARGE / SOLAR_CHARGE) |
-| Ziel-Akkustand | Number (0–100 %) | Set the desired target SoC |
-| Abfahrtzeit | Time | Set the daily primary departure time |
-| Fahrzeug-Akkustand (manuell) | Number (0–100 %) | Manually report current SoC (SMART_CHARGE only) |
+| Entity | Key | Type | Description |
+|--------|-----|------|-------------|
+| Charging Mode | `ev_charging_mode` | Select | Set charging mode (SMART_CHARGE / QUICK_CHARGE / SOLAR_CHARGE) |
+| Target SoC | `ev_target_soc_number` | Number (0–100 %) | Set the desired target SoC |
+| Departure Time | `ev_departure_time` | Time | Set the daily primary departure time |
+| Vehicle SoC (Manual) | `ev_current_soc` | Number (0–100 %) | Manually report current SoC (SMART_CHARGE only) |
 
 #### Example automation: keep manual SoC in sync
 
-The **Fahrzeug-Akkustand (manuell)** entity expects the current battery level to be reported manually to the 1KOMMA5° system. If your EV integration (e.g. Volkswagen WeConnect, Tesla, etc.) already exposes a sensor with the current battery level, you can automate this with the following automation.
+The **Vehicle SoC (Manual)** entity expects the current battery level to be reported manually to the 1KOMMA5° system. If your EV integration (e.g. Volkswagen WeConnect, Tesla, etc.) already exposes a sensor with the current battery level, you can automate this with the following automation.
 
 > **Prerequisite:** You need a sensor that provides the current battery level of your vehicle as a numeric percentage value. Not all EV integrations expose this.
 
@@ -221,9 +223,9 @@ Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor entity ID and `CA
 
 ### EMS Controls
 
-| Entity | Type | Description |
-|--------|------|-------------|
-| EMS Automatikmodus | Switch | Toggle EMS auto / manual mode |
+| Entity | Key | Type | Description |
+|--------|-----|------|-------------|
+| EMS Auto Mode | `ems_auto_mode` | Switch | Toggle EMS auto / manual mode |
 
 ---
 
@@ -273,7 +275,7 @@ After setup, additional options can be configured via **Settings → Devices & S
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| Einspeisevergütung | 0.0803 €/kWh | Feed-in tariff used to calculate the *Einspeisevergütung* sensor. Set this to your actual contract rate (incl. all bonuses). |
+| Feed-in Tariff | 0.0803 €/kWh | Feed-in tariff used to calculate the *Feed-in Revenue* sensor. Set this to your actual contract rate (incl. all bonuses). |
 
 ---
 
