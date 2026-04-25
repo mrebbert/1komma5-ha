@@ -98,7 +98,11 @@ class OneKomma5LiveCoordinator(DataUpdateCoordinator[LiveData]):
         """Fetch all live data synchronously."""
         live_overview = self._system.get_live_overview()
         ev_chargers = self._system.get_ev_chargers()
-        ems_settings = self._system.get_ems_settings()
+        try:
+            ems_settings = self._system.get_ems_settings()
+        except Exception:
+            _LOGGER.debug("EMS settings not available (no DeviceGateway?), skipping")
+            ems_settings = None
         return live_overview, ev_chargers, ems_settings
 
 

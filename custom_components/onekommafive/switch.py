@@ -47,9 +47,18 @@ class OneKomma5EMSSwitch(OneKomma5Entity, SwitchEntity):
         self._system = system
 
     @property
+    def available(self) -> bool:
+        """Return True when EMS settings are available."""
+        return (
+            super().available
+            and self.coordinator.data is not None
+            and self.coordinator.data.ems_settings is not None
+        )
+
+    @property
     def is_on(self) -> bool | None:
         """Return True when EMS is in auto mode."""
-        if self.coordinator.data is None:
+        if self.coordinator.data is None or self.coordinator.data.ems_settings is None:
             return None
         return self.coordinator.data.ems_settings.auto_mode
 
