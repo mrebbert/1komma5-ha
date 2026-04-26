@@ -12,6 +12,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
+from .helpers import find_cheapest_window
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,14 +28,6 @@ SERVICE_GET_CHEAPEST_WINDOW_SCHEMA = vol.Schema(
         vol.Optional("config_entry_id"): cv.string,
     }
 )
-
-
-def _parse_iso(value: str) -> datetime.datetime:
-    """Parse an ISO-8601 timestamp, ensuring it is timezone-aware."""
-    dt = datetime.datetime.fromisoformat(value)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=datetime.timezone.utc)
-    return dt
 
 
 def _ensure_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -91,27 +84,10 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 f"Forecast covers {len(forecast)} slots, need {slot_count_needed}"
             )
 
-        best_avg: float | None = None
-        best_start: datetime.datetime | None = None
-        best_end: datetime.datetime | None = None
-
-        for i in range(len(forecast) - slot_count_needed + 1):
-            window = forecast[i : i + slot_count_needed]
-            window_start = _parse_iso(window[0]["start"])
-            window_end = _parse_iso(window[-1]["end"])
-
-            if earliest_start is not None and window_start < earliest_start:
-                continue
-            if latest_end is not None and window_end > latest_end:
-                continue
-
-            avg = sum(s["price"] for s in window) / len(window)
-            if best_avg is None or avg < best_avg:
-                best_avg = avg
-                best_start = window_start
-                best_end = window_end
-
-        if best_avg is None:
+        result = find_cheapest_window(
+            forecast, slot_count_needed, earliest_start, latest_end
+        )
+        if result is None:
             return {
                 "found": False,
                 "start": None,
@@ -119,14 +95,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 "average_price": None,
                 "slot_count": 0,
             }
-
-        return {
-            "found": True,
-            "start": best_start.isoformat(),
-            "end": best_end.isoformat(),
-            "average_price": round(best_avg, 6),
-            "slot_count": slot_count_needed,
-        }
+        return {"found": True, **result}
 
     hass.services.async_register(
         DOMAIN,

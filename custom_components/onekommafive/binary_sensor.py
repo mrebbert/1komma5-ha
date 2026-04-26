@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_change
 
 from . import OneKomma5ConfigEntry
-from .coordinator import get_current_price
+from .helpers import get_current_price
 from .entity import OneKomma5PriceEntity
 
 

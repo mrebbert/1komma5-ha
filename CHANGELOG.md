@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Bumped minimum Home Assistant version to **2024.10** (required for `_get_reauth_entry`, `_get_reconfigure_entry`, and `data_updates` helper)
 - **Cheap Electricity** binary sensor: now updates dynamically every 15 minutes (was previously only updated on coordinator refresh)
+- **Refactor**: pure helper functions (price slot lookup, forecast building, optimization aggregation, cheapest-window search) extracted into `helpers.py`, with 23 unit tests covering them
 
 ## [0.1.31] - 2026-04-26
 

@@ -14,6 +14,12 @@ from .const import (
     OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
     PRICE_UPDATE_INTERVAL_SECONDS,
 )
+from .helpers import (
+    aggregate_optimization_events,
+    build_forecast,
+    get_current_price,
+    split_prices_by_date,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,33 +48,6 @@ class PriceData:
     tomorrow_average_price: float | None = None
     tomorrow_lowest_price: float | None = None
     tomorrow_highest_price: float | None = None
-
-
-def get_current_price(prices: dict[str, float]) -> float | None:
-    """Return the price for the active 15-minute slot.
-
-    API timestamps represent the END of each 15-minute delivery slot, so the
-    active slot is the one with the smallest end timestamp strictly after now.
-    """
-    if not prices:
-        return None
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
-
-    best_value: float | None = None
-    best_time: datetime.datetime | None = None
-
-    for key, value in prices.items():
-        try:
-            slot_time = datetime.datetime.fromisoformat(key.replace("Z", "+00:00"))
-            if slot_time.tzinfo is None:
-                slot_time = slot_time.replace(tzinfo=datetime.timezone.utc)
-            if slot_time > now and (best_time is None or slot_time < best_time):
-                best_time = slot_time
-                best_value = value
-        except ValueError:
-            _LOGGER.debug("Could not parse price timestamp: %s", key)
-
-    return best_value
 
 
 class OneKomma5LiveCoordinator(DataUpdateCoordinator[LiveData]):
@@ -173,14 +152,12 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
 
         current_price = get_current_price(all_in_prices)
         current_price_with_grid_costs = get_current_price(grid_prices)
-        forecast = self._build_forecast(all_in_prices, horizon_hours=30)
+        forecast = build_forecast(all_in_prices, horizon_hours=30)
 
         # Price statistics: split by date
-        today_str = now.strftime("%Y-%m-%d")
-        tomorrow_str = (now + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-
-        today_prices = [v for k, v in all_in_prices.items() if today_str in k]
-        tomorrow_prices_list = [v for k, v in all_in_prices.items() if tomorrow_str in k]
+        today_prices, tomorrow_prices_list = split_prices_by_date(
+            all_in_prices, now.date(), now.date() + datetime.timedelta(days=1)
+        )
 
         negative_price_slots_today = sum(1 for p in today_prices if p < 0)
 
@@ -208,45 +185,6 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
             tomorrow_highest_price=tomorrow_highest,
         )
 
-    def _build_forecast(
-        self, prices: dict[str, float], horizon_hours: int = 24
-    ) -> list[dict[str, Any]]:
-        """Build a sorted forecast list compatible with the Tibber/ENTSO-E format.
-
-        API timestamps represent the END of each 15-minute delivery slot.
-        Only slots whose delivery period overlaps [now, now + horizon_hours]
-        are included.
-
-        Each entry contains:
-          start  – ISO-8601 string (timezone-aware)
-          end    – ISO-8601 string (= API timestamp)
-          price  – all-in price in EUR/kWh
-        """
-        slot_duration = datetime.timedelta(minutes=15)
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
-        cutoff = now + datetime.timedelta(hours=horizon_hours)
-        slots: list[dict[str, Any]] = []
-
-        for key, value in prices.items():
-            try:
-                end = datetime.datetime.fromisoformat(key.replace("Z", "+00:00"))
-                if end.tzinfo is None:
-                    end = end.replace(tzinfo=datetime.timezone.utc)
-                start = end - slot_duration
-                if end <= now or start >= cutoff:
-                    continue
-                slots.append(
-                    {
-                        "start": start.isoformat(),
-                        "end": end.isoformat(),
-                        "price": round(value, 6),
-                    }
-                )
-            except ValueError:
-                _LOGGER.debug("Could not parse price timestamp for forecast: %s", key)
-
-        slots.sort(key=lambda s: s["start"])
-        return slots
 
 
 @dataclass
@@ -292,22 +230,6 @@ class OneKomma5OptimizationCoordinator(DataUpdateCoordinator[OptimizationData]):
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
 
         result = self._system.get_optimizations(today_start, today_end)
-        events = result.events
-
-        costs = [e.total_cost for e in events if e.total_cost is not None]
-        bought = [e.energy_bought for e in events if e.energy_bought is not None]
-        sold = [e.energy_sold for e in events if e.energy_sold is not None]
-
-        last_event = None
-        if events:
-            last_event = max(events, key=lambda e: e.from_time or e.timestamp)
-
-        return OptimizationData(
-            events=events,
-            event_count=len(events),
-            total_cost=sum(costs) if costs else None,
-            energy_bought=sum(bought) if bought else None,
-            energy_sold=sum(sold) if sold else None,
-            last_event=last_event,
-        )
+        agg = aggregate_optimization_events(result.events)
+        return OptimizationData(events=result.events, **agg)
 

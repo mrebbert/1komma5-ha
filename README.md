@@ -391,6 +391,28 @@ After setup, additional options can be configured via **Settings → Devices & S
 
 ---
 
+## Development
+
+### Tests
+
+Pure-helper unit tests (no Home Assistant dependency required):
+
+```bash
+python3.13 -m venv .venv
+.venv/bin/pip install -r requirements-test.txt
+.venv/bin/pytest
+```
+
+Tests live in `tests/` and target the pure functions in `custom_components/onekommafive/helpers.py` (price slot lookup, forecast building, optimization aggregation, cheapest-window search).
+
+To run with coverage:
+
+```bash
+.venv/bin/pytest --cov=custom_components/onekommafive --cov-report=term-missing
+```
+
+---
+
 ## Credits
 
 Large parts of this project are inspired by and based on the work of [Alex Birkner](https://github.com/BirknerAlex) and his [hacs_1komma5grad](https://github.com/BirknerAlex/hacs_1komma5grad) integration. Many thanks for paving the way!
