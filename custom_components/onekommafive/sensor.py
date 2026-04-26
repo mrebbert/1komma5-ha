@@ -225,6 +225,13 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         value_fn=lambda d: d.negative_price_slots_today,
     ),
     OneKomma5PriceSensorDescription(
+        key="negative_price_slots_tomorrow",
+        translation_key="negative_price_slots_tomorrow",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:cash-minus",
+        value_fn=lambda d: d.negative_price_slots_tomorrow,
+    ),
+    OneKomma5PriceSensorDescription(
         key="tomorrow_average_price",
         translation_key="tomorrow_average_price",
         state_class=SensorStateClass.MEASUREMENT,

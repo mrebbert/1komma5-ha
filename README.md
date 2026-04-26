@@ -63,6 +63,7 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 | Lowest Electricity Price | `lowest_electricity_price` | Today's lowest all-in price | EUR/kWh | 1 h |
 | Highest Electricity Price | `highest_electricity_price` | Today's highest all-in price | EUR/kWh | 1 h |
 | Negative Price Slots Today | `negative_price_slots_today` | Number of 15-min slots today with negative all-in price | — | 1 h |
+| Negative Price Slots Tomorrow | `negative_price_slots_tomorrow` | Number of 15-min slots tomorrow with negative all-in price | — | 1 h |
 | Average Electricity Price Tomorrow | `tomorrow_average_price` | Tomorrow's average all-in price (available after ~13:00 CET) | EUR/kWh | 1 h |
 | Lowest Electricity Price Tomorrow | `tomorrow_lowest_price` | Tomorrow's lowest all-in price | EUR/kWh | 1 h |
 | Highest Electricity Price Tomorrow | `tomorrow_highest_price` | Tomorrow's highest all-in price | EUR/kWh | 1 h |
@@ -198,6 +199,7 @@ Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minut
 | Entity | Key | Description | Update |
 |--------|-----|-------------|--------|
 | Cheap Electricity | `cheap_electricity` | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 15 min |
+| Cheapest Hour Now | `cheapest_hour_now` | ON when the current 15-minute slot is the cheapest in the next ~30 hours of forecast. Useful for triggering loads exactly at the cheapest moment. Attributes: `current_price`, `cheapest_price`, `cheapest_slot_start`. | 15 min |
 
 ### EV Charger
 

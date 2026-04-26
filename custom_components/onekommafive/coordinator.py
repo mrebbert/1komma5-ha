@@ -38,6 +38,7 @@ class PriceData:
     all_in_prices: dict[str, float] = None  # full price dict for dynamic lookups
     grid_prices: dict[str, float] = None  # full grid-cost price dict
     negative_price_slots_today: int = 0
+    negative_price_slots_tomorrow: int | None = None
     tomorrow_average_price: float | None = None
     tomorrow_lowest_price: float | None = None
     tomorrow_highest_price: float | None = None
@@ -186,10 +187,12 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
         tomorrow_average = None
         tomorrow_lowest = None
         tomorrow_highest = None
+        negative_slots_tomorrow: int | None = None
         if tomorrow_prices_list:
             tomorrow_average = sum(tomorrow_prices_list) / len(tomorrow_prices_list)
             tomorrow_lowest = min(tomorrow_prices_list)
             tomorrow_highest = max(tomorrow_prices_list)
+            negative_slots_tomorrow = sum(1 for p in tomorrow_prices_list if p < 0)
 
         return PriceData(
             market_prices=market_prices,
@@ -199,6 +202,7 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
             all_in_prices=all_in_prices,
             grid_prices=grid_prices,
             negative_price_slots_today=negative_price_slots_today,
+            negative_price_slots_tomorrow=negative_slots_tomorrow,
             tomorrow_average_price=tomorrow_average,
             tomorrow_lowest_price=tomorrow_lowest,
             tomorrow_highest_price=tomorrow_highest,

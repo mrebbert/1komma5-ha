@@ -86,6 +86,9 @@
     "binary_sensor": {
       "cheap_electricity": {
         "name": "Cheap electricity"
+      },
+      "cheapest_hour_now": {
+        "name": "Cheapest hour now"
       }
     },
     "sensor": {
@@ -199,6 +202,9 @@
       },
       "negative_price_slots_today": {
         "name": "Negative price slots today"
+      },
+      "negative_price_slots_tomorrow": {
+        "name": "Negative price slots tomorrow"
       },
       "tomorrow_average_price": {
         "name": "Average electricity price tomorrow"

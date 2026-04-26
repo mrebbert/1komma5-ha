@@ -9,9 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Re-authentication flow**: when 1KOMMA5° credentials become invalid, HA automatically shows a "Re-authentication required" notification — enter new credentials in place without losing sensor history
 - **Reconfigure flow**: proactive credential updates via Settings → Devices & Services → 1KOMMA5° → Reconfigure
 - **Service `onekommafive.get_cheapest_window`**: find the cheapest contiguous N-minute window in the price forecast — returns start/end timestamps and average price for use in automations (dishwasher, washing machine, EV, heat pump scheduling)
+- **Negative Price Slots Tomorrow** sensor: count of 15-min slots tomorrow with negative price (available after ~13:00 CET)
+- **Cheapest Hour Now** binary sensor: ON when the current 15-min slot is the cheapest in the next ~30h of forecast
 
 ### Changed
 - Bumped minimum Home Assistant version to **2024.10** (required for `_get_reauth_entry`, `_get_reconfigure_entry`, and `data_updates` helper)
+- **Cheap Electricity** binary sensor: now updates dynamically every 15 minutes (was previously only updated on coordinator refresh)
 
 ## [0.1.31] - 2026-04-26
 

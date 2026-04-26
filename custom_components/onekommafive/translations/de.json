@@ -86,6 +86,9 @@
     "binary_sensor": {
       "cheap_electricity": {
         "name": "Günstiger Strom"
+      },
+      "cheapest_hour_now": {
+        "name": "Günstigste Stunde jetzt"
       }
     },
     "sensor": {
@@ -199,6 +202,9 @@
       },
       "negative_price_slots_today": {
         "name": "Negative Preisslots heute"
+      },
+      "negative_price_slots_tomorrow": {
+        "name": "Negative Preisslots morgen"
       },
       "tomorrow_average_price": {
         "name": "Durchschnittlicher Strompreis morgen"
