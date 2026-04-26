@@ -11,6 +11,7 @@ from helpers import (  # type: ignore[import-not-found]
     aggregate_optimization_events,
     build_forecast,
     find_cheapest_window,
+    find_most_expensive_window,
     get_current_price,
     split_prices_by_date,
     trapezoidal_delta_kwh,
@@ -278,6 +279,56 @@ class TestFindCheapestWindow:
         ]
         result = find_cheapest_window(forecast, slot_count=1)
         assert result is not None
+        assert result["average_price"] == -0.05
+
+
+# ----------------------------------------------------------------------------
+# find_most_expensive_window
+# ----------------------------------------------------------------------------
+
+class TestFindMostExpensiveWindow:
+    def test_returns_none_when_forecast_too_short(self) -> None:
+        forecast = [_slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.1)]
+        assert find_most_expensive_window(forecast, slot_count=4) is None
+
+    def test_finds_most_expensive_two_slot_window(self) -> None:
+        forecast = [
+            _slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.10),
+            _slot("2026-04-26T10:15:00+00:00", "2026-04-26T10:30:00+00:00", 0.40),
+            _slot("2026-04-26T10:30:00+00:00", "2026-04-26T10:45:00+00:00", 0.50),
+            _slot("2026-04-26T10:45:00+00:00", "2026-04-26T11:00:00+00:00", 0.20),
+        ]
+        result = find_most_expensive_window(forecast, slot_count=2)
+        assert result is not None
+        # Most expensive 2-slot window is index 1+2: (0.40 + 0.50) / 2 = 0.45
+        assert result["start"] == "2026-04-26T10:15:00+00:00"
+        assert result["end"] == "2026-04-26T10:45:00+00:00"
+        assert result["average_price"] == 0.45
+        assert result["slot_count"] == 2
+
+    def test_respects_earliest_start(self) -> None:
+        forecast = [
+            _slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.50),
+            _slot("2026-04-26T10:15:00+00:00", "2026-04-26T10:30:00+00:00", 0.50),
+            _slot("2026-04-26T10:30:00+00:00", "2026-04-26T10:45:00+00:00", 0.10),
+            _slot("2026-04-26T10:45:00+00:00", "2026-04-26T11:00:00+00:00", 0.10),
+        ]
+        result = find_most_expensive_window(
+            forecast, slot_count=2,
+            earliest_start=datetime.datetime(2026, 4, 26, 10, 30, tzinfo=UTC),
+        )
+        assert result is not None
+        assert result["start"] == "2026-04-26T10:30:00+00:00"
+        assert result["average_price"] == 0.10  # only post-30 slots are eligible
+
+    def test_handles_negative_prices(self) -> None:
+        forecast = [
+            _slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", -0.05),
+            _slot("2026-04-26T10:15:00+00:00", "2026-04-26T10:30:00+00:00", -0.10),
+        ]
+        result = find_most_expensive_window(forecast, slot_count=1)
+        assert result is not None
+        # Most expensive (least negative) is -0.05
         assert result["average_price"] == -0.05
 
 

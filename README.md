@@ -251,9 +251,14 @@ mode: single
 
 Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor entity ID and `CAR_IDENTIFIER` with your EV charger prefix. The second condition ensures the automation only runs in `SMART_CHARGE` mode — the entity is unavailable otherwise.
 
-### Service: `onekommafive.get_cheapest_window`
+### Services: `onekommafive.get_cheapest_window` / `get_most_expensive_window`
 
-Find the cheapest contiguous time window in the price forecast — useful for scheduling flexible loads (dishwasher, washing machine, EV, heat pump). Returns the start/end timestamps and the average price.
+Find the cheapest (or most expensive) contiguous time window in the price forecast.
+
+- **`get_cheapest_window`** — useful for scheduling flexible loads (dishwasher, washing machine, EV, heat pump) at the cheapest moment.
+- **`get_most_expensive_window`** — useful for load shedding (turning loads off during peak prices).
+
+Both services accept the same parameters and return the same shape.
 
 **Parameters:**
 

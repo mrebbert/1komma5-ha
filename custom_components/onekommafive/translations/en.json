@@ -80,6 +80,28 @@
           "description": "When multiple 1KOMMA5° systems are configured: select the target system."
         }
       }
+    },
+    "get_most_expensive_window": {
+      "name": "Find most expensive window",
+      "description": "Finds the most expensive contiguous time window in the electricity price forecast — useful for load shedding.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Duration (minutes)",
+          "description": "Length of the desired window in minutes (multiple of 15)."
+        },
+        "earliest_start": {
+          "name": "Earliest start",
+          "description": "Optional: the window must not start before this time."
+        },
+        "latest_end": {
+          "name": "Latest end",
+          "description": "Optional: the window must not end after this time."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "When multiple 1KOMMA5° systems are configured: select the target system."
+        }
+      }
     }
   },
   "entity": {

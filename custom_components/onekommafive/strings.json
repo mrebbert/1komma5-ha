@@ -80,6 +80,28 @@
           "description": "Bei mehreren konfigurierten 1KOMMA5°-Systemen: das gewünschte System auswählen."
         }
       }
+    },
+    "get_most_expensive_window": {
+      "name": "Teuerstes Zeitfenster finden",
+      "description": "Findet das teuerste zusammenhängende Zeitfenster im Strompreis-Forecast — nützlich für Lastabwurf.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Dauer (Minuten)",
+          "description": "Länge des gesuchten Fensters in Minuten (Vielfaches von 15)."
+        },
+        "earliest_start": {
+          "name": "Frühester Start",
+          "description": "Optional: Das Fenster darf nicht vor diesem Zeitpunkt beginnen."
+        },
+        "latest_end": {
+          "name": "Spätestes Ende",
+          "description": "Optional: Das Fenster darf nicht nach diesem Zeitpunkt enden."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Bei mehreren konfigurierten 1KOMMA5°-Systemen: das gewünschte System auswählen."
+        }
+      }
     }
   },
   "entity": {

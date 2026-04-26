@@ -6,6 +6,7 @@ runtime dependencies, so its functions can be unit-tested in isolation.
 from __future__ import annotations
 
 import datetime
+from collections.abc import Callable
 from typing import Any
 
 
@@ -128,17 +129,17 @@ def trapezoidal_delta_kwh(
     return avg_w * dt_hours / 1000
 
 
-def find_cheapest_window(
+def _find_window(
     forecast: list[dict[str, Any]],
     slot_count: int,
+    is_better: "Callable[[float, float], bool]",
     earliest_start: datetime.datetime | None = None,
     latest_end: datetime.datetime | None = None,
 ) -> dict[str, Any] | None:
-    """Find the cheapest contiguous window of `slot_count` 15-min slots in the forecast.
+    """Find a contiguous slot window optimized by the supplied comparator.
 
-    Returns a dict with start, end, average_price, slot_count or None if no
-    window matching the constraints exists. Forecast slot timestamps are
-    parsed; the function is otherwise pure.
+    ``is_better(candidate_avg, current_best_avg)`` returns True when the
+    candidate window should replace the current best.
     """
     if slot_count < 1 or len(forecast) < slot_count:
         return None
@@ -158,7 +159,7 @@ def find_cheapest_window(
             continue
 
         avg = sum(s["price"] for s in window) / len(window)
-        if best_avg is None or avg < best_avg:
+        if best_avg is None or is_better(avg, best_avg):
             best_avg = avg
             best_start = window_start
             best_end = window_end
@@ -172,3 +173,29 @@ def find_cheapest_window(
         "average_price": round(best_avg, 6),
         "slot_count": slot_count,
     }
+
+
+def find_cheapest_window(
+    forecast: list[dict[str, Any]],
+    slot_count: int,
+    earliest_start: datetime.datetime | None = None,
+    latest_end: datetime.datetime | None = None,
+) -> dict[str, Any] | None:
+    """Find the cheapest contiguous window of ``slot_count`` 15-min slots."""
+    return _find_window(
+        forecast, slot_count, lambda candidate, best: candidate < best,
+        earliest_start, latest_end,
+    )
+
+
+def find_most_expensive_window(
+    forecast: list[dict[str, Any]],
+    slot_count: int,
+    earliest_start: datetime.datetime | None = None,
+    latest_end: datetime.datetime | None = None,
+) -> dict[str, Any] | None:
+    """Find the most expensive contiguous window of ``slot_count`` 15-min slots."""
+    return _find_window(
+        forecast, slot_count, lambda candidate, best: candidate > best,
+        earliest_start, latest_end,
+    )
