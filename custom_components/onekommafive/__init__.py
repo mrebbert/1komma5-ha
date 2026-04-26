@@ -70,7 +70,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     price_coordinator = OneKomma5PriceCoordinator(hass, system)
 
     await live_coordinator.async_config_entry_first_refresh()
-    await price_coordinator.async_config_entry_first_refresh()
+
+    # Price data is non-critical — don't block setup if the API rate-limits
+    # or is temporarily unavailable.  Prices will be fetched on the next
+    # scheduled interval.
+    try:
+        await price_coordinator.async_refresh()
+    except Exception:
+        _LOGGER.warning("Initial price fetch failed, will retry on next interval")
 
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,

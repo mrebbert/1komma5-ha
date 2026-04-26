@@ -494,10 +494,10 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
     def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
         """Initialize the stable price sensor."""
         super().__init__(coordinator, system_id, system_name, "stable_electricity_price")
-        self._stable_price: float = 0.0
+        self._stable_price: float | None = None
         if coordinator.data is not None:
             price = self._dynamic_price()
-            if price is not None and price > 0:
+            if price is not None:
                 self._stable_price = price
 
     def _dynamic_price(self) -> float | None:
@@ -509,20 +509,18 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
         return self.coordinator.data.current_price
 
     @property
-    def stable_price(self) -> float:
+    def stable_price(self) -> float | None:
         """Return the last known valid electricity price."""
         return self._stable_price
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to coordinator; fall back to restored state if coordinator has no price."""
         await super().async_added_to_hass()
-        if self._stable_price == 0.0:
+        if self._stable_price is None:
             if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
                 try:
-                    restored_price = float(restored.native_value)
-                    if restored_price > 0:
-                        self._stable_price = restored_price
-                        self.async_write_ha_state()
+                    self._stable_price = float(restored.native_value)
+                    self.async_write_ha_state()
                 except (TypeError, ValueError):
                     pass
         self.async_on_remove(
@@ -545,13 +543,15 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
     def _update_stable_price(self) -> None:
         """Update stable price from current dynamic price."""
         price = self._dynamic_price()
-        if price is not None and price > 0:
+        if price is not None:
             self._stable_price = price
         self.async_write_ha_state()
 
     @property
-    def native_value(self) -> float:
+    def native_value(self) -> float | None:
         """Return the stable electricity price."""
+        if self._stable_price is None:
+            return None
         return round(self._stable_price, 6)
 
 
@@ -560,7 +560,9 @@ class OneKomma5CostSensor(OneKomma5Entity, RestoreSensor):
 
     On each coordinator update the trapezoidal power integral is computed
     (identical to OneKomma5EnergySensor) and multiplied by the current stable
-    price.  Guards prevent accumulation when price is unavailable or zero.
+    price.  Negative prices reduce the accumulated cost (you get paid for
+    consuming electricity).  Guards prevent accumulation when price is
+    unavailable.
     """
 
     _attr_device_class = SensorDeviceClass.MONETARY
@@ -608,7 +610,7 @@ class OneKomma5CostSensor(OneKomma5Entity, RestoreSensor):
             if avg_w > 0:
                 delta_kwh = avg_w * dt_hours / 1000
                 price = self._stable_price_sensor.stable_price
-                if price > 0:
+                if price is not None:
                     self._cost += delta_kwh * price
         self._last_power = power_w
         self._last_time = now
