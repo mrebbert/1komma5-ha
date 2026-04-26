@@ -138,6 +138,42 @@
       },
       "battery_discharge_power_energy": {
         "name": "Batterie Entladeenergie"
+      },
+      "optimization_event_count": {
+        "name": "Optimierungsentscheidungen heute"
+      },
+      "optimization_total_cost": {
+        "name": "Optimierungskosten/-ersparnis"
+      },
+      "optimization_energy_bought": {
+        "name": "Optimierung Energiebezug"
+      },
+      "optimization_energy_sold": {
+        "name": "Optimierung Energieverkauf"
+      },
+      "optimization_last_decision": {
+        "name": "Letzte Optimierungsentscheidung"
+      },
+      "negative_price_slots_today": {
+        "name": "Negative Preisslots heute"
+      },
+      "tomorrow_average_price": {
+        "name": "Durchschnittlicher Strompreis morgen"
+      },
+      "tomorrow_lowest_price": {
+        "name": "Niedrigster Strompreis morgen"
+      },
+      "tomorrow_highest_price": {
+        "name": "Höchster Strompreis morgen"
+      },
+      "diag_live_update": {
+        "name": "Letztes Live-Update"
+      },
+      "diag_price_update": {
+        "name": "Letztes Preis-Update"
+      },
+      "diag_optimization_update": {
+        "name": "Letztes Optimierungs-Update"
       }
     },
     "switch": {

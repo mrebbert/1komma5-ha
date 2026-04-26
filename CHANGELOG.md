@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.31] - 2026-04-26
+
+### Added
+- **Optimization sensors**: 5 new sensors exposing Heartbeat AI optimization decisions (event count, cost/savings, energy bought/sold, last decision) — updated every 15 minutes
+- **Diagnostic sensors**: 3 new timestamp sensors tracking the last successful API update for each coordinator (live, price, optimization) — `entity_category: diagnostic`
+- **Price statistics**: negative price slots today, tomorrow's average/lowest/highest price
+- **Long-term statistics**: all price sensors now use `state_class: measurement`, enabling HA to record hourly min/max/mean automatically
+
+### Fixed
+- Negative electricity prices are now handled correctly — the stable price sensor accepts negative values and the cost sensor reduces accumulated costs during negative price periods
+- Price coordinator first refresh is no longer fatal — if the initial fetch fails (e.g. API rate limit), the integration starts normally
+- EMS `DeviceGateway not found` error no longer blocks integration setup — EMS switch becomes unavailable while other sensors continue working
+
+### Changed
+- Removed `device_class: monetary` from price sensors (incompatible with `state_class: measurement` in HA)
+- Documentation: all entity names translated to English with translation key references
+
 ## [0.1.26] - 2026-03-21
 
 ### Changed

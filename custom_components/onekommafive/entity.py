@@ -5,7 +5,11 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import OneKomma5LiveCoordinator, OneKomma5PriceCoordinator
+from .coordinator import (
+    OneKomma5LiveCoordinator,
+    OneKomma5OptimizationCoordinator,
+    OneKomma5PriceCoordinator,
+)
 
 
 class OneKomma5Entity(CoordinatorEntity[OneKomma5LiveCoordinator]):
@@ -40,6 +44,30 @@ class OneKomma5PriceEntity(CoordinatorEntity[OneKomma5PriceCoordinator]):
     def __init__(
         self,
         coordinator: OneKomma5PriceCoordinator,
+        system_id: str,
+        system_name: str,
+        unique_id_suffix: str,
+    ) -> None:
+        """Initialize the entity."""
+        super().__init__(coordinator)
+        self._system_id = system_id
+        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, system_id)},
+            name=system_name,
+            manufacturer="1KOMMA5°",
+            model="Heartbeat",
+        )
+
+
+class OneKomma5OptimizationEntity(CoordinatorEntity[OneKomma5OptimizationCoordinator]):
+    """Base entity for optimization-data entities."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: OneKomma5OptimizationCoordinator,
         system_id: str,
         system_name: str,
         unique_id_suffix: str,

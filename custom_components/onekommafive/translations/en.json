@@ -138,6 +138,42 @@
       },
       "battery_discharge_power_energy": {
         "name": "Battery discharge energy"
+      },
+      "optimization_event_count": {
+        "name": "Optimization decisions today"
+      },
+      "optimization_total_cost": {
+        "name": "Optimization cost/savings"
+      },
+      "optimization_energy_bought": {
+        "name": "Optimization energy bought"
+      },
+      "optimization_energy_sold": {
+        "name": "Optimization energy sold"
+      },
+      "optimization_last_decision": {
+        "name": "Last optimization decision"
+      },
+      "negative_price_slots_today": {
+        "name": "Negative price slots today"
+      },
+      "tomorrow_average_price": {
+        "name": "Average electricity price tomorrow"
+      },
+      "tomorrow_lowest_price": {
+        "name": "Lowest electricity price tomorrow"
+      },
+      "tomorrow_highest_price": {
+        "name": "Highest electricity price tomorrow"
+      },
+      "diag_live_update": {
+        "name": "Last live update"
+      },
+      "diag_price_update": {
+        "name": "Last price update"
+      },
+      "diag_optimization_update": {
+        "name": "Last optimization update"
       }
     },
     "switch": {

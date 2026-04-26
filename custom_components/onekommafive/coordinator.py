@@ -9,7 +9,11 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import LIVE_UPDATE_INTERVAL_SECONDS, PRICE_UPDATE_INTERVAL_SECONDS
+from .const import (
+    LIVE_UPDATE_INTERVAL_SECONDS,
+    OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
+    PRICE_UPDATE_INTERVAL_SECONDS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +37,10 @@ class PriceData:
     forecast: list[dict[str, Any]]  # sorted list of {start, end, price} dicts
     all_in_prices: dict[str, float] = None  # full price dict for dynamic lookups
     grid_prices: dict[str, float] = None  # full grid-cost price dict
+    negative_price_slots_today: int = 0
+    tomorrow_average_price: float | None = None
+    tomorrow_lowest_price: float | None = None
+    tomorrow_highest_price: float | None = None
 
 
 def get_current_price(prices: dict[str, float]) -> float | None:
@@ -166,6 +174,23 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
         current_price_with_grid_costs = get_current_price(grid_prices)
         forecast = self._build_forecast(all_in_prices, horizon_hours=30)
 
+        # Price statistics: split by date
+        today_str = now.strftime("%Y-%m-%d")
+        tomorrow_str = (now + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+        today_prices = [v for k, v in all_in_prices.items() if today_str in k]
+        tomorrow_prices_list = [v for k, v in all_in_prices.items() if tomorrow_str in k]
+
+        negative_price_slots_today = sum(1 for p in today_prices if p < 0)
+
+        tomorrow_average = None
+        tomorrow_lowest = None
+        tomorrow_highest = None
+        if tomorrow_prices_list:
+            tomorrow_average = sum(tomorrow_prices_list) / len(tomorrow_prices_list)
+            tomorrow_lowest = min(tomorrow_prices_list)
+            tomorrow_highest = max(tomorrow_prices_list)
+
         return PriceData(
             market_prices=market_prices,
             current_price=current_price,
@@ -173,6 +198,10 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
             forecast=forecast,
             all_in_prices=all_in_prices,
             grid_prices=grid_prices,
+            negative_price_slots_today=negative_price_slots_today,
+            tomorrow_average_price=tomorrow_average,
+            tomorrow_lowest_price=tomorrow_lowest,
+            tomorrow_highest_price=tomorrow_highest,
         )
 
     def _build_forecast(
@@ -214,4 +243,67 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
 
         slots.sort(key=lambda s: s["start"])
         return slots
+
+
+@dataclass
+class OptimizationData:
+    """Container for optimization event data fetched from the API."""
+
+    events: list[Any]  # list[OptimizationEvent]
+    event_count: int
+    total_cost: float | None
+    energy_bought: float | None
+    energy_sold: float | None
+    last_event: Any | None  # OptimizationEvent or None
+
+
+class OneKomma5OptimizationCoordinator(DataUpdateCoordinator[OptimizationData]):
+    """Coordinator for AI optimization event data."""
+
+    def __init__(self, hass: HomeAssistant, system: Any) -> None:
+        """Initialize the coordinator."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            name="1KOMMA5° Optimizations",
+            update_interval=datetime.timedelta(seconds=OPTIMIZATION_UPDATE_INTERVAL_SECONDS),
+        )
+        self._system = system
+
+    async def _async_update_data(self) -> OptimizationData:
+        """Fetch optimization event data from the API."""
+        try:
+            return await self.hass.async_add_executor_job(self._fetch_optimization_data)
+        except Exception as err:
+            from onekommafive.errors import ApiError
+
+            if isinstance(err, ApiError):
+                raise UpdateFailed(f"API error fetching optimization data: {err}") from err
+            raise UpdateFailed(f"Error fetching optimization data: {err}") from err
+
+    def _fetch_optimization_data(self) -> OptimizationData:
+        """Fetch today's optimization events synchronously."""
+        now = datetime.datetime.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+
+        result = self._system.get_optimizations(today_start, today_end)
+        events = result.events
+
+        costs = [e.total_cost for e in events if e.total_cost is not None]
+        bought = [e.energy_bought for e in events if e.energy_bought is not None]
+        sold = [e.energy_sold for e in events if e.energy_sold is not None]
+
+        last_event = None
+        if events:
+            last_event = max(events, key=lambda e: e.from_time or e.timestamp)
+
+        return OptimizationData(
+            events=events,
+            event_count=len(events),
+            total_cost=sum(costs) if costs else None,
+            energy_bought=sum(bought) if bought else None,
+            energy_sold=sum(sold) if sold else None,
+            last_event=last_event,
+        )
 

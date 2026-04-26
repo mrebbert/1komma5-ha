@@ -13,16 +13,23 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower
+from homeassistant.const import EntityCategory, PERCENTAGE, UnitOfEnergy, UnitOfPower
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_util
 
 from . import OneKomma5ConfigEntry
-from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
-from .coordinator import LiveData, PriceData, get_current_price
-from .entity import OneKomma5Entity, OneKomma5EVEntity, OneKomma5PriceEntity
+from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF, DOMAIN
+from .coordinator import LiveData, OptimizationData, PriceData, get_current_price
+from .entity import (
+    OneKomma5Entity,
+    OneKomma5EVEntity,
+    OneKomma5OptimizationEntity,
+    OneKomma5PriceEntity,
+)
 
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
 
@@ -181,7 +188,7 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
     OneKomma5PriceSensorDescription(
         key="current_electricity_price",
         translation_key="current_electricity_price",
-        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
         value_fn=lambda d: get_current_price(d.all_in_prices) if d.all_in_prices else d.current_price,
@@ -189,7 +196,7 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
     OneKomma5PriceSensorDescription(
         key="average_electricity_price",
         translation_key="average_electricity_price",
-        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
         value_fn=lambda d: d.market_prices.average_price_all_in,
@@ -197,7 +204,7 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
     OneKomma5PriceSensorDescription(
         key="lowest_electricity_price",
         translation_key="lowest_electricity_price",
-        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
         value_fn=lambda d: d.market_prices.lowest_price_all_in,
@@ -205,10 +212,43 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
     OneKomma5PriceSensorDescription(
         key="highest_electricity_price",
         translation_key="highest_electricity_price",
-        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
         value_fn=lambda d: d.market_prices.highest_price_all_in,
+    ),
+    OneKomma5PriceSensorDescription(
+        key="negative_price_slots_today",
+        translation_key="negative_price_slots_today",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:cash-minus",
+        value_fn=lambda d: d.negative_price_slots_today,
+    ),
+    OneKomma5PriceSensorDescription(
+        key="tomorrow_average_price",
+        translation_key="tomorrow_average_price",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
+        suggested_display_precision=4,
+        value_fn=lambda d: round(d.tomorrow_average_price, 6)
+        if d.tomorrow_average_price is not None
+        else None,
+    ),
+    OneKomma5PriceSensorDescription(
+        key="tomorrow_lowest_price",
+        translation_key="tomorrow_lowest_price",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
+        suggested_display_precision=4,
+        value_fn=lambda d: d.tomorrow_lowest_price,
+    ),
+    OneKomma5PriceSensorDescription(
+        key="tomorrow_highest_price",
+        translation_key="tomorrow_highest_price",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
+        suggested_display_precision=4,
+        value_fn=lambda d: d.tomorrow_highest_price,
     ),
 )
 
@@ -247,6 +287,86 @@ EV_SENSORS: tuple[OneKomma5EVSensorDescription, ...] = (
 )
 
 
+@dataclass(frozen=True, kw_only=True)
+class OneKomma5OptimizationSensorDescription(SensorEntityDescription):
+    """Optimization sensor entity description with value accessor."""
+
+    value_fn: Callable[[OptimizationData], Any]
+    attr_fn: Callable[[OptimizationData], dict[str, Any] | None] = lambda _: None
+
+
+OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
+    OneKomma5OptimizationSensorDescription(
+        key="optimization_event_count",
+        translation_key="optimization_event_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:counter",
+        value_fn=lambda d: d.event_count,
+        attr_fn=lambda d: {
+            "decisions": [
+                {
+                    "asset": e.asset,
+                    "decision": e.decision,
+                    "from": e.from_time,
+                    "to": e.to_time,
+                    "market_price": e.market_price,
+                }
+                for e in d.events
+            ]
+        }
+        if d.events
+        else None,
+    ),
+    OneKomma5OptimizationSensorDescription(
+        key="optimization_total_cost",
+        translation_key="optimization_total_cost",
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement="EUR",
+        suggested_display_precision=2,
+        icon="mdi:piggy-bank-outline",
+        value_fn=lambda d: round(d.total_cost, 2) if d.total_cost is not None else None,
+    ),
+    OneKomma5OptimizationSensorDescription(
+        key="optimization_energy_bought",
+        translation_key="optimization_energy_bought",
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=2,
+        value_fn=lambda d: round(d.energy_bought, 2)
+        if d.energy_bought is not None
+        else None,
+    ),
+    OneKomma5OptimizationSensorDescription(
+        key="optimization_energy_sold",
+        translation_key="optimization_energy_sold",
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=2,
+        value_fn=lambda d: round(d.energy_sold, 2)
+        if d.energy_sold is not None
+        else None,
+    ),
+    OneKomma5OptimizationSensorDescription(
+        key="optimization_last_decision",
+        translation_key="optimization_last_decision",
+        icon="mdi:brain",
+        value_fn=lambda d: d.last_event.decision if d.last_event else None,
+        attr_fn=lambda d: {
+            "asset": d.last_event.asset,
+            "from": d.last_event.from_time,
+            "to": d.last_event.to_time,
+            "market_price": d.last_event.market_price,
+            "state_of_charge": d.last_event.state_of_charge,
+        }
+        if d.last_event
+        else None,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: OneKomma5ConfigEntry,
@@ -256,6 +376,7 @@ async def async_setup_entry(
     data = entry.runtime_data
     live_coordinator = data.live_coordinator
     price_coordinator = data.price_coordinator
+    optimization_coordinator = data.optimization_coordinator
     system = data.system
     system_id = system.id()
     system_name = data.system_name
@@ -298,6 +419,12 @@ async def async_setup_entry(
     feed_in_tariff = entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
     entities.append(OneKomma5FeedInRevenueSensor(live_coordinator, system_id, system_name, feed_in_tariff))
 
+    # Optimization sensors
+    entities.extend(
+        OneKomma5OptimizationSensor(optimization_coordinator, system_id, system_name, desc)
+        for desc in OPTIMIZATION_SENSORS
+    )
+
     # EV charger sensors (one set per charger)
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
@@ -307,6 +434,20 @@ async def async_setup_entry(
                 OneKomma5EVSensor(live_coordinator, system_id, system_name, ev_id, ev_label, desc)
                 for desc in EV_SENSORS
             )
+
+    # Diagnostic sensors (last successful update per coordinator)
+    entities.append(OneKomma5DiagnosticSensor(
+        live_coordinator, system_id, system_name,
+        "diag_live_update", "diag_live_update",
+    ))
+    entities.append(OneKomma5DiagnosticSensor(
+        price_coordinator, system_id, system_name,
+        "diag_price_update", "diag_price_update",
+    ))
+    entities.append(OneKomma5DiagnosticSensor(
+        optimization_coordinator, system_id, system_name,
+        "diag_optimization_update", "diag_optimization_update",
+    ))
 
     async_add_entities(entities)
 
@@ -683,6 +824,77 @@ class OneKomma5FeedInRevenueSensor(OneKomma5Entity, RestoreSensor):
     def native_value(self) -> float:
         """Return the accumulated feed-in revenue in EUR."""
         return round(self._revenue, 4)
+
+
+class OneKomma5OptimizationSensor(OneKomma5OptimizationEntity, SensorEntity):
+    """Sensor for optimization event data."""
+
+    entity_description: OneKomma5OptimizationSensorDescription
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        description: OneKomma5OptimizationSensorDescription,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, system_id, system_name, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> Any:
+        """Return the sensor value."""
+        if self.coordinator.data is None:
+            return None
+        return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra state attributes."""
+        if self.coordinator.data is None:
+            return None
+        return self.entity_description.attr_fn(self.coordinator.data)
+
+
+class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
+    """Diagnostic sensor tracking the last successful coordinator update."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        key: str,
+        translation_key: str,
+    ) -> None:
+        """Initialize the diagnostic sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{system_id}_{key}"
+        self._attr_translation_key = translation_key
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, system_id)},
+            name=system_name,
+            manufacturer="1KOMMA5°",
+            model="Heartbeat",
+        )
+        self._last_success: datetime | None = None
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Record timestamp on successful coordinator update."""
+        if self.coordinator.last_update_success:
+            self._last_success = dt_util.utcnow()
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the last successful update timestamp."""
+        return self._last_success
 
 
 def _get_ev_label(ev: Any) -> str:

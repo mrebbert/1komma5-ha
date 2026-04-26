@@ -57,6 +57,14 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 | Average Electricity Price | `average_electricity_price` | Today's average all-in price | EUR/kWh | 1 h |
 | Lowest Electricity Price | `lowest_electricity_price` | Today's lowest all-in price | EUR/kWh | 1 h |
 | Highest Electricity Price | `highest_electricity_price` | Today's highest all-in price | EUR/kWh | 1 h |
+| Negative Price Slots Today | `negative_price_slots_today` | Number of 15-min slots today with negative all-in price | — | 1 h |
+| Average Electricity Price Tomorrow | `tomorrow_average_price` | Tomorrow's average all-in price (available after ~13:00 CET) | EUR/kWh | 1 h |
+| Lowest Electricity Price Tomorrow | `tomorrow_lowest_price` | Tomorrow's lowest all-in price | EUR/kWh | 1 h |
+| Highest Electricity Price Tomorrow | `tomorrow_highest_price` | Tomorrow's highest all-in price | EUR/kWh | 1 h |
+
+All price sensors use `state_class: measurement`, so Home Assistant automatically records **long-term statistics** (hourly min/max/mean). Price history is visible in the History panel and can be used for trend analysis.
+
+> **Note:** Tomorrow's price sensors show "unknown" until the day-ahead prices are published (typically around 13:00 CET).
 
 ### Energy Sensors
 
@@ -87,6 +95,20 @@ Accumulated monetary sensors derived from energy flow and dynamic pricing. Both 
 | Feed-in Revenue | `feed_in_revenue` | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
 
 The feed-in tariff can be changed at any time under **Settings → Devices & Services → 1KOMMA5° → Configure**.
+
+### Optimization Sensors
+
+Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minutes.
+
+| Entity | Key | Description | Unit |
+|--------|-----|-------------|------|
+| Optimization Decisions Today | `optimization_event_count` | Number of AI optimization decisions today. Attributes: list of all decisions with asset, time range and market price. | — |
+| Optimization Cost/Savings | `optimization_total_cost` | Aggregated total cost from today's optimization events (if reported by API). | EUR |
+| Optimization Energy Bought | `optimization_energy_bought` | Aggregated energy bought through optimizations (if reported by API). | kWh |
+| Optimization Energy Sold | `optimization_energy_sold` | Aggregated energy sold through optimizations (if reported by API). | kWh |
+| Last Optimization Decision | `optimization_last_decision` | Most recent AI decision (e.g. `BATTERY_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`). Attributes: `asset`, `from`, `to`, `market_price`, `state_of_charge`. | — |
+
+> **Note:** The cost, energy bought and energy sold fields depend on the 1KOMMA5° API providing settlement data. Currently, these fields are not yet populated by the API and the sensors will show "unknown".
 
 ### Binary Sensors
 
@@ -226,6 +248,16 @@ Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor entity ID and `CA
 | Entity | Key | Type | Description |
 |--------|-----|------|-------------|
 | EMS Auto Mode | `ems_auto_mode` | Switch | Toggle EMS auto / manual mode |
+
+### Diagnostic Sensors
+
+These sensors are hidden by default (`entity_category: diagnostic`) and useful for troubleshooting API connectivity.
+
+| Entity | Key | Description |
+|--------|-----|-------------|
+| Last Live Update | `diag_live_update` | Timestamp of the last successful live data fetch |
+| Last Price Update | `diag_price_update` | Timestamp of the last successful price data fetch |
+| Last Optimization Update | `diag_optimization_update` | Timestamp of the last successful optimization data fetch |
 
 ---
 
