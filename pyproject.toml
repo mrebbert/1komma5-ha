@@ -10,6 +10,13 @@ test = [
     "pytest-cov>=5.0",
 ]
 
+[tool.setuptools]
+# This is a Home Assistant custom component, not a normal pip-installable package.
+# Tell setuptools that the project ships zero Python packages so the editable
+# install used by CI doesn't fail when it sees dashboard/ and custom_components/
+# alongside each other.
+packages = []
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
