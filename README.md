@@ -71,57 +71,7 @@ All price sensors use `state_class: measurement`, so Home Assistant automaticall
 
 > **Note:** Tomorrow's price sensors show "unknown" until the day-ahead prices are published (typically around 13:00 CET).
 
-### Energy Sensors
-
-For every unidirectional power sensor an accompanying energy sensor (kWh) is automatically created. Energy is calculated via **trapezoidal integration** of the 30-second power samples and persisted across Home Assistant restarts. These sensors use `state_class: total_increasing` and are therefore directly compatible with the **Energy Dashboard**.
-
-| Entity | Key | Description | Unit |
-|--------|-----|-------------|------|
-| PV Energy | `pv_power_energy` | Cumulative solar energy produced | kWh |
-| Grid Import Energy | `grid_consumption_power_energy` | Cumulative energy drawn from grid | kWh |
-| Grid Export Energy | `grid_feed_in_power_energy` | Cumulative energy fed into grid | kWh |
-| Total Consumption Energy | `consumption_power_energy` | Cumulative total site consumption | kWh |
-| Household Energy | `household_power_energy` | Cumulative base consumption | kWh |
-| EV Charging Energy | `ev_chargers_power_energy` | Cumulative EV charging energy | kWh |
-| Heat Pump Energy | `heat_pumps_power_energy` | Cumulative heat pump energy | kWh |
-| AC Energy | `acs_power_energy` | Cumulative AC energy | kWh |
-| Battery Charge Energy | `battery_charge_power_energy` | Cumulative energy charged into the battery (positive direction only) | kWh |
-| Battery Discharge Energy | `battery_discharge_power_energy` | Cumulative energy discharged from the battery (negative direction only) | kWh |
-
-> **Note:** Battery Power and Grid Power are bidirectional (positive/negative) and therefore excluded from the general energy sensors. The battery is covered by the dedicated Battery Charge Energy and Battery Discharge Energy sensors, which split the bidirectional signal into two `total_increasing` sensors — required for the **Energy Dashboard** battery storage configuration.
-
-### Cost & Revenue Sensors
-
-Accumulated monetary sensors derived from energy flow and dynamic pricing. Both use `state_class: total` and `device_class: monetary` and are compatible with the HA **Energy Dashboard**.
-
-| Entity | Key | Description | Unit |
-|--------|-----|-------------|------|
-| Electricity Cost | `electricity_cost` | Cumulative electricity cost — integrates grid import power × current dynamic price (from *Last Valid Electricity Price*). Guards prevent accumulation when price is unavailable. | EUR |
-| Feed-in Revenue | `feed_in_revenue` | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
-
-The feed-in tariff can be changed at any time under **Settings → Devices & Services → 1KOMMA5° → Configure**.
-
-### Optimization Sensors
-
-Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minutes.
-
-| Entity | Key | Description | Unit |
-|--------|-----|-------------|------|
-| Optimization Decisions Today | `optimization_event_count` | Number of AI optimization decisions today. Attributes: list of all decisions with asset, time range and market price. | — |
-| Optimization Cost/Savings | `optimization_total_cost` | Aggregated total cost from today's optimization events (if reported by API). | EUR |
-| Optimization Energy Bought | `optimization_energy_bought` | Aggregated energy bought through optimizations (if reported by API). | kWh |
-| Optimization Energy Sold | `optimization_energy_sold` | Aggregated energy sold through optimizations (if reported by API). | kWh |
-| Last Optimization Decision | `optimization_last_decision` | Most recent AI decision (e.g. `BATTERY_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`). Attributes: `asset`, `from`, `to`, `market_price`, `state_of_charge`. | — |
-
-> **Note:** The cost, energy bought and energy sold fields depend on the 1KOMMA5° API providing settlement data. Currently, these fields are not yet populated by the API and the sensors will show "unknown".
-
-### Binary Sensors
-
-| Entity | Key | Description | Update |
-|--------|-----|-------------|--------|
-| Cheap Electricity | `cheap_electricity` | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 15 min |
-
-### Price Forecast & Cheapest Hour
+#### Price Forecast & Cheapest Hour
 
 The **Current Electricity Price** sensor carries several attributes updated every hour:
 
@@ -131,7 +81,7 @@ The **Current Electricity Price** sensor carries several attributes updated ever
 | `cheapest_future_hour` | ISO-8601 start timestamp of the cheapest upcoming slot |
 | `cheapest_future_price` | Price (EUR/kWh) of that slot |
 
-The sensor value always reflects the **active 15-minute slot** (latest slot whose start ≤ now), not just the price at the top of the hour. The `forecast` list covers up to **30 hours** ahead (today + all of tomorrow) and is compatible with [`apexcharts-card`](https://github.com/RomRider/apexcharts-card) and other custom cards that follow the Tibber/ENTSO-E format:
+The sensor value always reflects the **active 15-minute slot** (smallest slot end > now), not just the price at the top of the hour. The `forecast` list covers up to **30 hours** ahead (today + all of tomorrow) and is compatible with [`apexcharts-card`](https://github.com/RomRider/apexcharts-card) and other custom cards that follow the Tibber/ENTSO-E format:
 
 ```yaml
 forecast:
@@ -198,6 +148,56 @@ trigger:
     value_template: >
       {{ now().isoformat() >= state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour') }}
 ```
+
+### Energy Sensors
+
+For every unidirectional power sensor an accompanying energy sensor (kWh) is automatically created. Energy is calculated via **trapezoidal integration** of the 30-second power samples and persisted across Home Assistant restarts. These sensors use `state_class: total_increasing` and are therefore directly compatible with the **Energy Dashboard**.
+
+| Entity | Key | Description | Unit |
+|--------|-----|-------------|------|
+| PV Energy | `pv_power_energy` | Cumulative solar energy produced | kWh |
+| Grid Import Energy | `grid_consumption_power_energy` | Cumulative energy drawn from grid | kWh |
+| Grid Export Energy | `grid_feed_in_power_energy` | Cumulative energy fed into grid | kWh |
+| Total Consumption Energy | `consumption_power_energy` | Cumulative total site consumption | kWh |
+| Household Energy | `household_power_energy` | Cumulative base consumption | kWh |
+| EV Charging Energy | `ev_chargers_power_energy` | Cumulative EV charging energy | kWh |
+| Heat Pump Energy | `heat_pumps_power_energy` | Cumulative heat pump energy | kWh |
+| AC Energy | `acs_power_energy` | Cumulative AC energy | kWh |
+| Battery Charge Energy | `battery_charge_power_energy` | Cumulative energy charged into the battery (positive direction only) | kWh |
+| Battery Discharge Energy | `battery_discharge_power_energy` | Cumulative energy discharged from the battery (negative direction only) | kWh |
+
+> **Note:** Battery Power and Grid Power are bidirectional (positive/negative) and therefore excluded from the general energy sensors. The battery is covered by the dedicated Battery Charge Energy and Battery Discharge Energy sensors, which split the bidirectional signal into two `total_increasing` sensors — required for the **Energy Dashboard** battery storage configuration.
+
+### Cost & Revenue Sensors
+
+Accumulated monetary sensors derived from energy flow and dynamic pricing. Both use `state_class: total` and `device_class: monetary` and are compatible with the HA **Energy Dashboard**.
+
+| Entity | Key | Description | Unit |
+|--------|-----|-------------|------|
+| Electricity Cost | `electricity_cost` | Cumulative electricity cost — integrates grid import power × current dynamic price (from *Last Valid Electricity Price*). Guards prevent accumulation when price is unavailable. | EUR |
+| Feed-in Revenue | `feed_in_revenue` | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
+
+The feed-in tariff can be changed at any time under **Settings → Devices & Services → 1KOMMA5° → Configure**.
+
+### Optimization Sensors
+
+Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minutes.
+
+| Entity | Key | Description | Unit |
+|--------|-----|-------------|------|
+| Optimization Decisions Today | `optimization_event_count` | Number of AI optimization decisions today. Attributes: list of all decisions with asset, time range and market price. | — |
+| Optimization Cost/Savings | `optimization_total_cost` | Aggregated total cost from today's optimization events (if reported by API). | EUR |
+| Optimization Energy Bought | `optimization_energy_bought` | Aggregated energy bought through optimizations (if reported by API). | kWh |
+| Optimization Energy Sold | `optimization_energy_sold` | Aggregated energy sold through optimizations (if reported by API). | kWh |
+| Last Optimization Decision | `optimization_last_decision` | Most recent AI decision (e.g. `BATTERY_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`). Attributes: `asset`, `from`, `to`, `market_price`, `state_of_charge`. | — |
+
+> **Note:** The cost, energy bought and energy sold fields depend on the 1KOMMA5° API providing settlement data. Currently, these fields are not yet populated by the API and the sensors will show "unknown".
+
+### Binary Sensors
+
+| Entity | Key | Description | Update |
+|--------|-----|-------------|--------|
+| Cheap Electricity | `cheap_electricity` | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 15 min |
 
 ### EV Charger
 
