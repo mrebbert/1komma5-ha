@@ -13,14 +13,15 @@ from helpers import (  # type: ignore[import-not-found]
     find_cheapest_window,
     get_current_price,
     split_prices_by_date,
+    trapezoidal_delta_kwh,
 )
 
 
 UTC = datetime.timezone.utc
 
 
-def _at(year: int, month: int, day: int, hour: int = 0, minute: int = 0) -> datetime.datetime:
-    return datetime.datetime(year, month, day, hour, minute, tzinfo=UTC)
+def _at(year: int, month: int, day: int, hour: int = 0, minute: int = 0, second: int = 0) -> datetime.datetime:
+    return datetime.datetime(year, month, day, hour, minute, second, tzinfo=UTC)
 
 
 # ----------------------------------------------------------------------------
@@ -278,3 +279,46 @@ class TestFindCheapestWindow:
         result = find_cheapest_window(forecast, slot_count=1)
         assert result is not None
         assert result["average_price"] == -0.05
+
+
+# ----------------------------------------------------------------------------
+# trapezoidal_delta_kwh
+# ----------------------------------------------------------------------------
+
+class TestTrapezoidalDeltaKwh:
+    def test_constant_1kw_for_1_hour_yields_1kwh(self) -> None:
+        result = trapezoidal_delta_kwh(
+            1000.0, _at(2026, 4, 26, 10, 0),
+            1000.0, _at(2026, 4, 26, 11, 0),
+        )
+        assert result == pytest.approx(1.0)
+
+    def test_returns_none_for_negative_average(self) -> None:
+        result = trapezoidal_delta_kwh(
+            -100.0, _at(2026, 4, 26, 10, 0),
+            -100.0, _at(2026, 4, 26, 11, 0),
+        )
+        assert result is None
+
+    def test_returns_none_for_zero_average(self) -> None:
+        result = trapezoidal_delta_kwh(
+            0.0, _at(2026, 4, 26, 10, 0),
+            0.0, _at(2026, 4, 26, 11, 0),
+        )
+        assert result is None
+
+    def test_averages_power_over_interval(self) -> None:
+        # 0W → 1000W over 1 hour → avg 500W → 0.5 kWh
+        result = trapezoidal_delta_kwh(
+            0.0, _at(2026, 4, 26, 10, 0),
+            1000.0, _at(2026, 4, 26, 11, 0),
+        )
+        assert result == pytest.approx(0.5)
+
+    def test_30_second_sample_at_2kw(self) -> None:
+        # 2000W constant for 30s → 2000 * (30/3600) / 1000 ≈ 0.01667 kWh
+        result = trapezoidal_delta_kwh(
+            2000.0, _at(2026, 4, 26, 10, 0, 0),
+            2000.0, datetime.datetime(2026, 4, 26, 10, 0, 30, tzinfo=UTC),
+        )
+        assert result == pytest.approx(2000 * (30 / 3600) / 1000)

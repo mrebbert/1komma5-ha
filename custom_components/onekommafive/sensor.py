@@ -24,7 +24,7 @@ from homeassistant.util import dt as dt_util
 from . import OneKomma5ConfigEntry
 from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF, DOMAIN
 from .coordinator import LiveData, OptimizationData, PriceData
-from .helpers import get_current_price
+from .helpers import get_current_price, trapezoidal_delta_kwh
 from .entity import (
     OneKomma5Entity,
     OneKomma5EVEntity,
@@ -566,18 +566,82 @@ class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
         return self.entity_description.value_fn(ev)
 
 
-class OneKomma5EnergySensor(OneKomma5Entity, RestoreSensor):
-    """Energy sensor (kWh) derived from a power sensor via trapezoidal integration.
+class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
+    """Base class for sensors that accumulate via trapezoidal integration of a power signal.
+
+    Subclasses provide:
+    - ``_get_power_w(data)`` — the power value in W to integrate
+    - ``_get_kwh_multiplier()`` — multiplier for delta_kWh (None to skip the sample)
 
     The accumulated value is persisted across restarts via RestoreSensor.
-    Only positive power contributions are counted so the state class
-    TOTAL_INCREASING is never violated.
     """
+
+    _accumulator_precision: int = 3
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        unique_id_suffix: str,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, unique_id_suffix)
+        self._accumulated: float = 0.0
+        self._last_power: float | None = None
+        self._last_time: datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore accumulated value after HA restart."""
+        await super().async_added_to_hass()
+        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
+            try:
+                self._accumulated = float(restored.native_value)
+            except (TypeError, ValueError):
+                self._accumulated = 0.0
+
+    def _get_power_w(self, data: LiveData) -> float | None:
+        """Return the power signal (W) to integrate. Subclasses override."""
+        raise NotImplementedError
+
+    def _get_kwh_multiplier(self) -> float | None:
+        """Return the multiplier applied to delta_kWh. Return None to skip the sample."""
+        return 1.0
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Integrate power over elapsed time and accumulate."""
+        if self.coordinator.data is None:
+            return
+        power_w = self._get_power_w(self.coordinator.data)
+        if power_w is None:
+            return
+        now = dt_util.utcnow()
+        if self._last_power is not None and self._last_time is not None:
+            delta_kwh = trapezoidal_delta_kwh(
+                self._last_power, self._last_time, power_w, now
+            )
+            if delta_kwh is not None:
+                multiplier = self._get_kwh_multiplier()
+                if multiplier is not None:
+                    self._accumulated += delta_kwh * multiplier
+        self._last_power = power_w
+        self._last_time = now
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float:
+        """Return the accumulated value rounded to the configured precision."""
+        return round(self._accumulated, self._accumulator_precision)
+
+
+class OneKomma5EnergySensor(OneKomma5AccumulatingSensor):
+    """Energy sensor (kWh) derived from a power sensor via trapezoidal integration."""
 
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
     _attr_suggested_display_precision = 3
+    _accumulator_precision = 3
 
     def __init__(
         self,
@@ -586,45 +650,12 @@ class OneKomma5EnergySensor(OneKomma5Entity, RestoreSensor):
         system_name: str,
         description: OneKomma5SensorDescription,
     ) -> None:
-        """Initialize the energy sensor."""
         super().__init__(coordinator, system_id, system_name, f"{description.key}_energy")
         self._power_fn = description.value_fn
         self._attr_translation_key = f"{description.key}_energy"
-        self._kwh: float = 0.0
-        self._last_power: float | None = None
-        self._last_time: datetime | None = None
 
-    async def async_added_to_hass(self) -> None:
-        """Restore accumulated energy after HA restart."""
-        await super().async_added_to_hass()
-        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
-            try:
-                self._kwh = float(restored.native_value)
-            except (TypeError, ValueError):
-                self._kwh = 0.0
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Integrate power (W) over elapsed time and accumulate kWh."""
-        if self.coordinator.data is None:
-            return
-        power_w = self._power_fn(self.coordinator.data)
-        if power_w is None:
-            return
-        now = dt_util.utcnow()
-        if self._last_power is not None and self._last_time is not None:
-            dt_hours = (now - self._last_time).total_seconds() / 3600
-            avg_w = (self._last_power + power_w) / 2
-            if avg_w > 0:
-                self._kwh += avg_w * dt_hours / 1000
-        self._last_power = power_w
-        self._last_time = now
-        self.async_write_ha_state()
-
-    @property
-    def native_value(self) -> float:
-        """Return the accumulated energy in kWh."""
-        return round(self._kwh, 3)
+    def _get_power_w(self, data: LiveData) -> float | None:
+        return self._power_fn(data)
 
 
 class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
@@ -704,14 +735,11 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
         return round(self._stable_price, 6)
 
 
-class OneKomma5CostSensor(OneKomma5Entity, RestoreSensor):
+class OneKomma5CostSensor(OneKomma5AccumulatingSensor):
     """Accumulated electricity cost sensor (€) derived from grid import power × dynamic price.
 
-    On each coordinator update the trapezoidal power integral is computed
-    (identical to OneKomma5EnergySensor) and multiplied by the current stable
-    price.  Negative prices reduce the accumulated cost (you get paid for
-    consuming electricity).  Guards prevent accumulation when price is
-    unavailable.
+    Negative prices reduce the accumulated cost (you get paid for
+    consuming electricity).  Accumulation is skipped when price is unavailable.
     """
 
     _attr_device_class = SensorDeviceClass.MONETARY
@@ -720,6 +748,7 @@ class OneKomma5CostSensor(OneKomma5Entity, RestoreSensor):
     _attr_suggested_display_precision = 2
     _attr_translation_key = "electricity_cost"
     _attr_icon = "mdi:currency-eur"
+    _accumulator_precision = 4
 
     def __init__(
         self,
@@ -728,50 +757,17 @@ class OneKomma5CostSensor(OneKomma5Entity, RestoreSensor):
         system_name: str,
         stable_price_sensor: OneKomma5StablePriceSensor,
     ) -> None:
-        """Initialize the cost sensor."""
         super().__init__(coordinator, system_id, system_name, "electricity_cost")
         self._stable_price_sensor = stable_price_sensor
-        self._cost: float = 0.0
-        self._last_power: float | None = None
-        self._last_time: datetime | None = None
 
-    async def async_added_to_hass(self) -> None:
-        """Restore accumulated cost after HA restart."""
-        await super().async_added_to_hass()
-        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
-            try:
-                self._cost = float(restored.native_value)
-            except (TypeError, ValueError):
-                self._cost = 0.0
+    def _get_power_w(self, data: LiveData) -> float | None:
+        return data.live_overview.grid_consumption_power
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Integrate grid import power over time and accumulate cost."""
-        if self.coordinator.data is None:
-            return
-        power_w = self.coordinator.data.live_overview.grid_consumption_power
-        if power_w is None:
-            return
-        now = dt_util.utcnow()
-        if self._last_power is not None and self._last_time is not None:
-            dt_hours = (now - self._last_time).total_seconds() / 3600
-            avg_w = (self._last_power + power_w) / 2
-            if avg_w > 0:
-                delta_kwh = avg_w * dt_hours / 1000
-                price = self._stable_price_sensor.stable_price
-                if price is not None:
-                    self._cost += delta_kwh * price
-        self._last_power = power_w
-        self._last_time = now
-        self.async_write_ha_state()
-
-    @property
-    def native_value(self) -> float:
-        """Return the accumulated electricity cost in EUR."""
-        return round(self._cost, 4)
+    def _get_kwh_multiplier(self) -> float | None:
+        return self._stable_price_sensor.stable_price
 
 
-class OneKomma5FeedInRevenueSensor(OneKomma5Entity, RestoreSensor):
+class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
     """Accumulated feed-in revenue sensor (€) derived from grid export power × fixed tariff.
 
     The tariff is configurable via the integration's options flow and defaults
@@ -785,6 +781,7 @@ class OneKomma5FeedInRevenueSensor(OneKomma5Entity, RestoreSensor):
     _attr_suggested_display_precision = 2
     _attr_translation_key = "feed_in_revenue"
     _attr_icon = "mdi:transmission-tower-export"
+    _accumulator_precision = 4
 
     def __init__(
         self,
@@ -793,45 +790,14 @@ class OneKomma5FeedInRevenueSensor(OneKomma5Entity, RestoreSensor):
         system_name: str,
         feed_in_tariff: float,
     ) -> None:
-        """Initialize the feed-in revenue sensor."""
         super().__init__(coordinator, system_id, system_name, "feed_in_revenue")
         self._feed_in_tariff = feed_in_tariff
-        self._revenue: float = 0.0
-        self._last_power: float | None = None
-        self._last_time: datetime | None = None
 
-    async def async_added_to_hass(self) -> None:
-        """Restore accumulated revenue after HA restart."""
-        await super().async_added_to_hass()
-        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
-            try:
-                self._revenue = float(restored.native_value)
-            except (TypeError, ValueError):
-                self._revenue = 0.0
+    def _get_power_w(self, data: LiveData) -> float | None:
+        return data.live_overview.grid_feed_in_power
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Integrate grid export power over time and accumulate revenue."""
-        if self.coordinator.data is None:
-            return
-        power_w = self.coordinator.data.live_overview.grid_feed_in_power
-        if power_w is None:
-            return
-        now = dt_util.utcnow()
-        if self._last_power is not None and self._last_time is not None:
-            dt_hours = (now - self._last_time).total_seconds() / 3600
-            avg_w = (self._last_power + power_w) / 2
-            if avg_w > 0 and self._feed_in_tariff > 0:
-                delta_kwh = avg_w * dt_hours / 1000
-                self._revenue += delta_kwh * self._feed_in_tariff
-        self._last_power = power_w
-        self._last_time = now
-        self.async_write_ha_state()
-
-    @property
-    def native_value(self) -> float:
-        """Return the accumulated feed-in revenue in EUR."""
-        return round(self._revenue, 4)
+    def _get_kwh_multiplier(self) -> float | None:
+        return self._feed_in_tariff if self._feed_in_tariff > 0 else None
 
 
 class OneKomma5OptimizationSensor(OneKomma5OptimizationEntity, SensorEntity):

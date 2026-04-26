@@ -110,6 +110,24 @@ def aggregate_optimization_events(events: list[Any]) -> dict[str, Any]:
     }
 
 
+def trapezoidal_delta_kwh(
+    last_power_w: float,
+    last_time: datetime.datetime,
+    current_power_w: float,
+    current_time: datetime.datetime,
+) -> float | None:
+    """Compute the delta kWh between two power samples via trapezoidal integration.
+
+    Returns ``None`` when the average power between the samples is non-positive
+    (no accumulation should happen).
+    """
+    dt_hours = (current_time - last_time).total_seconds() / 3600
+    avg_w = (last_power_w + current_power_w) / 2
+    if avg_w <= 0:
+        return None
+    return avg_w * dt_hours / 1000
+
+
 def find_cheapest_window(
     forecast: list[dict[str, Any]],
     slot_count: int,
