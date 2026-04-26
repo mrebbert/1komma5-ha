@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a new sensor, service, or improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement! Please describe the use case so we can decide whether it fits the integration's scope.
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What are you trying to accomplish? What problem would this feature solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        How do you imagine this feature working? E.g. a new sensor, a new service, a new option in the config flow, etc.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you already tried a workaround? Is there an existing automation that could solve this?
+
+  - type: textarea
+    id: api
+    attributes:
+      label: 1KOMMA5° API support (if known)
+      description: |
+        Does the [`onekommafive`](https://github.com/mrebbert/1komma5-api) library or the underlying Heartbeat API expose the data needed for this feature?
+        If not, the feature is likely out of scope until the API supports it.
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have searched [existing issues](https://github.com/mrebbert/1komma5-ha/issues?q=is%3Aissue) for similar requests.
+          required: true

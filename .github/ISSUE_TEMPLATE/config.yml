@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General questions / discussion
+    url: https://github.com/mrebbert/1komma5-ha/discussions
+    about: For setup help, automation ideas, or general questions, please use Discussions instead of opening an issue.
+  - name: Home Assistant Community Forum
+    url: https://community.home-assistant.io/
+    about: Broader Home Assistant questions are best discussed in the official HA community.
