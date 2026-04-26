@@ -1,7 +1,12 @@
 """Base entity for the 1KOMMA5° integration."""
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
+
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -58,6 +63,16 @@ class OneKomma5PriceEntity(CoordinatorEntity[OneKomma5PriceCoordinator]):
             manufacturer="1KOMMA5°",
             model="Heartbeat",
         )
+
+    def _dynamic_current_price(self) -> float | None:
+        """Look up the current price using the dynamic helper if available."""
+        from .helpers import get_current_price  # local import to avoid cycles
+
+        if self.coordinator.data is None:
+            return None
+        if self.coordinator.data.all_in_prices:
+            return get_current_price(self.coordinator.data.all_in_prices)
+        return self.coordinator.data.current_price
 
 
 class OneKomma5OptimizationEntity(CoordinatorEntity[OneKomma5OptimizationCoordinator]):
@@ -119,3 +134,32 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
             if ev.id() == self._ev_id:
                 return ev
         return None
+
+
+class QuarterHourUpdateMixin:
+    """Mixin: subscribe an entity to quarter-hour boundary state updates.
+
+    Use ``self._async_register_quarter_hour_update()`` from
+    ``async_added_to_hass`` after the parent ``super().async_added_to_hass()``
+    call. The entity's ``async_write_ha_state`` is invoked at :00/:15/:30/:45.
+
+    Useful for entities whose state depends on the active 15-minute price
+    slot but whose data coordinator updates less frequently.
+    """
+
+    hass: Any  # provided by HA Entity base class
+
+    def _async_register_quarter_hour_update(self) -> None:
+        self.async_on_remove(  # type: ignore[attr-defined]
+            async_track_time_change(
+                self.hass,
+                self._quarter_hour_update,
+                minute=[0, 15, 30, 45],
+                second=[0],
+            )
+        )
+
+    @callback
+    def _quarter_hour_update(self, _now: datetime) -> None:
+        """Re-evaluate state at quarter-hour boundaries."""
+        self.async_write_ha_state()  # type: ignore[attr-defined]

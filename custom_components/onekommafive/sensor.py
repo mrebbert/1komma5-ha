@@ -18,7 +18,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_util
 
 from . import OneKomma5ConfigEntry
@@ -30,6 +29,7 @@ from .entity import (
     OneKomma5EVEntity,
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
+    QuarterHourUpdateMixin,
 )
 
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
@@ -484,7 +484,7 @@ class OneKomma5LiveSensor(OneKomma5Entity, SensorEntity):
         return self.entity_description.value_fn(self.coordinator.data)
 
 
-class OneKomma5PriceSensor(OneKomma5PriceEntity, SensorEntity):
+class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity):
     """Sensor for electricity market prices."""
 
     entity_description: OneKomma5PriceSensorDescription
@@ -501,20 +501,10 @@ class OneKomma5PriceSensor(OneKomma5PriceEntity, SensorEntity):
         self.entity_description = description
 
     async def async_added_to_hass(self) -> None:
-        """Register quarter-hour update for dynamic price sensors."""
+        """Register quarter-hour update for the dynamic current-price sensor."""
         await super().async_added_to_hass()
         if self.entity_description.key == "current_electricity_price":
-            self.async_on_remove(
-                async_track_time_change(
-                    self.hass, self._quarter_hour_update,
-                    minute=[0, 15, 30, 45], second=[0],
-                )
-            )
-
-    @callback
-    def _quarter_hour_update(self, _now: datetime) -> None:
-        """Re-evaluate the current price slot at quarter-hour boundaries."""
-        self.async_write_ha_state()
+            self._async_register_quarter_hour_update()
 
     @property
     def native_value(self) -> Any:
@@ -658,7 +648,7 @@ class OneKomma5EnergySensor(OneKomma5AccumulatingSensor):
         return self._power_fn(data)
 
 
-class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
+class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, RestoreSensor):
     """Stable electricity price sensor with hold-last-valid logic.
 
     Exposes the last known valid electricity price, surviving unavailable/zero
@@ -676,17 +666,9 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
         super().__init__(coordinator, system_id, system_name, "stable_electricity_price")
         self._stable_price: float | None = None
         if coordinator.data is not None:
-            price = self._dynamic_price()
+            price = self._dynamic_current_price()
             if price is not None:
                 self._stable_price = price
-
-    def _dynamic_price(self) -> float | None:
-        """Look up the current price dynamically from stored price data."""
-        if self.coordinator.data is None:
-            return None
-        if self.coordinator.data.all_in_prices:
-            return get_current_price(self.coordinator.data.all_in_prices)
-        return self.coordinator.data.current_price
 
     @property
     def stable_price(self) -> float | None:
@@ -703,16 +685,11 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
                     self.async_write_ha_state()
                 except (TypeError, ValueError):
                     pass
-        self.async_on_remove(
-            async_track_time_change(
-                self.hass, self._quarter_hour_update,
-                minute=[0, 15, 30, 45], second=[0],
-            )
-        )
+        self._async_register_quarter_hour_update()
 
     @callback
     def _quarter_hour_update(self, _now: datetime) -> None:
-        """Re-evaluate the current price slot at quarter-hour boundaries."""
+        """Override mixin handler: refresh the stable price (not just the state)."""
         self._update_stable_price()
 
     @callback
@@ -722,7 +699,7 @@ class OneKomma5StablePriceSensor(OneKomma5PriceEntity, RestoreSensor):
 
     def _update_stable_price(self) -> None:
         """Update stable price from current dynamic price."""
-        price = self._dynamic_price()
+        price = self._dynamic_current_price()
         if price is not None:
             self._stable_price = price
         self.async_write_ha_state()
