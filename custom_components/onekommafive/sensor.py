@@ -27,6 +27,7 @@ from .sensor_descriptions import (
     OneKomma5PriceSensorDescription,
     OneKomma5SensorDescription,
 )
+from .entity import get_ev_label
 from .sensor_entities import (
     CURRENCY_EUR_PER_KWH,
     OneKomma5CostSensor,
@@ -38,7 +39,6 @@ from .sensor_entities import (
     OneKomma5OptimizationSensor,
     OneKomma5PriceSensor,
     OneKomma5StablePriceSensor,
-    get_ev_label,
 )
 
 # Power sensors for which an energy counterpart (kWh) is created.

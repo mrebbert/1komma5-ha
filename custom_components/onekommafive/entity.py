@@ -27,6 +27,12 @@ def system_device_info(system_id: str, system_name: str) -> DeviceInfo:
     )
 
 
+def get_ev_label(ev: Any) -> str:
+    """Build a human-readable label for an EV charger device."""
+    parts = [p for p in (ev.manufacturer(), ev.model()) if p]
+    return " ".join(parts) if parts else f"EV {ev.id()[:8]}"
+
+
 class OneKomma5Entity(CoordinatorEntity[OneKomma5LiveCoordinator]):
     """Base entity for live-data entities."""
 

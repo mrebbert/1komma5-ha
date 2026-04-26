@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5EVEntity
+from .entity import OneKomma5EVEntity, get_ev_label
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ async def async_setup_entry(
                     system_id,
                     system_name,
                     ev.id(),
-                    _get_ev_label(ev),
+                    get_ev_label(ev),
                 )
             )
 
@@ -87,6 +87,3 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
         await self.coordinator.async_request_refresh()
 
 
-def _get_ev_label(ev: Any) -> str:
-    parts = [p for p in (ev.manufacturer(), ev.model()) if p]
-    return " ".join(parts) if parts else f"EV {ev.id()[:8]}"

@@ -400,11 +400,13 @@ Pure-helper unit tests (no Home Assistant dependency required):
 
 ```bash
 python3.13 -m venv .venv
-.venv/bin/pip install -r requirements-test.txt
+.venv/bin/pip install -e ".[test]"
 .venv/bin/pytest
 ```
 
-Tests live in `tests/` and target the pure functions in `custom_components/onekommafive/helpers.py` (price slot lookup, forecast building, optimization aggregation, cheapest-window search).
+Tests live in `tests/` and target:
+- the pure functions in `custom_components/onekommafive/helpers.py` (price slot lookup, forecast building, optimization aggregation, cheapest-window search, trapezoidal integration)
+- translation file consistency (`strings.json` ↔ `translations/*.json`)
 
 To run with coverage:
 

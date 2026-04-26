@@ -26,6 +26,7 @@ from .entity import (
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
     QuarterHourUpdateMixin,
+    get_ev_label,
     system_device_info,
 )
 from .helpers import trapezoidal_delta_kwh
@@ -427,7 +428,3 @@ class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
         return self._last_success
 
 
-def get_ev_label(ev: Any) -> str:
-    """Build a human-readable label for an EV charger device."""
-    parts = [p for p in (ev.manufacturer(), ev.model()) if p]
-    return " ".join(parts) if parts else f"EV {ev.id()[:8]}"
