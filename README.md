@@ -52,6 +52,11 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 | Heat Pump Power | `heat_pumps_power` | Aggregated heat pump power | W | 30 s |
 | AC Power | `acs_power` | Aggregated AC power | W | 30 s |
 | Self-Sufficiency | `self_sufficiency` | Self-sufficiency ratio | % | 30 s |
+
+### Price Sensors
+
+| Entity | Key | Description | Unit | Update |
+|--------|-----|-------------|------|--------|
 | Current Electricity Price | `current_electricity_price` | Current all-in price (active 15-min slot) | EUR/kWh | 15 min |
 | Last Valid Electricity Price | `stable_electricity_price` | Like above, but holds the last known valid value when the API returns zero or unavailable — used as stable price source for cost calculations | EUR/kWh | 15 min |
 | Average Electricity Price | `average_electricity_price` | Today's average all-in price | EUR/kWh | 1 h |
