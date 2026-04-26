@@ -9,13 +9,13 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
-from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME, DOMAIN
+from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME
 from .coordinator import (
     OneKomma5LiveCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
 )
-from .services import SERVICE_GET_CHEAPEST_WINDOW, async_setup_services
+from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,11 +43,14 @@ class OneKomma5Data:
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
 
 
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Register integration-wide services once on HA startup."""
+    async_setup_services(hass)
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) -> bool:
     """Set up 1KOMMA5° from a config entry."""
-    if not hass.services.has_service(DOMAIN, SERVICE_GET_CHEAPEST_WINDOW):
-        async_setup_services(hass)
-
     from onekommafive.client import Client
     from onekommafive.errors import AuthenticationError, RequestError
     from onekommafive.systems import Systems
@@ -109,8 +112,4 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 
 async def async_unload_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) -> bool:
     """Unload a 1KOMMA5° config entry."""
-    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unloaded and len(hass.config_entries.async_entries(DOMAIN)) == 1:
-        # Last entry being removed — clean up the integration-wide service
-        hass.services.async_remove(DOMAIN, SERVICE_GET_CHEAPEST_WINDOW)
-    return unloaded
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

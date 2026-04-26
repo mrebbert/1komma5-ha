@@ -17,6 +17,16 @@ from .coordinator import (
 )
 
 
+def system_device_info(system_id: str, system_name: str) -> DeviceInfo:
+    """Build the canonical DeviceInfo for a 1KOMMA5° system."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, system_id)},
+        name=system_name,
+        manufacturer="1KOMMA5°",
+        model="Heartbeat",
+    )
+
+
 class OneKomma5Entity(CoordinatorEntity[OneKomma5LiveCoordinator]):
     """Base entity for live-data entities."""
 
@@ -33,12 +43,7 @@ class OneKomma5Entity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, system_id)},
-            name=system_name,
-            manufacturer="1KOMMA5°",
-            model="Heartbeat",
-        )
+        self._attr_device_info = system_device_info(system_id, system_name)
 
 
 class OneKomma5PriceEntity(CoordinatorEntity[OneKomma5PriceCoordinator]):
@@ -57,12 +62,7 @@ class OneKomma5PriceEntity(CoordinatorEntity[OneKomma5PriceCoordinator]):
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, system_id)},
-            name=system_name,
-            manufacturer="1KOMMA5°",
-            model="Heartbeat",
-        )
+        self._attr_device_info = system_device_info(system_id, system_name)
 
     def _dynamic_current_price(self) -> float | None:
         """Look up the current price using the dynamic helper if available."""
@@ -91,12 +91,7 @@ class OneKomma5OptimizationEntity(CoordinatorEntity[OneKomma5OptimizationCoordin
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, system_id)},
-            name=system_name,
-            manufacturer="1KOMMA5°",
-            model="Heartbeat",
-        )
+        self._attr_device_info = system_device_info(system_id, system_name)
 
 
 class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):

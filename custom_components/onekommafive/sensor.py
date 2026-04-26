@@ -15,13 +15,12 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory, PERCENTAGE, UnitOfEnergy, UnitOfPower
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from . import OneKomma5ConfigEntry
-from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF, DOMAIN
+from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
 from .coordinator import LiveData, OptimizationData, PriceData
 from .helpers import get_current_price, trapezoidal_delta_kwh
 from .entity import (
@@ -30,6 +29,7 @@ from .entity import (
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
     QuarterHourUpdateMixin,
+    system_device_info,
 )
 
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
@@ -809,7 +809,12 @@ class OneKomma5OptimizationSensor(OneKomma5OptimizationEntity, SensorEntity):
 
 
 class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
-    """Diagnostic sensor tracking the last successful coordinator update."""
+    """Diagnostic sensor tracking the last successful coordinator update.
+
+    This is the only entity that needs to work with any of the three
+    coordinator types, so it inherits ``CoordinatorEntity`` directly and
+    builds the device info via ``system_device_info``.
+    """
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -827,12 +832,7 @@ class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._attr_unique_id = f"{system_id}_{key}"
         self._attr_translation_key = translation_key
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, system_id)},
-            name=system_name,
-            manufacturer="1KOMMA5°",
-            model="Heartbeat",
-        )
+        self._attr_device_info = system_device_info(system_id, system_name)
         self._last_success: datetime | None = None
 
     @callback
