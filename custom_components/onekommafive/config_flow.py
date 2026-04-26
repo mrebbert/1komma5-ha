@@ -109,53 +109,39 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Show form for new credentials and update the entry."""
-        errors: dict[str, str] = {}
-        entry = self._get_reauth_entry()
-
-        if user_input is not None:
-            try:
-                systems = await self._async_get_systems(
-                    user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
-                )
-            except InvalidAuth:
-                errors["base"] = "invalid_auth"
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
-            except Exception:
-                _LOGGER.exception("Unexpected exception during reauth")
-                errors["base"] = "unknown"
-            else:
-                existing_system_id = entry.data[CONF_SYSTEM_ID]
-                if not any(s.id() == existing_system_id for s in systems):
-                    errors["base"] = "system_not_found"
-                else:
-                    return self.async_update_reload_and_abort(
-                        entry,
-                        data_updates={
-                            CONF_USERNAME: user_input[CONF_USERNAME],
-                            CONF_PASSWORD: user_input[CONF_PASSWORD],
-                        },
-                    )
-
-        return self.async_show_form(
+        return await self._async_credentials_step(
+            entry=self._get_reauth_entry(),
             step_id="reauth_confirm",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_USERNAME, default=entry.data[CONF_USERNAME]
-                    ): str,
-                    vol.Required(CONF_PASSWORD): str,
-                }
-            ),
-            errors=errors,
+            user_input=user_input,
+            log_label="reauth",
         )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Allow the user to update credentials proactively."""
+        return await self._async_credentials_step(
+            entry=self._get_reconfigure_entry(),
+            step_id="reconfigure",
+            user_input=user_input,
+            log_label="reconfigure",
+        )
+
+    async def _async_credentials_step(
+        self,
+        entry: Any,
+        step_id: str,
+        user_input: dict[str, Any] | None,
+        log_label: str,
+    ) -> ConfigFlowResult:
+        """Shared form handler for reauth and reconfigure flows.
+
+        Both flows present the same credential form, validate against the
+        existing system_id and call ``async_update_reload_and_abort`` on
+        success.  Only the step_id, the log label and which entry-getter
+        produced ``entry`` differ between them.
+        """
         errors: dict[str, str] = {}
-        entry = self._get_reconfigure_entry()
 
         if user_input is not None:
             try:
@@ -167,7 +153,7 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except Exception:
-                _LOGGER.exception("Unexpected exception during reconfigure")
+                _LOGGER.exception("Unexpected exception during %s", log_label)
                 errors["base"] = "unknown"
             else:
                 existing_system_id = entry.data[CONF_SYSTEM_ID]
@@ -183,7 +169,7 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
 
         return self.async_show_form(
-            step_id="reconfigure",
+            step_id=step_id,
             data_schema=vol.Schema(
                 {
                     vol.Required(
