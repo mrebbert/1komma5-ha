@@ -50,39 +50,77 @@ class PriceData:
     tomorrow_highest_price: float | None = None
 
 
-class OneKomma5LiveCoordinator(DataUpdateCoordinator[LiveData]):
-    """Coordinator for live energy data, EV charger state, and EMS settings."""
+@dataclass
+class OptimizationData:
+    """Container for optimization event data fetched from the API."""
 
-    def __init__(self, hass: HomeAssistant, system: Any) -> None:
+    events: list[Any]  # list[OptimizationEvent]
+    event_count: int
+    total_cost: float | None
+    energy_bought: float | None
+    energy_sold: float | None
+    last_event: Any | None  # OptimizationEvent or None
+
+
+class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
+    """Base coordinator handling executor dispatch and error wrapping.
+
+    Subclasses provide:
+    - the constructor's ``name`` and ``interval_seconds``
+    - ``_data_label`` (used in UpdateFailed messages)
+    - ``_fetch()`` returning the typed data container
+    """
+
+    _data_label: str = "data"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        system: Any,
+        *,
+        name: str,
+        interval_seconds: int,
+    ) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
             _LOGGER,
-            name="1KOMMA5° Live",
-            update_interval=datetime.timedelta(seconds=LIVE_UPDATE_INTERVAL_SECONDS),
+            name=name,
+            update_interval=datetime.timedelta(seconds=interval_seconds),
         )
         self._system = system
 
-    async def _async_update_data(self) -> LiveData:
-        """Fetch data from the API."""
+    async def _async_update_data(self) -> T:
+        """Fetch data via the executor, wrapping errors as UpdateFailed."""
         try:
-            from onekommafive.errors import ApiError
-
-            live_overview, ev_chargers, ems_settings = await self.hass.async_add_executor_job(
-                self._fetch_live_data
-            )
-            return LiveData(
-                live_overview=live_overview,
-                ev_chargers=ev_chargers,
-                ems_settings=ems_settings,
-            )
+            return await self.hass.async_add_executor_job(self._fetch)
         except Exception as err:
             from onekommafive.errors import ApiError
-            if isinstance(err, ApiError):
-                raise UpdateFailed(f"API error fetching live data: {err}") from err
-            raise UpdateFailed(f"Error fetching live data: {err}") from err
 
-    def _fetch_live_data(self) -> tuple[Any, list[Any], Any]:
+            if isinstance(err, ApiError):
+                raise UpdateFailed(
+                    f"API error fetching {self._data_label}: {err}"
+                ) from err
+            raise UpdateFailed(f"Error fetching {self._data_label}: {err}") from err
+
+    def _fetch(self) -> T:
+        """Synchronous fetch implementation. Override in subclasses."""
+        raise NotImplementedError
+
+
+class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
+    """Coordinator for live energy data, EV charger state, and EMS settings."""
+
+    _data_label = "live data"
+
+    def __init__(self, hass: HomeAssistant, system: Any) -> None:
+        super().__init__(
+            hass, system,
+            name="1KOMMA5° Live",
+            interval_seconds=LIVE_UPDATE_INTERVAL_SECONDS,
+        )
+
+    def _fetch(self) -> LiveData:
         """Fetch all live data synchronously."""
         live_overview = self._system.get_live_overview()
         ev_chargers = self._system.get_ev_chargers()
@@ -91,33 +129,26 @@ class OneKomma5LiveCoordinator(DataUpdateCoordinator[LiveData]):
         except Exception:
             _LOGGER.debug("EMS settings not available (no DeviceGateway?), skipping")
             ems_settings = None
-        return live_overview, ev_chargers, ems_settings
+        return LiveData(
+            live_overview=live_overview,
+            ev_chargers=ev_chargers,
+            ems_settings=ems_settings,
+        )
 
 
-class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
+class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     """Coordinator for electricity market price data."""
 
+    _data_label = "price data"
+
     def __init__(self, hass: HomeAssistant, system: Any) -> None:
-        """Initialize the coordinator."""
         super().__init__(
-            hass,
-            _LOGGER,
+            hass, system,
             name="1KOMMA5° Prices",
-            update_interval=datetime.timedelta(seconds=PRICE_UPDATE_INTERVAL_SECONDS),
+            interval_seconds=PRICE_UPDATE_INTERVAL_SECONDS,
         )
-        self._system = system
 
-    async def _async_update_data(self) -> PriceData:
-        """Fetch market price data from the API."""
-        try:
-            return await self.hass.async_add_executor_job(self._fetch_price_data)
-        except Exception as err:
-            from onekommafive.errors import ApiError
-            if isinstance(err, ApiError):
-                raise UpdateFailed(f"API error fetching price data: {err}") from err
-            raise UpdateFailed(f"Error fetching price data: {err}") from err
-
-    def _fetch_price_data(self) -> PriceData:
+    def _fetch(self) -> PriceData:
         """Fetch price data synchronously.
 
         Always fetches today and tomorrow so the forecast covers up to 30 hours
@@ -186,44 +217,19 @@ class OneKomma5PriceCoordinator(DataUpdateCoordinator[PriceData]):
         )
 
 
-
-@dataclass
-class OptimizationData:
-    """Container for optimization event data fetched from the API."""
-
-    events: list[Any]  # list[OptimizationEvent]
-    event_count: int
-    total_cost: float | None
-    energy_bought: float | None
-    energy_sold: float | None
-    last_event: Any | None  # OptimizationEvent or None
-
-
-class OneKomma5OptimizationCoordinator(DataUpdateCoordinator[OptimizationData]):
+class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData]):
     """Coordinator for AI optimization event data."""
 
+    _data_label = "optimization data"
+
     def __init__(self, hass: HomeAssistant, system: Any) -> None:
-        """Initialize the coordinator."""
         super().__init__(
-            hass,
-            _LOGGER,
+            hass, system,
             name="1KOMMA5° Optimizations",
-            update_interval=datetime.timedelta(seconds=OPTIMIZATION_UPDATE_INTERVAL_SECONDS),
+            interval_seconds=OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
         )
-        self._system = system
 
-    async def _async_update_data(self) -> OptimizationData:
-        """Fetch optimization event data from the API."""
-        try:
-            return await self.hass.async_add_executor_job(self._fetch_optimization_data)
-        except Exception as err:
-            from onekommafive.errors import ApiError
-
-            if isinstance(err, ApiError):
-                raise UpdateFailed(f"API error fetching optimization data: {err}") from err
-            raise UpdateFailed(f"Error fetching optimization data: {err}") from err
-
-    def _fetch_optimization_data(self) -> OptimizationData:
+    def _fetch(self) -> OptimizationData:
         """Fetch today's optimization events synchronously."""
         now = datetime.datetime.now()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -232,4 +238,3 @@ class OneKomma5OptimizationCoordinator(DataUpdateCoordinator[OptimizationData]):
         result = self._system.get_optimizations(today_start, today_end)
         agg = aggregate_optimization_events(result.events)
         return OptimizationData(events=result.events, **agg)
-
