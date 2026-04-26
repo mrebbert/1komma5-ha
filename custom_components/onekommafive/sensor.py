@@ -301,11 +301,15 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         if d.events
         else None,
     ),
+    # Optimization aggregations are daily snapshots that reset at midnight when
+    # the coordinator fetches a new day's events. They are intentionally NOT
+    # state_class TOTAL/TOTAL_INCREASING — that would feed Long-Term Statistics
+    # with a reset every midnight (without last_reset HA records the drop as
+    # an anomaly). Device class is still useful for unit formatting.
     OneKomma5OptimizationSensorDescription(
         key="optimization_total_cost",
         translation_key="optimization_total_cost",
         device_class=SensorDeviceClass.MONETARY,
-        state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="EUR",
         suggested_display_precision=2,
         icon="mdi:piggy-bank-outline",
@@ -315,7 +319,6 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         key="optimization_energy_bought",
         translation_key="optimization_energy_bought",
         device_class=SensorDeviceClass.ENERGY,
-        state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=2,
         value_fn=lambda d: round(d.energy_bought, 2)
@@ -326,7 +329,6 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         key="optimization_energy_sold",
         translation_key="optimization_energy_sold",
         device_class=SensorDeviceClass.ENERGY,
-        state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=2,
         value_fn=lambda d: round(d.energy_sold, 2)

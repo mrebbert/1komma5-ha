@@ -23,6 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Refactor**: split `sensor.py` into `sensor.py` (setup + descriptions tuples), `sensor_descriptions.py` (dataclass descriptions) and `sensor_entities.py` (entity classes)
 - **Refactor**: consolidated reauth and reconfigure flows into a shared form handler
 
+### Fixed
+- Optimization aggregation sensors (`optimization_total_cost`, `optimization_energy_bought`, `optimization_energy_sold`) no longer declare `state_class: total`. They are daily snapshots that reset at midnight, and recording them as totals without a `last_reset` would feed Long-Term Statistics with a spurious midnight drop. Device classes (monetary / energy) are kept for unit formatting.
+
 ### Tooling
 - Added **37 unit tests** covering all pure helpers + translation file consistency
 - Added **GitHub Actions** workflow that runs the test suite on every push and pull request
