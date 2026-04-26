@@ -16,7 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Bumped minimum Home Assistant version to **2024.10** (required for `_get_reauth_entry`, `_get_reconfigure_entry`, and `data_updates` helper)
 - **Cheap Electricity** binary sensor: now updates dynamically every 15 minutes (was previously only updated on coordinator refresh)
-- **Refactor**: pure helper functions (price slot lookup, forecast building, optimization aggregation, cheapest-window search) extracted into `helpers.py`, with 23 unit tests covering them
+- **Refactor**: pure helper functions extracted into `helpers.py` (price slot lookup, forecast building, optimization aggregation, cheapest/most-expensive-window search, trapezoidal integration)
+- **Refactor**: introduced `OneKomma5AccumulatingSensor` base class shared by Energy / Cost / Feed-in Revenue sensors
+- **Refactor**: introduced `OneKomma5BaseCoordinator[T]` generic base shared by Live / Price / Optimization coordinators
+- **Refactor**: introduced `QuarterHourUpdateMixin` and `system_device_info` helper to remove duplication across price sensors and binary sensors
+- **Refactor**: split `sensor.py` into `sensor.py` (setup + descriptions tuples), `sensor_descriptions.py` (dataclass descriptions) and `sensor_entities.py` (entity classes)
+- **Refactor**: consolidated reauth and reconfigure flows into a shared form handler
+
+### Tooling
+- Added **37 unit tests** covering all pure helpers + translation file consistency
+- Added **GitHub Actions** workflow that runs the test suite on every push and pull request
+- Added **GitHub issue templates** for bug reports and feature requests
+- Switched build / test config to **`pyproject.toml`** (replaces `pytest.ini` and `requirements-test.txt`)
 
 ## [0.1.31] - 2026-04-26
 
