@@ -248,6 +248,49 @@ mode: single
 
 Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor entity ID and `CAR_IDENTIFIER` with your EV charger prefix. The second condition ensures the automation only runs in `SMART_CHARGE` mode — the entity is unavailable otherwise.
 
+### Service: `onekommafive.get_cheapest_window`
+
+Find the cheapest contiguous time window in the price forecast — useful for scheduling flexible loads (dishwasher, washing machine, EV, heat pump). Returns the start/end timestamps and the average price.
+
+**Parameters:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `duration_minutes` | yes | Length of the desired window (multiple of 15) |
+| `earliest_start` | no | The window must not start before this time |
+| `latest_end` | no | The window must not end after this time |
+| `config_entry_id` | no | Required only when multiple 1KOMMA5° systems are configured |
+
+**Response:**
+
+```yaml
+found: true
+start: "2026-04-27T01:30:00+00:00"
+end: "2026-04-27T03:30:00+00:00"
+average_price: 0.0823
+slot_count: 8
+```
+
+**Example automation** — start the dishwasher at the cheapest 2-hour window before 7 AM:
+
+```yaml
+trigger:
+  - platform: time
+    at: "20:00:00"
+action:
+  - service: onekommafive.get_cheapest_window
+    data:
+      duration_minutes: 120
+      latest_end: "{{ (now().replace(hour=7, minute=0, second=0) + timedelta(days=1)).isoformat() }}"
+    response_variable: window
+  - if: "{{ window.found }}"
+    then:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.dishwasher_start
+        # Or schedule via wait_until / time pattern using window.start
+```
+
 ### EMS Controls
 
 | Entity | Key | Type | Description |
@@ -306,6 +349,15 @@ Or manually:
 
 Credentials are stored securely in the Home Assistant config entry.
 
+### Updating Credentials
+
+Two flows handle credential changes without losing your sensor history:
+
+- **Re-authentication** — If your 1KOMMA5° password changes (or the API rejects authentication), Home Assistant automatically detects this and shows a "Re-authentication required" notification. Click it, enter your new password, and the integration recovers seamlessly.
+- **Reconfigure** — To proactively change credentials, go to **Settings → Devices & Services → 1KOMMA5°** → ⋮ menu → **Reconfigure**. Enter the new credentials; the integration reloads with the same `system_id`.
+
+Both flows preserve all sensor history, restored states, and Energy Dashboard configuration.
+
 ### Options
 
 After setup, additional options can be configured via **Settings → Devices & Services → 1KOMMA5° → Configure**:
@@ -318,7 +370,7 @@ After setup, additional options can be configured via **Settings → Devices & S
 
 ## Requirements
 
-- Home Assistant **2024.2** or newer
+- Home Assistant **2024.10** or newer
 - A 1KOMMA5° account with at least one active system
 - The [`onekommafive`](https://github.com/mrebbert/1komma5-api) Python library (installed automatically)
 

@@ -1,0 +1,24 @@
+get_cheapest_window:
+  fields:
+    duration_minutes:
+      required: true
+      example: 120
+      selector:
+        number:
+          min: 15
+          max: 1800
+          step: 15
+          unit_of_measurement: min
+          mode: slider
+    earliest_start:
+      example: "2026-04-26T22:00:00"
+      selector:
+        datetime:
+    latest_end:
+      example: "2026-04-27T07:00:00"
+      selector:
+        datetime:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: onekommafive

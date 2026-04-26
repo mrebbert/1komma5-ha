@@ -15,15 +15,34 @@
         "data": {
           "system_id": "System"
         }
+      },
+      "reauth_confirm": {
+        "title": "1KOMMA5° Re-Authentifizierung",
+        "description": "Deine 1KOMMA5°-Anmeldedaten sind nicht mehr gültig. Bitte gib deine aktuellen Zugangsdaten ein.",
+        "data": {
+          "username": "E-Mail-Adresse",
+          "password": "Passwort"
+        }
+      },
+      "reconfigure": {
+        "title": "1KOMMA5° neu konfigurieren",
+        "description": "Aktualisiere deine 1KOMMA5°-Zugangsdaten.",
+        "data": {
+          "username": "E-Mail-Adresse",
+          "password": "Passwort"
+        }
       }
     },
     "error": {
       "cannot_connect": "Verbindung zur 1KOMMA5°-API fehlgeschlagen.",
       "invalid_auth": "Ungültige Anmeldedaten.",
+      "system_not_found": "Das konfigurierte System ist mit diesen Anmeldedaten nicht mehr erreichbar.",
       "unknown": "Unbekannter Fehler."
     },
     "abort": {
-      "already_configured": "Dieses System ist bereits konfiguriert."
+      "already_configured": "Dieses System ist bereits konfiguriert.",
+      "reauth_successful": "Re-Authentifizierung erfolgreich.",
+      "reconfigure_successful": "Neu-Konfiguration erfolgreich."
     }
   },
   "options": {
@@ -35,6 +54,30 @@
         },
         "data_description": {
           "feed_in_tariff": "Vergütung pro eingespeister kWh (inkl. aller Boni), z.B. 0.0803 für 8,03 ct/kWh."
+        }
+      }
+    }
+  },
+  "services": {
+    "get_cheapest_window": {
+      "name": "Günstigstes Zeitfenster finden",
+      "description": "Findet das günstigste zusammenhängende Zeitfenster im Strompreis-Forecast.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Dauer (Minuten)",
+          "description": "Länge des gesuchten Fensters in Minuten (Vielfaches von 15)."
+        },
+        "earliest_start": {
+          "name": "Frühester Start",
+          "description": "Optional: Das Fenster darf nicht vor diesem Zeitpunkt beginnen."
+        },
+        "latest_end": {
+          "name": "Spätestes Ende",
+          "description": "Optional: Das Fenster darf nicht nach diesem Zeitpunkt enden."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Bei mehreren konfigurierten 1KOMMA5°-Systemen: das gewünschte System auswählen."
         }
       }
     }

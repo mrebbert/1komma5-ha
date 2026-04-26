@@ -15,15 +15,34 @@
         "data": {
           "system_id": "System"
         }
+      },
+      "reauth_confirm": {
+        "title": "1KOMMA5° re-authentication",
+        "description": "Your 1KOMMA5° credentials are no longer valid. Please enter your current credentials.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure 1KOMMA5°",
+        "description": "Update your 1KOMMA5° credentials.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to the 1KOMMA5° API.",
       "invalid_auth": "Invalid credentials.",
+      "system_not_found": "The configured system is no longer accessible with these credentials.",
       "unknown": "Unknown error."
     },
     "abort": {
-      "already_configured": "This system is already configured."
+      "already_configured": "This system is already configured.",
+      "reauth_successful": "Re-authentication successful.",
+      "reconfigure_successful": "Reconfigure successful."
     }
   },
   "options": {
@@ -35,6 +54,30 @@
         },
         "data_description": {
           "feed_in_tariff": "Revenue per exported kWh (incl. all bonuses), e.g. 0.0803 for 8.03 ct/kWh."
+        }
+      }
+    }
+  },
+  "services": {
+    "get_cheapest_window": {
+      "name": "Find cheapest window",
+      "description": "Finds the cheapest contiguous time window in the electricity price forecast.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Duration (minutes)",
+          "description": "Length of the desired window in minutes (multiple of 15)."
+        },
+        "earliest_start": {
+          "name": "Earliest start",
+          "description": "Optional: the window must not start before this time."
+        },
+        "latest_end": {
+          "name": "Latest end",
+          "description": "Optional: the window must not end after this time."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "When multiple 1KOMMA5° systems are configured: select the target system."
         }
       }
     }
