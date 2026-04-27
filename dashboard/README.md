@@ -1,6 +1,6 @@
 # Example Dashboard
 
-This directory contains an example Home Assistant dashboard for the 1KOMMA5° integration. Most cards use native Home Assistant card types. The **Strompreisentwicklung**, **Monatliche Übersicht** and **Freier Zeitraum** sections additionally require the [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom card (available via HACS).
+This directory contains an example Home Assistant dashboard for the 1KOMMA5° integration. Most cards use native Home Assistant card types. The **Strompreisentwicklung** and **Monatliche Übersicht** sections additionally require the [apexcharts-card](https://github.com/RomRider/apexcharts-card) custom card (available via HACS).
 
 ## Views
 
@@ -27,38 +27,6 @@ A focused view for controlling the EV charger, showing:
 
 - Charging mode selector (Smart Charge / Quick Charge / Solar Charge)
 - Manual battery level input, target battery level and daily departure time (visible in Smart Charge mode only)
-
-### Statistik
-
-A view for arbitrary long-term statistics analyses across freely chosen periods. All sensors with `state_class` (which is every relevant sensor in this integration) are recorded by Home Assistant's recorder as hourly aggregates and can be summed/averaged over any time range.
-
-| Section | Cards | Period control |
-|---------|-------|----------------|
-| Stromkosten | 5 statistic cards: today / yesterday / this week / this month / this year | Calendar offsets, fixed |
-| Einspeisevergütung | Same shape as Stromkosten | Calendar offsets, fixed |
-| PV-Erzeugung | Same shape, in kWh | Calendar offsets, fixed |
-| Trend (letzte 30 Tage) | `statistics-graph` cards (cost vs. revenue, PV, consumption split, grid in/out) | `period: day`, `days_to_show: 30` — adjustable per card |
-| Freier Zeitraum | apexcharts-card example with `graph_span: 90d` | Fully configurable span |
-
-#### Building your own statistic cards
-
-| Card | What it shows | Example periods |
-|------|--------------|-----------------|
-| `statistic` | A single sum/min/max/avg/change for a fixed calendar period | `period: { calendar: { period: day } }` (today), `offset: -1` (yesterday), `period: month/year` |
-| `statistics-graph` | Time series with built-in resolution selector | `period: hour | day | week | month`, `days_to_show: N` |
-| `apexcharts-card` | Fully configurable chart, supports custom `graph_span` and `span.start/end` | `graph_span: 90d`, plus `series.statistics: { type: change, period: day }` |
-
-For a truly **interactive** date-range picker, use Home Assistant's built-in **Energy Dashboard** (Settings → Dashboards → Energy) — it provides a calendar widget that drives all its cards. Custom dashboards do not have a global date picker; the `apexcharts-card` and `statistics-graph` cards each have their own period selectors.
-
-#### Sensors usable for statistics (state_class set)
-
-| Sensor key | Best `stat_type` | Unit |
-|------------|------------------|------|
-| `pv_power_energy`, `*_energy` | `change` (delta in period) or `sum` | kWh |
-| `battery_charge_power_energy`, `battery_discharge_power_energy` | `change` | kWh |
-| `electricity_cost`, `feed_in_revenue` | `change` | EUR |
-| `current_electricity_price`, `average_electricity_price` etc. | `mean` / `min` / `max` | EUR/kWh |
-| All power sensors (`pv_power`, `battery_power`, …) | `mean` / `min` / `max` | W |
 
 ### Preise und Kosten
 
