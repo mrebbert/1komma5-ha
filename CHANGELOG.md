@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Dashboard: new **Statistik** view with `statistic` and `statistics-graph` cards for cost / revenue / PV / consumption summaries over today / yesterday / this week / this month / this year, plus 30-day trend graphs and an example apexcharts-card with a 90-day span. Sensor reference table added to `dashboard/README.md`.
+
 ## [0.1.32] - 2026-04-26
 
 ### Added
