@@ -251,24 +251,28 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
         return data
 
     def _fire_new_decision_events(self, events: list[Any]) -> None:
-        """Fire onekommafive_optimization_decision for each event newer than the last seen."""
+        """Fire onekommafive_optimization_decision for each event newer than the last seen.
+
+        On the very first refresh after Home Assistant starts, only the most
+        recent decision is fired (so the user gets immediate confirmation the
+        wiring works without replaying every event from earlier in the day).
+        Subsequent refreshes fire one event per new decision.
+        """
         if not events:
             return
 
-        # Sort ascending by from_time so we fire in chronological order
         sorted_events = sorted(events, key=lambda e: e.from_time or e.timestamp)
         latest_from_time = sorted_events[-1].from_time or sorted_events[-1].timestamp
 
         if self._last_fired_from_time is None:
-            # First run after startup — initialise without firing so a freshly
-            # restarted HA does not replay the entire day's decisions.
-            self._last_fired_from_time = latest_from_time
-            return
+            events_to_fire = [sorted_events[-1]]
+        else:
+            events_to_fire = [
+                e for e in sorted_events
+                if (e.from_time or e.timestamp) > self._last_fired_from_time
+            ]
 
-        for event in sorted_events:
-            key = event.from_time or event.timestamp
-            if key <= self._last_fired_from_time:
-                continue
+        for event in events_to_fire:
             self.hass.bus.async_fire(
                 EVENT_OPTIMIZATION_DECISION,
                 {

@@ -301,7 +301,7 @@ action:
 
 ### Bus event: `onekommafive_optimization_decision`
 
-Whenever the integration sees a new optimization decision from the Heartbeat AI, it fires a Home Assistant bus event so you can drive automations from it. The first refresh after a Home Assistant restart is **silent** — it initialises the "last seen" pointer without firing to avoid replaying the day's existing decisions.
+Whenever the integration sees a new optimization decision from the Heartbeat AI, it fires a Home Assistant bus event so you can drive automations from it. The first refresh after a Home Assistant restart fires **one** event for the most recent decision (so the wiring is immediately verifiable in Developer Tools → Events); the day's earlier decisions are not replayed.
 
 **Event data:**
 
