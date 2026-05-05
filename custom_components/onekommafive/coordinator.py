@@ -259,6 +259,7 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
         Subsequent refreshes fire one event per new decision.
         """
         if not events:
+            _LOGGER.debug("No optimization events from API; nothing to fire")
             return
 
         sorted_events = sorted(events, key=lambda e: e.from_time or e.timestamp)
@@ -266,25 +267,32 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
 
         if self._last_fired_from_time is None:
             events_to_fire = [sorted_events[-1]]
+            _LOGGER.debug(
+                "First refresh — firing 1 event for the latest decision (from_time=%s)",
+                latest_from_time,
+            )
         else:
             events_to_fire = [
                 e for e in sorted_events
                 if (e.from_time or e.timestamp) > self._last_fired_from_time
             ]
+            _LOGGER.debug(
+                "Refresh — %d/%d events newer than last_fired_from_time=%s will fire",
+                len(events_to_fire), len(sorted_events), self._last_fired_from_time,
+            )
 
         for event in events_to_fire:
-            self.hass.bus.async_fire(
-                EVENT_OPTIMIZATION_DECISION,
-                {
-                    "system_id": self._system.id(),
-                    "asset": event.asset,
-                    "decision": event.decision,
-                    "from": event.from_time,
-                    "to": event.to_time,
-                    "market_price": event.market_price,
-                    "market_price_currency": event.market_price_currency,
-                    "state_of_charge": event.state_of_charge,
-                },
-            )
+            payload = {
+                "system_id": self._system.id(),
+                "asset": event.asset,
+                "decision": event.decision,
+                "from": event.from_time,
+                "to": event.to_time,
+                "market_price": event.market_price,
+                "market_price_currency": event.market_price_currency,
+                "state_of_charge": event.state_of_charge,
+            }
+            _LOGGER.debug("Firing %s: %s", EVENT_OPTIMIZATION_DECISION, payload)
+            self.hass.bus.async_fire(EVENT_OPTIMIZATION_DECISION, payload)
 
         self._last_fired_from_time = latest_from_time
