@@ -15,3 +15,6 @@ ATTR_SYSTEM_NAME = "system_name"
 
 CONF_FEED_IN_TARIFF = "feed_in_tariff"
 DEFAULT_FEED_IN_TARIFF = 0.0803
+
+# Bus event fired whenever a new optimization decision is observed.
+EVENT_OPTIMIZATION_DECISION = "onekommafive_optimization_decision"

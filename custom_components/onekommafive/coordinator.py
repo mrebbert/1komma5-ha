@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    EVENT_OPTIMIZATION_DECISION,
     LIVE_UPDATE_INTERVAL_SECONDS,
     OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
     PRICE_UPDATE_INTERVAL_SECONDS,
@@ -228,6 +229,10 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
             name="1KOMMA5° Optimizations",
             interval_seconds=OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
         )
+        # Highest from_time we have already fired an event for. None on first
+        # run — we initialise from the first fetch without firing to avoid
+        # spamming N events at startup.
+        self._last_fired_from_time: str | None = None
 
     def _fetch(self) -> OptimizationData:
         """Fetch today's optimization events synchronously."""
@@ -238,3 +243,44 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
         result = self._system.get_optimizations(today_start, today_end)
         agg = aggregate_optimization_events(result.events)
         return OptimizationData(events=result.events, **agg)
+
+    async def _async_update_data(self) -> OptimizationData:
+        """Fetch + fire HA bus events for newly observed decisions."""
+        data = await super()._async_update_data()
+        self._fire_new_decision_events(data.events)
+        return data
+
+    def _fire_new_decision_events(self, events: list[Any]) -> None:
+        """Fire onekommafive_optimization_decision for each event newer than the last seen."""
+        if not events:
+            return
+
+        # Sort ascending by from_time so we fire in chronological order
+        sorted_events = sorted(events, key=lambda e: e.from_time or e.timestamp)
+        latest_from_time = sorted_events[-1].from_time or sorted_events[-1].timestamp
+
+        if self._last_fired_from_time is None:
+            # First run after startup — initialise without firing so a freshly
+            # restarted HA does not replay the entire day's decisions.
+            self._last_fired_from_time = latest_from_time
+            return
+
+        for event in sorted_events:
+            key = event.from_time or event.timestamp
+            if key <= self._last_fired_from_time:
+                continue
+            self.hass.bus.async_fire(
+                EVENT_OPTIMIZATION_DECISION,
+                {
+                    "system_id": self._system.id(),
+                    "asset": event.asset,
+                    "decision": event.decision,
+                    "from": event.from_time,
+                    "to": event.to_time,
+                    "market_price": event.market_price,
+                    "market_price_currency": event.market_price_currency,
+                    "state_of_charge": event.state_of_charge,
+                },
+            )
+
+        self._last_fired_from_time = latest_from_time

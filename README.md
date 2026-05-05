@@ -299,6 +299,37 @@ action:
         # Or schedule via wait_until / time pattern using window.start
 ```
 
+### Bus event: `onekommafive_optimization_decision`
+
+Whenever the integration sees a new optimization decision from the Heartbeat AI, it fires a Home Assistant bus event so you can drive automations from it. The first refresh after a Home Assistant restart is **silent** — it initialises the "last seen" pointer without firing to avoid replaying the day's existing decisions.
+
+**Event data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `system_id` | string | The 1KOMMA5° system UUID — useful in multi-system setups |
+| `asset` | string | `BATTERY` or `HEATPUMP` |
+| `decision` | string | `BATTERY_CHARGE_FROM_GRID`, `BATTERY_NO_CHARGE`, `BATTERY_NO_DISCHARGE`, `HEATPUMP_RECOMMEND_ON`, `HEATPUMP_AUTO`, … |
+| `from` | string | ISO-8601 start of the optimisation slot |
+| `to` | string | ISO-8601 end of the slot |
+| `market_price` | float \| null | Market price at decision time, in EUR/MWh |
+| `market_price_currency` | string \| null | Typically `EUR` |
+| `state_of_charge` | int \| null | Battery SoC at decision time (0–100) |
+
+**Example automation** — turn on a non-essential load whenever the AI plans grid charging (i.e. very cheap or negative prices ahead):
+
+```yaml
+trigger:
+  - platform: event
+    event_type: onekommafive_optimization_decision
+    event_data:
+      decision: BATTERY_CHARGE_FROM_GRID
+action:
+  - service: switch.turn_on
+    target:
+      entity_id: switch.dishwasher
+```
+
 ### EMS Controls
 
 | Entity | Key | Type | Description |
