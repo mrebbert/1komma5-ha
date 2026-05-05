@@ -272,7 +272,8 @@ class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, R
             except (TypeError, ValueError) as err:
                 _LOGGER.debug(
                     "Could not parse restored stable price %r: %s",
-                    restored.native_value, err,
+                    restored.native_value,
+                    err,
                 )
         self._async_register_quarter_hour_update()
 
