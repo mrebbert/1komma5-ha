@@ -6,6 +6,7 @@ The actual SENSORS configuration tuples and the platform's
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -36,6 +37,8 @@ from .sensor_descriptions import (
     OneKomma5PriceSensorDescription,
     OneKomma5SensorDescription,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
 
@@ -266,8 +269,11 @@ class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, R
             try:
                 self._stable_price = float(restored.native_value)
                 self.async_write_ha_state()
-            except (TypeError, ValueError):
-                pass
+            except (TypeError, ValueError) as err:
+                _LOGGER.debug(
+                    "Could not parse restored stable price %r: %s",
+                    restored.native_value, err,
+                )
         self._async_register_quarter_hour_update()
 
     @callback

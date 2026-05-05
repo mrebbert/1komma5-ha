@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
@@ -11,8 +10,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .entity import OneKomma5Entity
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(

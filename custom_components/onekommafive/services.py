@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import datetime
-import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -14,8 +13,6 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
 from .helpers import find_cheapest_window, find_most_expensive_window
-
-_LOGGER = logging.getLogger(__name__)
 
 SERVICE_GET_CHEAPEST_WINDOW = "get_cheapest_window"
 SERVICE_GET_MOST_EXPENSIVE_WINDOW = "get_most_expensive_window"
