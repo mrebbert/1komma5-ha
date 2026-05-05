@@ -1,4 +1,5 @@
 """Tests verifying translation files stay in sync with strings.json."""
+
 from __future__ import annotations
 
 import json
@@ -26,9 +27,7 @@ def _flatten_keys(obj: dict, prefix: str = "") -> set[str]:
     return keys
 
 
-@pytest.mark.parametrize(
-    "locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem
-)
+@pytest.mark.parametrize("locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem)
 def test_translation_keys_match_strings(locale_path: Path) -> None:
     """Every key in strings.json must exist in each translation locale, and vice versa."""
     strings = _flatten_keys(_load(_STRINGS))
@@ -42,8 +41,7 @@ def test_translation_keys_match_strings(locale_path: Path) -> None:
         f"{sorted(missing_in_locale)}"
     )
     assert not extra_in_locale, (
-        f"Keys present in {locale_path.name} but missing in strings.json: "
-        f"{sorted(extra_in_locale)}"
+        f"Keys present in {locale_path.name} but missing in strings.json: {sorted(extra_in_locale)}"
     )
 
 
@@ -52,9 +50,7 @@ def test_strings_json_is_valid_json() -> None:
     _load(_STRINGS)
 
 
-@pytest.mark.parametrize(
-    "locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem
-)
+@pytest.mark.parametrize("locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem)
 def test_translation_locale_is_valid_json(locale_path: Path) -> None:
     """Sanity check — every translation locale must be parseable JSON."""
     _load(locale_path)

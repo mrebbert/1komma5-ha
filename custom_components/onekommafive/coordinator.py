@@ -1,4 +1,5 @@
 """DataUpdateCoordinator for the 1KOMMA5° integration."""
+
 from __future__ import annotations
 
 import datetime
@@ -99,9 +100,7 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
             from onekommafive.errors import ApiError
 
             if isinstance(err, ApiError):
-                raise UpdateFailed(
-                    f"API error fetching {self._data_label}: {err}"
-                ) from err
+                raise UpdateFailed(f"API error fetching {self._data_label}: {err}") from err
             raise UpdateFailed(f"Error fetching {self._data_label}: {err}") from err
 
     def _fetch(self) -> T:
@@ -116,7 +115,8 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
 
     def __init__(self, hass: HomeAssistant, system: Any) -> None:
         super().__init__(
-            hass, system,
+            hass,
+            system,
             name="1KOMMA5° Live",
             interval_seconds=LIVE_UPDATE_INTERVAL_SECONDS,
         )
@@ -144,7 +144,8 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
 
     def __init__(self, hass: HomeAssistant, system: Any) -> None:
         super().__init__(
-            hass, system,
+            hass,
+            system,
             name="1KOMMA5° Prices",
             interval_seconds=PRICE_UPDATE_INTERVAL_SECONDS,
         )
@@ -225,7 +226,8 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
 
     def __init__(self, hass: HomeAssistant, system: Any) -> None:
         super().__init__(
-            hass, system,
+            hass,
+            system,
             name="1KOMMA5° Optimizations",
             interval_seconds=OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
         )
@@ -273,12 +275,15 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
             )
         else:
             events_to_fire = [
-                e for e in sorted_events
+                e
+                for e in sorted_events
                 if (e.from_time or e.timestamp) > self._last_fired_from_time
             ]
             _LOGGER.debug(
                 "Refresh — %d/%d events newer than last_fired_from_time=%s will fire",
-                len(events_to_fire), len(sorted_events), self._last_fired_from_time,
+                len(events_to_fire),
+                len(sorted_events),
+                self._last_fired_from_time,
             )
 
         for event in events_to_fire:

@@ -4,6 +4,7 @@ Pure data: dataclass descriptions for each sensor category. The actual
 SENSORS tuples and entity classes live in ``sensor.py`` and
 ``sensor_entities.py`` respectively.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable

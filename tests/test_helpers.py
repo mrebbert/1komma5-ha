@@ -1,4 +1,5 @@
 """Tests for the pure helper functions."""
+
 from __future__ import annotations
 
 import datetime
@@ -6,7 +7,6 @@ from dataclasses import dataclass
 from unittest.mock import patch
 
 import pytest
-
 from helpers import (  # type: ignore[import-not-found]
     aggregate_optimization_events,
     build_forecast,
@@ -17,17 +17,19 @@ from helpers import (  # type: ignore[import-not-found]
     trapezoidal_delta_kwh,
 )
 
+UTC = datetime.UTC
 
-UTC = datetime.timezone.utc
 
-
-def _at(year: int, month: int, day: int, hour: int = 0, minute: int = 0, second: int = 0) -> datetime.datetime:
+def _at(
+    year: int, month: int, day: int, hour: int = 0, minute: int = 0, second: int = 0
+) -> datetime.datetime:
     return datetime.datetime(year, month, day, hour, minute, second, tzinfo=UTC)
 
 
 # ----------------------------------------------------------------------------
 # get_current_price
 # ----------------------------------------------------------------------------
+
 
 class TestGetCurrentPrice:
     def test_empty_dict_returns_none(self) -> None:
@@ -79,6 +81,7 @@ class TestGetCurrentPrice:
 # build_forecast
 # ----------------------------------------------------------------------------
 
+
 class TestBuildForecast:
     def test_empty_input(self) -> None:
         assert build_forecast({}, now=_at(2026, 4, 26, 10, 0)) == []
@@ -123,6 +126,7 @@ class TestBuildForecast:
 # split_prices_by_date
 # ----------------------------------------------------------------------------
 
+
 class TestSplitPricesByDate:
     def test_splits_correctly(self) -> None:
         prices = {
@@ -149,6 +153,7 @@ class TestSplitPricesByDate:
 # ----------------------------------------------------------------------------
 # aggregate_optimization_events
 # ----------------------------------------------------------------------------
+
 
 @dataclass
 class _StubEvent:
@@ -181,10 +186,15 @@ class TestAggregateOptimizationEvents:
 
     def test_aggregates_present_values(self) -> None:
         events = [
-            _StubEvent(total_cost=1.0, energy_bought=2.0, energy_sold=0.5,
-                       from_time="2026-04-26T09:00:00Z"),
-            _StubEvent(total_cost=2.0, energy_bought=3.0, energy_sold=None,
-                       from_time="2026-04-26T10:00:00Z"),
+            _StubEvent(
+                total_cost=1.0, energy_bought=2.0, energy_sold=0.5, from_time="2026-04-26T09:00:00Z"
+            ),
+            _StubEvent(
+                total_cost=2.0,
+                energy_bought=3.0,
+                energy_sold=None,
+                from_time="2026-04-26T10:00:00Z",
+            ),
         ]
         result = aggregate_optimization_events(events)
         assert result["event_count"] == 2
@@ -205,6 +215,7 @@ class TestAggregateOptimizationEvents:
 # ----------------------------------------------------------------------------
 # find_cheapest_window
 # ----------------------------------------------------------------------------
+
 
 def _slot(start: str, end: str, price: float) -> dict:
     return {"start": start, "end": end, "price": price}
@@ -242,7 +253,8 @@ class TestFindCheapestWindow:
             _slot("2026-04-26T10:45:00+00:00", "2026-04-26T11:00:00+00:00", 0.30),
         ]
         result = find_cheapest_window(
-            forecast, slot_count=2,
+            forecast,
+            slot_count=2,
             earliest_start=datetime.datetime(2026, 4, 26, 10, 30, tzinfo=UTC),
         )
         assert result is not None
@@ -256,7 +268,8 @@ class TestFindCheapestWindow:
             _slot("2026-04-26T10:45:00+00:00", "2026-04-26T11:00:00+00:00", 0.05),
         ]
         result = find_cheapest_window(
-            forecast, slot_count=2,
+            forecast,
+            slot_count=2,
             latest_end=datetime.datetime(2026, 4, 26, 10, 30, tzinfo=UTC),
         )
         assert result is not None
@@ -267,7 +280,8 @@ class TestFindCheapestWindow:
             _slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.10),
         ]
         result = find_cheapest_window(
-            forecast, slot_count=1,
+            forecast,
+            slot_count=1,
             earliest_start=datetime.datetime(2026, 4, 26, 12, 0, tzinfo=UTC),
         )
         assert result is None
@@ -285,6 +299,7 @@ class TestFindCheapestWindow:
 # ----------------------------------------------------------------------------
 # find_most_expensive_window
 # ----------------------------------------------------------------------------
+
 
 class TestFindMostExpensiveWindow:
     def test_returns_none_when_forecast_too_short(self) -> None:
@@ -314,7 +329,8 @@ class TestFindMostExpensiveWindow:
             _slot("2026-04-26T10:45:00+00:00", "2026-04-26T11:00:00+00:00", 0.10),
         ]
         result = find_most_expensive_window(
-            forecast, slot_count=2,
+            forecast,
+            slot_count=2,
             earliest_start=datetime.datetime(2026, 4, 26, 10, 30, tzinfo=UTC),
         )
         assert result is not None
@@ -336,40 +352,51 @@ class TestFindMostExpensiveWindow:
 # trapezoidal_delta_kwh
 # ----------------------------------------------------------------------------
 
+
 class TestTrapezoidalDeltaKwh:
     def test_constant_1kw_for_1_hour_yields_1kwh(self) -> None:
         result = trapezoidal_delta_kwh(
-            1000.0, _at(2026, 4, 26, 10, 0),
-            1000.0, _at(2026, 4, 26, 11, 0),
+            1000.0,
+            _at(2026, 4, 26, 10, 0),
+            1000.0,
+            _at(2026, 4, 26, 11, 0),
         )
         assert result == pytest.approx(1.0)
 
     def test_returns_none_for_negative_average(self) -> None:
         result = trapezoidal_delta_kwh(
-            -100.0, _at(2026, 4, 26, 10, 0),
-            -100.0, _at(2026, 4, 26, 11, 0),
+            -100.0,
+            _at(2026, 4, 26, 10, 0),
+            -100.0,
+            _at(2026, 4, 26, 11, 0),
         )
         assert result is None
 
     def test_returns_none_for_zero_average(self) -> None:
         result = trapezoidal_delta_kwh(
-            0.0, _at(2026, 4, 26, 10, 0),
-            0.0, _at(2026, 4, 26, 11, 0),
+            0.0,
+            _at(2026, 4, 26, 10, 0),
+            0.0,
+            _at(2026, 4, 26, 11, 0),
         )
         assert result is None
 
     def test_averages_power_over_interval(self) -> None:
         # 0W → 1000W over 1 hour → avg 500W → 0.5 kWh
         result = trapezoidal_delta_kwh(
-            0.0, _at(2026, 4, 26, 10, 0),
-            1000.0, _at(2026, 4, 26, 11, 0),
+            0.0,
+            _at(2026, 4, 26, 10, 0),
+            1000.0,
+            _at(2026, 4, 26, 11, 0),
         )
         assert result == pytest.approx(0.5)
 
     def test_30_second_sample_at_2kw(self) -> None:
         # 2000W constant for 30s → 2000 * (30/3600) / 1000 ≈ 0.01667 kWh
         result = trapezoidal_delta_kwh(
-            2000.0, _at(2026, 4, 26, 10, 0, 0),
-            2000.0, datetime.datetime(2026, 4, 26, 10, 0, 30, tzinfo=UTC),
+            2000.0,
+            _at(2026, 4, 26, 10, 0, 0),
+            2000.0,
+            datetime.datetime(2026, 4, 26, 10, 0, 30, tzinfo=UTC),
         )
         assert result == pytest.approx(2000 * (30 / 3600) / 1000)

@@ -1,4 +1,5 @@
 """Services for the 1KOMMA5° integration."""
+
 from __future__ import annotations
 
 import datetime
@@ -7,7 +8,6 @@ from collections.abc import Callable
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
@@ -22,9 +22,7 @@ SERVICE_GET_MOST_EXPENSIVE_WINDOW = "get_most_expensive_window"
 
 WINDOW_SERVICE_SCHEMA = vol.Schema(
     {
-        vol.Required("duration_minutes"): vol.All(
-            vol.Coerce(int), vol.Range(min=15, max=1800)
-        ),
+        vol.Required("duration_minutes"): vol.All(vol.Coerce(int), vol.Range(min=15, max=1800)),
         vol.Optional("earliest_start"): cv.datetime,
         vol.Optional("latest_end"): cv.datetime,
         vol.Optional("config_entry_id"): cv.string,
@@ -35,7 +33,7 @@ WINDOW_SERVICE_SCHEMA = vol.Schema(
 def _ensure_aware(dt: datetime.datetime) -> datetime.datetime:
     """Ensure a datetime is timezone-aware (assume UTC if naive)."""
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=datetime.timezone.utc)
+        return dt.replace(tzinfo=datetime.UTC)
     return dt
 
 
@@ -65,19 +63,13 @@ def _resolve_window_inputs(
         raise HomeAssistantError("No 1KOMMA5° integration configured")
 
     if config_entry_id is not None:
-        entry = next(
-            (e for e in entries if e.entry_id == config_entry_id), None
-        )
+        entry = next((e for e in entries if e.entry_id == config_entry_id), None)
         if entry is None:
-            raise HomeAssistantError(
-                f"Config entry '{config_entry_id}' not found"
-            )
+            raise HomeAssistantError(f"Config entry '{config_entry_id}' not found")
     elif len(entries) == 1:
         entry = entries[0]
     else:
-        raise HomeAssistantError(
-            "Multiple 1KOMMA5° entries configured — specify config_entry_id"
-        )
+        raise HomeAssistantError("Multiple 1KOMMA5° entries configured — specify config_entry_id")
 
     coordinator = entry.runtime_data.price_coordinator
     if coordinator.data is None or not coordinator.data.forecast:
@@ -85,9 +77,7 @@ def _resolve_window_inputs(
 
     forecast = coordinator.data.forecast
     if len(forecast) < slot_count_needed:
-        raise HomeAssistantError(
-            f"Forecast covers {len(forecast)} slots, need {slot_count_needed}"
-        )
+        raise HomeAssistantError(f"Forecast covers {len(forecast)} slots, need {slot_count_needed}")
 
     return forecast, slot_count_needed, earliest_start, latest_end
 

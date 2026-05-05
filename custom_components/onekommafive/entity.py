@@ -1,4 +1,5 @@
 """Base entity for the 1KOMMA5° integration."""
+
 from __future__ import annotations
 
 from datetime import datetime

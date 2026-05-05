@@ -1,4 +1,5 @@
 """Select platform for the 1KOMMA5° integration (EV charging mode)."""
+
 from __future__ import annotations
 
 import logging
@@ -63,7 +64,9 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         ev_label: str,
     ) -> None:
         """Initialize the select entity."""
-        super().__init__(coordinator, system_id, system_name, ev_id, ev_label, "charging_mode_select")
+        super().__init__(
+            coordinator, system_id, system_name, ev_id, ev_label, "charging_mode_select"
+        )
         self._ev_charger = ev_charger
 
     @property
@@ -85,5 +88,3 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
             return
         await self.hass.async_add_executor_job(ev.set_charging_mode, mode)
         await self.coordinator.async_request_refresh()
-
-

@@ -7,6 +7,7 @@ This file contains:
 Sensor entity classes live in ``sensor_entities.py`` and dataclass
 descriptions in ``sensor_descriptions.py``.
 """
+
 from __future__ import annotations
 
 from homeassistant.components.sensor import (
@@ -20,6 +21,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
+from .entity import get_ev_label
 from .helpers import get_current_price
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -27,7 +29,6 @@ from .sensor_descriptions import (
     OneKomma5PriceSensorDescription,
     OneKomma5SensorDescription,
 )
-from .entity import get_ev_label
 from .sensor_entities import (
     CURRENCY_EUR_PER_KWH,
     OneKomma5CostSensor,
@@ -44,16 +45,18 @@ from .sensor_entities import (
 # Power sensors for which an energy counterpart (kWh) is created.
 # Bidirectional sensors (battery_power, grid_power) are excluded intentionally —
 # grid_consumption_power / grid_feed_in_power already cover those directions.
-ENERGY_SENSOR_KEYS = frozenset({
-    "pv_power",
-    "grid_consumption_power",
-    "grid_feed_in_power",
-    "consumption_power",
-    "household_power",
-    "ev_chargers_power",
-    "heat_pumps_power",
-    "acs_power",
-})
+ENERGY_SENSOR_KEYS = frozenset(
+    {
+        "pv_power",
+        "grid_consumption_power",
+        "grid_feed_in_power",
+        "consumption_power",
+        "household_power",
+        "ev_chargers_power",
+        "heat_pumps_power",
+        "acs_power",
+    }
+)
 
 
 LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
@@ -177,7 +180,9 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
-        value_fn=lambda d: get_current_price(d.all_in_prices) if d.all_in_prices else d.current_price,
+        value_fn=lambda d: (
+            get_current_price(d.all_in_prices) if d.all_in_prices else d.current_price
+        ),
     ),
     OneKomma5PriceSensorDescription(
         key="average_electricity_price",
@@ -223,9 +228,9 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
-        value_fn=lambda d: round(d.tomorrow_average_price, 6)
-        if d.tomorrow_average_price is not None
-        else None,
+        value_fn=lambda d: (
+            round(d.tomorrow_average_price, 6) if d.tomorrow_average_price is not None else None
+        ),
     ),
     OneKomma5PriceSensorDescription(
         key="tomorrow_lowest_price",
@@ -250,16 +255,20 @@ BATTERY_SPLIT_DESCRIPTORS: tuple[OneKomma5SensorDescription, ...] = (
     OneKomma5SensorDescription(
         key="battery_charge_power",
         translation_key="battery_charge_power_energy",
-        value_fn=lambda d: max(d.live_overview.battery_power, 0)
-        if d.live_overview.battery_power is not None
-        else None,
+        value_fn=lambda d: (
+            max(d.live_overview.battery_power, 0)
+            if d.live_overview.battery_power is not None
+            else None
+        ),
     ),
     OneKomma5SensorDescription(
         key="battery_discharge_power",
         translation_key="battery_discharge_power_energy",
-        value_fn=lambda d: max(-d.live_overview.battery_power, 0)
-        if d.live_overview.battery_power is not None
-        else None,
+        value_fn=lambda d: (
+            max(-d.live_overview.battery_power, 0)
+            if d.live_overview.battery_power is not None
+            else None
+        ),
     ),
 )
 
@@ -286,20 +295,22 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:counter",
         value_fn=lambda d: d.event_count,
-        attr_fn=lambda d: {
-            "decisions": [
-                {
-                    "asset": e.asset,
-                    "decision": e.decision,
-                    "from": e.from_time,
-                    "to": e.to_time,
-                    "market_price": e.market_price,
-                }
-                for e in d.events
-            ]
-        }
-        if d.events
-        else None,
+        attr_fn=lambda d: (
+            {
+                "decisions": [
+                    {
+                        "asset": e.asset,
+                        "decision": e.decision,
+                        "from": e.from_time,
+                        "to": e.to_time,
+                        "market_price": e.market_price,
+                    }
+                    for e in d.events
+                ]
+            }
+            if d.events
+            else None
+        ),
     ),
     # Optimization aggregations are daily snapshots that reset at midnight when
     # the coordinator fetches a new day's events. They are intentionally NOT
@@ -321,9 +332,7 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=2,
-        value_fn=lambda d: round(d.energy_bought, 2)
-        if d.energy_bought is not None
-        else None,
+        value_fn=lambda d: round(d.energy_bought, 2) if d.energy_bought is not None else None,
     ),
     OneKomma5OptimizationSensorDescription(
         key="optimization_energy_sold",
@@ -331,24 +340,24 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=2,
-        value_fn=lambda d: round(d.energy_sold, 2)
-        if d.energy_sold is not None
-        else None,
+        value_fn=lambda d: round(d.energy_sold, 2) if d.energy_sold is not None else None,
     ),
     OneKomma5OptimizationSensorDescription(
         key="optimization_last_decision",
         translation_key="optimization_last_decision",
         icon="mdi:brain",
         value_fn=lambda d: d.last_event.decision if d.last_event else None,
-        attr_fn=lambda d: {
-            "asset": d.last_event.asset,
-            "from": d.last_event.from_time,
-            "to": d.last_event.to_time,
-            "market_price": d.last_event.market_price,
-            "state_of_charge": d.last_event.state_of_charge,
-        }
-        if d.last_event
-        else None,
+        attr_fn=lambda d: (
+            {
+                "asset": d.last_event.asset,
+                "from": d.last_event.from_time,
+                "to": d.last_event.to_time,
+                "market_price": d.last_event.market_price,
+                "state_of_charge": d.last_event.state_of_charge,
+            }
+            if d.last_event
+            else None
+        ),
     ),
 )
 
@@ -371,8 +380,7 @@ async def async_setup_entry(
 
     # Live overview sensors
     entities.extend(
-        OneKomma5LiveSensor(live_coordinator, system_id, system_name, desc)
-        for desc in LIVE_SENSORS
+        OneKomma5LiveSensor(live_coordinator, system_id, system_name, desc) for desc in LIVE_SENSORS
     )
 
     # Energy sensors (trapezoidal integration of power sensors)
@@ -399,11 +407,15 @@ async def async_setup_entry(
     entities.append(stable_price_sensor)
 
     # Accumulated electricity cost sensor
-    entities.append(OneKomma5CostSensor(live_coordinator, system_id, system_name, stable_price_sensor))
+    entities.append(
+        OneKomma5CostSensor(live_coordinator, system_id, system_name, stable_price_sensor)
+    )
 
     # Feed-in revenue sensor
     feed_in_tariff = entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
-    entities.append(OneKomma5FeedInRevenueSensor(live_coordinator, system_id, system_name, feed_in_tariff))
+    entities.append(
+        OneKomma5FeedInRevenueSensor(live_coordinator, system_id, system_name, feed_in_tariff)
+    )
 
     # Optimization sensors
     entities.extend(
@@ -422,17 +434,32 @@ async def async_setup_entry(
             )
 
     # Diagnostic sensors (last successful update per coordinator)
-    entities.append(OneKomma5DiagnosticSensor(
-        live_coordinator, system_id, system_name,
-        "diag_live_update", "diag_live_update",
-    ))
-    entities.append(OneKomma5DiagnosticSensor(
-        price_coordinator, system_id, system_name,
-        "diag_price_update", "diag_price_update",
-    ))
-    entities.append(OneKomma5DiagnosticSensor(
-        optimization_coordinator, system_id, system_name,
-        "diag_optimization_update", "diag_optimization_update",
-    ))
+    entities.append(
+        OneKomma5DiagnosticSensor(
+            live_coordinator,
+            system_id,
+            system_name,
+            "diag_live_update",
+            "diag_live_update",
+        )
+    )
+    entities.append(
+        OneKomma5DiagnosticSensor(
+            price_coordinator,
+            system_id,
+            system_name,
+            "diag_price_update",
+            "diag_price_update",
+        )
+    )
+    entities.append(
+        OneKomma5DiagnosticSensor(
+            optimization_coordinator,
+            system_id,
+            system_name,
+            "diag_optimization_update",
+            "diag_optimization_update",
+        )
+    )
 
     async_add_entities(entities)

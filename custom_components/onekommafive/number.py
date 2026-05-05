@@ -1,4 +1,5 @@
 """Number platform for the 1KOMMA5° integration (EV SoC control)."""
+
 from __future__ import annotations
 
 import logging
@@ -85,7 +86,12 @@ async def async_setup_entry(
             ev_label = get_ev_label(ev)
             entities.extend(
                 OneKomma5EVNumber(
-                    live_coordinator, system_id, system_name, ev_id, ev_label, desc,
+                    live_coordinator,
+                    system_id,
+                    system_name,
+                    ev_id,
+                    ev_label,
+                    desc,
                 )
                 for desc in EV_NUMBERS
             )
@@ -135,10 +141,9 @@ class OneKomma5EVNumber(OneKomma5EVEntity, NumberEntity):
         if ev is None:
             _LOGGER.warning(
                 "EV charger %s not found, cannot set %s",
-                self._ev_id, self.entity_description.key,
+                self._ev_id,
+                self.entity_description.key,
             )
             return
-        await self.hass.async_add_executor_job(
-            self.entity_description.set_fn, ev, value
-        )
+        await self.hass.async_add_executor_job(self.entity_description.set_fn, ev, value)
         await self.coordinator.async_request_refresh()

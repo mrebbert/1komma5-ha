@@ -1,4 +1,5 @@
 """Binary sensor platform for the 1KOMMA5° integration."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -19,17 +20,25 @@ async def async_setup_entry(
     """Set up binary sensor entities from a config entry."""
     data = entry.runtime_data
     system_id = data.system.id()
-    async_add_entities([
-        OneKomma5CheapElectricitySensor(
-            data.price_coordinator, system_id, data.system_name,
-        ),
-        OneKomma5CheapestHourNowSensor(
-            data.price_coordinator, system_id, data.system_name,
-        ),
-    ])
+    async_add_entities(
+        [
+            OneKomma5CheapElectricitySensor(
+                data.price_coordinator,
+                system_id,
+                data.system_name,
+            ),
+            OneKomma5CheapestHourNowSensor(
+                data.price_coordinator,
+                system_id,
+                data.system_name,
+            ),
+        ]
+    )
 
 
-class OneKomma5CheapElectricitySensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, BinarySensorEntity):
+class OneKomma5CheapElectricitySensor(
+    QuarterHourUpdateMixin, OneKomma5PriceEntity, BinarySensorEntity
+):
     """Binary sensor that is ON when the current electricity price is below the daily average."""
 
     _attr_translation_key = "cheap_electricity"
@@ -72,7 +81,9 @@ class OneKomma5CheapElectricitySensor(QuarterHourUpdateMixin, OneKomma5PriceEnti
         return attrs
 
 
-class OneKomma5CheapestHourNowSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, BinarySensorEntity):
+class OneKomma5CheapestHourNowSensor(
+    QuarterHourUpdateMixin, OneKomma5PriceEntity, BinarySensorEntity
+):
     """Binary sensor that is ON when the current 15-min slot is the cheapest in the next 24h."""
 
     _attr_translation_key = "cheapest_hour_now"

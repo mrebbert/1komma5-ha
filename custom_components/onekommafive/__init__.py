@@ -1,4 +1,5 @@
 """The 1KOMMA5° integration."""
+
 from __future__ import annotations
 
 import logging
@@ -60,6 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     system_id: str = entry.data[CONF_SYSTEM_ID]
 
     try:
+
         def _fetch_system() -> tuple[object, str]:
             client = Client(username, password)
             system = Systems(client).get_system(system_id)

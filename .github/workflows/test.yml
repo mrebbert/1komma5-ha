@@ -25,3 +25,13 @@ jobs:
 
       - name: Run pytest
         run: pytest -v --cov=custom_components/onekommafive --cov-report=term-missing
+
+  lint:
+    name: Lint (ruff via pre-commit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: pre-commit/action@v3.0.1

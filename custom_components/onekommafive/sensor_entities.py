@@ -3,6 +3,7 @@
 The actual SENSORS configuration tuples and the platform's
 ``async_setup_entry`` live in ``sensor.py``.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -26,7 +27,6 @@ from .entity import (
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
     QuarterHourUpdateMixin,
-    get_ev_label,
     system_device_info,
 )
 from .helpers import trapezoidal_delta_kwh
@@ -163,7 +163,9 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
     async def async_added_to_hass(self) -> None:
         """Restore accumulated value after HA restart."""
         await super().async_added_to_hass()
-        if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
+        if (
+            restored := await self.async_get_last_sensor_data()
+        ) and restored.native_value is not None:
             try:
                 self._accumulated = float(restored.native_value)
             except (TypeError, ValueError):
@@ -187,9 +189,7 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
             return
         now = dt_util.utcnow()
         if self._last_power is not None and self._last_time is not None:
-            delta_kwh = trapezoidal_delta_kwh(
-                self._last_power, self._last_time, power_w, now
-            )
+            delta_kwh = trapezoidal_delta_kwh(self._last_power, self._last_time, power_w, now)
             if delta_kwh is not None:
                 multiplier = self._get_kwh_multiplier()
                 if multiplier is not None:
@@ -258,13 +258,16 @@ class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, R
     async def async_added_to_hass(self) -> None:
         """Subscribe to coordinator; fall back to restored state if coordinator has no price."""
         await super().async_added_to_hass()
-        if self._stable_price is None:
-            if (restored := await self.async_get_last_sensor_data()) and restored.native_value is not None:
-                try:
-                    self._stable_price = float(restored.native_value)
-                    self.async_write_ha_state()
-                except (TypeError, ValueError):
-                    pass
+        if (
+            self._stable_price is None
+            and (restored := await self.async_get_last_sensor_data())
+            and restored.native_value is not None
+        ):
+            try:
+                self._stable_price = float(restored.native_value)
+                self.async_write_ha_state()
+            except (TypeError, ValueError):
+                pass
         self._async_register_quarter_hour_update()
 
     @callback
@@ -426,5 +429,3 @@ class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
     def native_value(self) -> datetime | None:
         """Return the last successful update timestamp."""
         return self._last_success
-
-

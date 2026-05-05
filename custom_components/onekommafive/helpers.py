@@ -3,6 +3,7 @@
 This module intentionally avoids importing Home Assistant or any heavy
 runtime dependencies, so its functions can be unit-tested in isolation.
 """
+
 from __future__ import annotations
 
 import datetime
@@ -18,7 +19,7 @@ def get_current_price(prices: dict[str, float]) -> float | None:
     """
     if not prices:
         return None
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = datetime.datetime.now(tz=datetime.UTC)
 
     best_value: float | None = None
     best_time: datetime.datetime | None = None
@@ -27,7 +28,7 @@ def get_current_price(prices: dict[str, float]) -> float | None:
         try:
             slot_time = datetime.datetime.fromisoformat(key.replace("Z", "+00:00"))
             if slot_time.tzinfo is None:
-                slot_time = slot_time.replace(tzinfo=datetime.timezone.utc)
+                slot_time = slot_time.replace(tzinfo=datetime.UTC)
             if slot_time > now and (best_time is None or slot_time < best_time):
                 best_time = slot_time
                 best_value = value
@@ -50,7 +51,7 @@ def build_forecast(
     """
     slot_duration = datetime.timedelta(minutes=15)
     if now is None:
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.now(tz=datetime.UTC)
     cutoff = now + datetime.timedelta(hours=horizon_hours)
     slots: list[dict[str, Any]] = []
 
@@ -58,7 +59,7 @@ def build_forecast(
         try:
             end = datetime.datetime.fromisoformat(key.replace("Z", "+00:00"))
             if end.tzinfo is None:
-                end = end.replace(tzinfo=datetime.timezone.utc)
+                end = end.replace(tzinfo=datetime.UTC)
             start = end - slot_duration
             if end <= now or start >= cutoff:
                 continue
@@ -132,7 +133,7 @@ def trapezoidal_delta_kwh(
 def _find_window(
     forecast: list[dict[str, Any]],
     slot_count: int,
-    is_better: "Callable[[float, float], bool]",
+    is_better: Callable[[float, float], bool],
     earliest_start: datetime.datetime | None = None,
     latest_end: datetime.datetime | None = None,
 ) -> dict[str, Any] | None:
@@ -183,8 +184,11 @@ def find_cheapest_window(
 ) -> dict[str, Any] | None:
     """Find the cheapest contiguous window of ``slot_count`` 15-min slots."""
     return _find_window(
-        forecast, slot_count, lambda candidate, best: candidate < best,
-        earliest_start, latest_end,
+        forecast,
+        slot_count,
+        lambda candidate, best: candidate < best,
+        earliest_start,
+        latest_end,
     )
 
 
@@ -196,6 +200,9 @@ def find_most_expensive_window(
 ) -> dict[str, Any] | None:
     """Find the most expensive contiguous window of ``slot_count`` 15-min slots."""
     return _find_window(
-        forecast, slot_count, lambda candidate, best: candidate > best,
-        earliest_start, latest_end,
+        forecast,
+        slot_count,
+        lambda candidate, best: candidate > best,
+        earliest_start,
+        latest_end,
     )

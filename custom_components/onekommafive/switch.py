@@ -1,4 +1,5 @@
 """Switch platform for the 1KOMMA5° integration (EMS auto mode)."""
+
 from __future__ import annotations
 
 import logging
@@ -25,9 +26,7 @@ async def async_setup_entry(
     system_id = system.id()
     system_name = data.system_name
 
-    async_add_entities(
-        [OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)]
-    )
+    async_add_entities([OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)])
 
 
 class OneKomma5EMSSwitch(OneKomma5Entity, SwitchEntity):
@@ -71,5 +70,3 @@ class OneKomma5EMSSwitch(OneKomma5Entity, SwitchEntity):
         """Disable EMS auto mode (switch to manual)."""
         await self.hass.async_add_executor_job(self._system.set_ems_mode, False)
         await self.coordinator.async_request_refresh()
-
-
