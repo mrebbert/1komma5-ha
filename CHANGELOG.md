@@ -3,10 +3,13 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.1.33] - 2026-05-05
 
 ### Added
 - HA bus event `onekommafive_optimization_decision` is fired whenever a new optimization decision is observed. The event payload includes `system_id`, `asset`, `decision`, `from`, `to`, `market_price`, `market_price_currency` and `state_of_charge`. The first refresh after a Home Assistant restart fires one event for the most recent decision (so the wiring is immediately verifiable); the day's earlier decisions are not replayed.
+
+### Tooling
+- Debug log lines around the event-firing path so you can verify behaviour from the HA log without subscribing on the event bus first.
 
 ## [0.1.32] - 2026-04-26
 
