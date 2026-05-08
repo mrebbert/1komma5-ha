@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `CONTRIBUTING.md` covering local setup (venv, pre-commit, pytest), PR workflow, scope, translation guidelines and release process. Linked from the README development section.
+- `.github/PULL_REQUEST_TEMPLATE.md` — pre-fills new PRs with summary / type / how-tested / checklist sections.
+- `.github/SECURITY.md` — vulnerability-reporting policy via GitHub Security Advisories; clarifies in-scope vs upstream-HA / upstream-1KOMMA5° issues.
+- `.github/CODE_OF_CONDUCT.md` — adopts Contributor Covenant 2.1 by reference, with reporting channels matching the security policy.
 
 ### Changed
 - Dashboard example expanded with monthly bar charts (grid import/export and consumption-per-device), a 24 h power-flow line chart, and a Tag/Woche/Monat/Jahr time-range switcher for the cost & feed-in chart. Two new badges (`Günstiger Strom`, `Aktueller Strompreis`) added to the Netz view header.
