@@ -112,6 +112,38 @@ def aggregate_optimization_events(events: list[Any]) -> dict[str, Any]:
     }
 
 
+def active_optimization_event(
+    events: list[Any],
+    asset: str,
+    now: datetime.datetime,
+) -> Any | None:
+    """Return the optimization event currently active for ``asset``, or ``None``.
+
+    "Active" means ``from_time <= now < to_time``. The first matching event in
+    iteration order wins (the API typically returns at most one event per
+    asset per slot, so order does not matter in practice).
+    """
+    for event in events:
+        if getattr(event, "asset", None) != asset:
+            continue
+        from_raw = getattr(event, "from_time", None)
+        to_raw = getattr(event, "to_time", None)
+        if not from_raw or not to_raw:
+            continue
+        try:
+            from_dt = datetime.datetime.fromisoformat(from_raw.replace("Z", "+00:00"))
+            to_dt = datetime.datetime.fromisoformat(to_raw.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if from_dt.tzinfo is None:
+            from_dt = from_dt.replace(tzinfo=datetime.UTC)
+        if to_dt.tzinfo is None:
+            to_dt = to_dt.replace(tzinfo=datetime.UTC)
+        if from_dt <= now < to_dt:
+            return event
+    return None
+
+
 def trapezoidal_delta_kwh(
     last_power_w: float,
     last_time: datetime.datetime,

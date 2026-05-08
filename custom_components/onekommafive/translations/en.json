@@ -111,6 +111,9 @@
       },
       "cheapest_hour_now": {
         "name": "Cheapest hour now"
+      },
+      "optimization_battery_grid_charge": {
+        "name": "AI: Battery grid charging"
       }
     },
     "sensor": {

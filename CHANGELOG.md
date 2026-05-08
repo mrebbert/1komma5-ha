@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- **AI: Battery grid charging** binary sensor (`optimization_battery_grid_charge`) — ON when the Heartbeat AI's currently active BATTERY decision is `BATTERY_CHARGE_FROM_GRID`. AI-curated alternative to the simple price-vs-daily-average heuristic of `cheap_electricity` — fires when the HEMS has decided "now is the right grid-buy moment to bridge upcoming high-price periods", taking the full forecast and battery state into account.
+- New pure helper `active_optimization_event(events, asset, now)` (with 6 unit tests) for finding the slot that is currently active for a given asset.
+
 ## [0.1.33] - 2026-05-05
 
 ### Added

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
@@ -9,7 +10,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5PriceEntity, QuarterHourUpdateMixin
+from .entity import (
+    OneKomma5OptimizationEntity,
+    OneKomma5PriceEntity,
+    QuarterHourUpdateMixin,
+)
+from .helpers import active_optimization_event
 
 
 async def async_setup_entry(
@@ -29,6 +35,11 @@ async def async_setup_entry(
             ),
             OneKomma5CheapestHourNowSensor(
                 data.price_coordinator,
+                system_id,
+                data.system_name,
+            ),
+            OneKomma5OptimizationBatteryGridChargeSensor(
+                data.optimization_coordinator,
                 system_id,
                 data.system_name,
             ),
@@ -133,4 +144,62 @@ class OneKomma5CheapestHourNowSensor(
             "current_price": current,
             "cheapest_price": cheapest["price"],
             "cheapest_slot_start": cheapest["start"],
+        }
+
+
+class OneKomma5OptimizationBatteryGridChargeSensor(
+    QuarterHourUpdateMixin, OneKomma5OptimizationEntity, BinarySensorEntity
+):
+    """Binary sensor that is ON when the AI's currently active BATTERY decision
+    is ``BATTERY_CHARGE_FROM_GRID`` — i.e. the HEMS has decided to pull from the
+    grid right now to bridge upcoming high-price periods.
+    """
+
+    _attr_translation_key = "optimization_battery_grid_charge"
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, system_id, system_name, "optimization_battery_grid_charge")
+
+    async def async_added_to_hass(self) -> None:
+        """Register quarter-hour update so the sensor flips off at slot ends."""
+        await super().async_added_to_hass()
+        self._async_register_quarter_hour_update()
+
+    def _active_battery_event(self) -> Any | None:
+        if self.coordinator.data is None:
+            return None
+        return active_optimization_event(
+            self.coordinator.data.events,
+            asset="BATTERY",
+            now=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True only when an active BATTERY_CHARGE_FROM_GRID slot exists."""
+        if self.coordinator.data is None:
+            return None
+        event = self._active_battery_event()
+        if event is None:
+            return False
+        return event.decision == "BATTERY_CHARGE_FROM_GRID"
+
+    @property
+    def icon(self) -> str:
+        """Return icon reflecting state."""
+        return "mdi:battery-arrow-up" if self.is_on else "mdi:battery-arrow-up-outline"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose the active BATTERY decision details, if any."""
+        event = self._active_battery_event()
+        if event is None:
+            return None
+        return {
+            "decision": event.decision,
+            "from": event.from_time,
+            "to": event.to_time,
+            "market_price": event.market_price,
+            "state_of_charge": event.state_of_charge,
         }

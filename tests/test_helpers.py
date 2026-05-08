@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 from helpers import (  # type: ignore[import-not-found]
+    active_optimization_event,
     aggregate_optimization_events,
     build_forecast,
     find_cheapest_window,
@@ -346,6 +347,86 @@ class TestFindMostExpensiveWindow:
         assert result is not None
         # Most expensive (least negative) is -0.05
         assert result["average_price"] == -0.05
+
+
+# ----------------------------------------------------------------------------
+# active_optimization_event
+# ----------------------------------------------------------------------------
+
+
+@dataclass
+class _ActiveStubEvent:
+    asset: str
+    decision: str
+    from_time: str | None
+    to_time: str | None
+
+
+class TestActiveOptimizationEvent:
+    def test_returns_none_for_empty_list(self) -> None:
+        assert active_optimization_event([], "BATTERY", _at(2026, 5, 8, 12, 0)) is None
+
+    def test_finds_active_event_in_window(self) -> None:
+        events = [
+            _ActiveStubEvent(
+                asset="BATTERY",
+                decision="BATTERY_CHARGE_FROM_GRID",
+                from_time="2026-05-08T12:00:00Z",
+                to_time="2026-05-08T12:15:00Z",
+            ),
+        ]
+        result = active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 7))
+        assert result is events[0]
+
+    def test_excludes_event_before_from_time(self) -> None:
+        events = [
+            _ActiveStubEvent(
+                asset="BATTERY",
+                decision="BATTERY_CHARGE_FROM_GRID",
+                from_time="2026-05-08T12:00:00Z",
+                to_time="2026-05-08T12:15:00Z",
+            ),
+        ]
+        assert active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 11, 59)) is None
+
+    def test_excludes_event_at_or_after_to_time(self) -> None:
+        events = [
+            _ActiveStubEvent(
+                asset="BATTERY",
+                decision="BATTERY_CHARGE_FROM_GRID",
+                from_time="2026-05-08T12:00:00Z",
+                to_time="2026-05-08T12:15:00Z",
+            ),
+        ]
+        # to_time is exclusive
+        assert active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 15)) is None
+
+    def test_filters_by_asset(self) -> None:
+        events = [
+            _ActiveStubEvent(
+                asset="HEATPUMP",
+                decision="HEATPUMP_RECOMMEND_ON",
+                from_time="2026-05-08T12:00:00Z",
+                to_time="2026-05-08T12:15:00Z",
+            ),
+        ]
+        assert active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 7)) is None
+
+    def test_skips_events_with_invalid_timestamps(self) -> None:
+        events = [
+            _ActiveStubEvent(asset="BATTERY", decision="X", from_time=None, to_time=None),
+            _ActiveStubEvent(
+                asset="BATTERY", decision="X", from_time="garbage", to_time="2026-05-08T12:15:00Z"
+            ),
+            _ActiveStubEvent(
+                asset="BATTERY",
+                decision="BATTERY_NO_CHARGE",
+                from_time="2026-05-08T12:00:00Z",
+                to_time="2026-05-08T12:15:00Z",
+            ),
+        ]
+        result = active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 5))
+        assert result is events[2]
 
 
 # ----------------------------------------------------------------------------

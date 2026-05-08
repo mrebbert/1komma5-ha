@@ -111,6 +111,9 @@
       },
       "cheapest_hour_now": {
         "name": "Günstigste Stunde jetzt"
+      },
+      "optimization_battery_grid_charge": {
+        "name": "AI: Batterie aus Netz laden"
       }
     },
     "sensor": {

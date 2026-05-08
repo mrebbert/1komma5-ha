@@ -201,6 +201,7 @@ Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minut
 |--------|-----|-------------|--------|
 | Cheap Electricity | `cheap_electricity` | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 15 min |
 | Cheapest Hour Now | `cheapest_hour_now` | ON when the current 15-minute slot is the cheapest in the next ~30 hours of forecast. Useful for triggering loads exactly at the cheapest moment. Attributes: `current_price`, `cheapest_price`, `cheapest_slot_start`. | 15 min |
+| AI: Battery grid charging | `optimization_battery_grid_charge` | ON when the AI's currently active BATTERY decision is `BATTERY_CHARGE_FROM_GRID` — the HEMS has decided to pull from the grid right now to bridge upcoming high-price periods. AI-curated signal that considers full forecast and battery state. Attributes: `decision`, `from`, `to`, `market_price`, `state_of_charge`. | 15 min |
 
 ### EV Charger
 
