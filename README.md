@@ -431,6 +431,8 @@ After setup, additional options can be configured via **Settings → Devices & S
 
 ## Development
 
+For setup, PR workflow, code style and translation guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ### Tests
 
 Pure-helper unit tests (no Home Assistant dependency required):

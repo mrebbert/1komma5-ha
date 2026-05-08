@@ -5,9 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `CONTRIBUTING.md` covering local setup (venv, pre-commit, pytest), PR workflow, scope, translation guidelines and release process. Linked from the README development section.
+
 ### Changed
 - Dashboard example expanded with monthly bar charts (grid import/export and consumption-per-device), a 24 h power-flow line chart, and a Tag/Woche/Monat/Jahr time-range switcher for the cost & feed-in chart. Two new badges (`Günstiger Strom`, `Aktueller Strompreis`) added to the Netz view header.
 - Dashboard now requires the `button-card` HACS custom card and an `input_select.stromkosten_zeitspanne` helper (`Täglich` / `Wöchentlich` / `Monatlich` / `Jährlich`) for the new cost-time-range switcher. Both prerequisites are documented in `dashboard/README.md`.
+- Dashboard screenshots optimised with `pngquant` (~60 % smaller, no perceptible quality loss).
+- `dashboard/README.md` translated to fully English prose; literal config strings stay German on purpose.
 
 ## [0.1.34] - 2026-05-08
 
