@@ -3,11 +3,21 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.1.34] - 2026-05-08
 
 ### Added
 - **AI: Battery grid charging** binary sensor (`optimization_battery_grid_charge`) — ON when the Heartbeat AI's currently active BATTERY decision is `BATTERY_CHARGE_FROM_GRID`. AI-curated alternative to the simple price-vs-daily-average heuristic of `cheap_electricity` — fires when the HEMS has decided "now is the right grid-buy moment to bridge upcoming high-price periods", taking the full forecast and battery state into account.
 - New pure helper `active_optimization_event(events, asset, now)` (with 6 unit tests) for finding the slot that is currently active for a given asset.
+
+### Changed
+- Bumped `onekommafive` dependency to `>=0.1.20` (internal refactor of authenticated HTTP calls; CLI cleanups; no public API change).
+
+### Tooling
+- New **CodeQL** workflow (`.github/workflows/codeql.yml`) — security and code-quality scan on push, PR, and weekly cron.
+- New **lint** job in `test.yml` running ruff via `pre-commit/action`.
+- `pre-commit` config (`.pre-commit-config.yaml`) and `ruff` settings in `pyproject.toml`.
+- Repo-wide one-time ruff format pass; `datetime.timezone.utc` migrated to `datetime.UTC`.
+- Resolved CodeQL findings: unused module-level `_LOGGER`s in `services.py` and `switch.py` removed; the empty `except` in `OneKomma5StablePriceSensor` now logs at debug instead of silently swallowing.
 
 ## [0.1.33] - 2026-05-05
 
