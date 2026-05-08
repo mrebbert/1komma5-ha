@@ -10,7 +10,7 @@ custom_integrations/onekommafive/
   icon@2x.png   # 512×512 (upscaled from icon.png via `sips -Z 512`)
 ```
 
-⚠️ **Quality caveat:** `icon@2x.png` was upscaled from the 256×256 source by `sips`. It will look slightly blurry compared with a true 512-rendered logo. If a higher-resolution source is available (vector file or 512×512 export), drop it in here as `icon@2x.png` before opening the PR.
+**Quality caveat:** `icon@2x.png` was upscaled from the 256×256 source by `sips`. It will look slightly blurry compared with a true 512-rendered logo. If a higher-resolution source is available (vector file or 512×512 export), drop it in here as `icon@2x.png` before opening the PR.
 
 ## How to submit
 
