@@ -1,25 +1,6 @@
 views:
   - type: sections
     path: ''
-    max_columns: 2
-    dense_section_placement: true
-    title: Netz
-    icon: mdi:transmission-tower
-    cards: []
-    badges:
-      - type: entity
-        show_name: true
-        show_state: true
-        show_icon: true
-        entity: switch.SYSTEM_NAME_ems_automatikmodus
-        name: EMS Automatik
-        show_entity_picture: false
-      - type: entity
-        show_name: true
-        show_state: true
-        show_icon: true
-        entity: sensor.SYSTEM_NAME_autarkiegrad
-        icon: mdi:sun-clock
     sections:
       - type: grid
         cards:
@@ -116,7 +97,7 @@ views:
         cards:
           - type: heading
             icon: mdi:chart-box-outline
-            heading: Energiebezug und -einspeisung
+            heading: Energiebezug und -einspeisung - täglich
             heading_style: title
           - chart_type: bar
             period: day
@@ -166,7 +147,7 @@ views:
         cards:
           - type: heading
             icon: mdi:chart-box-outline
-            heading: Energieverbrauch
+            heading: Energieverbrauch - täglich
             heading_style: title
           - chart_type: bar
             period: day
@@ -221,7 +202,167 @@ views:
             stat_type: change
             name: Wärmepumpe
         column_span: 1
-
+      - type: grid
+        cards:
+          - type: heading
+            icon: mdi:calendar-month
+            heading: Energiebezug und -einspeisung - monatlich
+            heading_style: title
+          - chart_type: bar
+            period: month
+            type: statistics-graph
+            entities:
+              - entity: sensor.SYSTEM_NAME_pv_energie
+                name: PV
+              - entity: sensor.SYSTEM_NAME_netzbezug_energie
+                name: Netzbezug
+              - entity: sensor.SYSTEM_NAME_eingespeiste_energie
+                name: Einspeisung
+            stat_types:
+              - change
+            grid_options:
+              columns: 12
+              rows: 5
+            days_to_show: 7
+          - type: heading
+            heading: Energiebezug und -einspeisung - Monat
+            heading_style: title
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_netzbezug_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            grid_options:
+              columns: 12
+              rows: 2
+            name: Netzbezug
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_pv_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: PV
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_eingespeiste_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Einspeisung
+      - type: grid
+        cards:
+          - type: heading
+            heading: Leistungs- und Einspeisungsverlauf (24h)
+            heading_style: title
+            icon: mdi:chart-areaspline
+          - chart_type: line
+            period: 5minute
+            type: statistics-graph
+            entities:
+              - sensor.SYSTEM_NAME_netzleistung
+              - sensor.SYSTEM_NAME_batterieleistung
+              - sensor.SYSTEM_NAME_pv_leistung
+              - sensor.SYSTEM_NAME_gesamtverbrauch
+            stat_types:
+              - mean
+            days_to_show: 1
+            logarithmic_scale: false
+            expand_legend: true
+            grid_options:
+              columns: 24
+              rows: auto
+        column_span: 2
+      - type: grid
+        cards:
+          - type: heading
+            icon: mdi:calendar-month
+            heading: Energieverbrauch - monatlich
+            heading_style: title
+          - chart_type: bar
+            period: month
+            type: statistics-graph
+            entities:
+              - entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+                name: Gesamt
+              - entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+                name: Haushalt
+              - entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+                name: Wallbox
+              - entity: sensor.SYSTEM_NAME_warmepumpenenergie
+                name: Wärmepumpe
+            stat_types:
+              - change
+            hide_legend: false
+            logarithmic_scale: false
+            days_to_show: 7
+            grid_options:
+              columns: 12
+              rows: 5
+          - type: heading
+            heading: Energieverbrauch - Monat
+            heading_style: title
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Gesamt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Haushalt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Wallbox
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_warmepumpenenergie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Wärmepumpe
+    title: Netz
+    icon: mdi:transmission-tower
+    cards: []
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: switch.SYSTEM_NAME_ems_automatikmodus
+        name: EMS Automatik
+        show_entity_picture: false
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_autarkiegrad
+        icon: mdi:sun-clock
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_gunstiger_strom
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_aktueller_strompreis
+        show_entity_picture: false
+    max_columns: 2
+    dense_section_placement: true
   - type: sections
     max_columns: 4
     icon: mdi:car-electric
@@ -245,7 +386,6 @@ views:
                 entity: sensor.CAR_IDENTIFIER_lademodus
                 state: SMART_CHARGE
         column_span: 1
-
   - type: sections
     max_columns: 2
     icon: mdi:currency-eur
@@ -400,41 +540,141 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: Monatliche Übersicht
+            heading: Stromkosten & Einspeisevergütung
             heading_style: title
-            icon: mdi:cash-100
-          - type: custom:apexcharts-card
-            header:
-              show: true
-              title: Monatliche Stromkosten & Einspeisevergütung
-            graph_span: 1year
-            series:
-              - entity: sensor.SYSTEM_NAME_stromkosten
-                name: Stromkosten
-                color: '#e53935'
-                type: column
-                statistics:
-                  type: change
+          - type: vertical-stack
+            cards:
+              - type: horizontal-stack
+                cards:
+                  - type: custom:button-card
+                    name: Tag
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Täglich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Täglich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+                  - type: custom:button-card
+                    name: Woche
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Wöchentlich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Wöchentlich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+                  - type: custom:button-card
+                    name: Monat
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Monatlich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Monatlich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+                  - type: custom:button-card
+                    name: Jahr
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Jährlich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Jährlich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Täglich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung – Täglich
+                  chart_type: bar
+                  period: day
+                  days_to_show: 7
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Wöchentlich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung – Wöchentlich
+                  chart_type: bar
+                  period: week
+                  days_to_show: 28
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Monatlich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung – Monatlich
+                  chart_type: bar
                   period: month
-                unit: ' €'
-                float_precision: 2
-              - entity: sensor.SYSTEM_NAME_einspeisevergutung
-                name: Einspeisevergütung
-                color: '#43a047'
-                type: column
-                statistics:
-                  type: change
-                  period: month
-                unit: ' €'
-                float_precision: 2
-            apex_config:
-              chart:
-                toolbar:
-                  show: false
-              plotOptions:
-                bar:
-                  borderRadius: 3
-                  columnWidth: "60%"
-              yaxis:
-                forceNiceScale: true
-                min: 0
+                  days_to_show: 180
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Jährlich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung – 3-Jahres-Übersicht
+                  chart_type: bar
+                  period: year
+                  days_to_show: 1095
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
