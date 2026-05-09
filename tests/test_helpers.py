@@ -16,6 +16,7 @@ from helpers import (  # type: ignore[import-not-found]
     get_current_price,
     split_prices_by_date,
     trapezoidal_delta_kwh,
+    weather_symbol_to_ha_condition,
 )
 
 UTC = datetime.UTC
@@ -481,3 +482,40 @@ class TestTrapezoidalDeltaKwh:
             datetime.datetime(2026, 4, 26, 10, 0, 30, tzinfo=UTC),
         )
         assert result == pytest.approx(2000 * (30 / 3600) / 1000)
+
+
+# ----------------------------------------------------------------------------
+# weather_symbol_to_ha_condition
+# ----------------------------------------------------------------------------
+
+
+class TestWeatherSymbolToHaCondition:
+    @pytest.mark.parametrize(
+        "symbol_id,expected",
+        [
+            (1, "sunny"),
+            (2, "sunny"),
+            (3, "partlycloudy"),
+            (4, "cloudy"),
+            (5, "rainy"),
+            (8, "rainy"),
+            (15, "pouring"),
+            (101, "clear-night"),
+            (102, "clear-night"),
+            (103, "partlycloudy"),
+            (104, "cloudy"),
+            (105, "rainy"),
+            (108, "rainy"),
+            (115, "pouring"),
+        ],
+    )
+    def test_known_symbols_map_to_ha_conditions(self, symbol_id: int, expected: str) -> None:
+        assert weather_symbol_to_ha_condition(symbol_id) == expected
+
+    def test_none_symbol_returns_none(self) -> None:
+        assert weather_symbol_to_ha_condition(None) is None
+
+    def test_unknown_symbol_returns_none(self) -> None:
+        # 999 is not in our mapping; the WeatherEntity should fall back rather
+        # than crash, so the helper returns None.
+        assert weather_symbol_to_ha_condition(999) is None

@@ -238,3 +238,35 @@ def find_most_expensive_window(
         earliest_start,
         latest_end,
     )
+
+
+# Map 1KOMMA5° weather symbol IDs to Home Assistant WeatherEntity condition strings.
+# Day variants are <100; night variants are day_id + 100. Library source:
+# .venv/.../onekommafive/models.py (WEATHER_SYMBOLS).
+_WEATHER_SYMBOL_TO_CONDITION: dict[int, str] = {
+    1: "sunny",
+    2: "sunny",
+    3: "partlycloudy",
+    4: "cloudy",
+    5: "rainy",
+    8: "rainy",
+    15: "pouring",
+    101: "clear-night",
+    102: "clear-night",
+    103: "partlycloudy",
+    104: "cloudy",
+    105: "rainy",
+    108: "rainy",
+    115: "pouring",
+}
+
+
+def weather_symbol_to_ha_condition(symbol_id: int | None) -> str | None:
+    """Translate a 1KOMMA5° weather symbol ID to an HA WeatherEntity condition.
+
+    Returns ``None`` for unknown IDs and for ``None`` input so the WeatherEntity
+    falls back to its previous state instead of raising.
+    """
+    if symbol_id is None:
+        return None
+    return _WEATHER_SYMBOL_TO_CONDITION.get(symbol_id)

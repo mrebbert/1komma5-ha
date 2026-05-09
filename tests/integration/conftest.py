@@ -52,6 +52,7 @@ def mock_system_factory():
         ems_settings: MagicMock | None = None,
         prices: MagicMock | None = None,
         optimizations: MagicMock | None = None,
+        weather: MagicMock | None = None,
     ) -> MagicMock:
         system = MagicMock()
         system.id.return_value = system_id
@@ -98,6 +99,22 @@ def mock_system_factory():
         if optimizations is None:
             optimizations = MagicMock(events=[])
         system.get_optimizations.return_value = optimizations
+
+        if weather is None:
+            weather = MagicMock(
+                today=MagicMock(
+                    temperature_celsius=None,
+                    sunshine_minutes=None,
+                    weather_symbol_id=None,
+                ),
+                tomorrow=MagicMock(
+                    temperature_celsius=None,
+                    sunshine_minutes=None,
+                    weather_symbol_id=None,
+                ),
+                forecasts=[],
+            )
+        system.get_weather.return_value = weather
 
         return system
 

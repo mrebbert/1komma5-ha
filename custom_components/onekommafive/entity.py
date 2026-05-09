@@ -15,6 +15,7 @@ from .coordinator import (
     OneKomma5LiveCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
+    OneKomma5WeatherCoordinator,
 )
 
 
@@ -90,6 +91,25 @@ class OneKomma5OptimizationEntity(CoordinatorEntity[OneKomma5OptimizationCoordin
     def __init__(
         self,
         coordinator: OneKomma5OptimizationCoordinator,
+        system_id: str,
+        system_name: str,
+        unique_id_suffix: str,
+    ) -> None:
+        """Initialize the entity."""
+        super().__init__(coordinator)
+        self._system_id = system_id
+        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
+        self._attr_device_info = system_device_info(system_id, system_name)
+
+
+class OneKomma5WeatherEntity(CoordinatorEntity[OneKomma5WeatherCoordinator]):
+    """Base entity for sensors backed by the weather coordinator."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: OneKomma5WeatherCoordinator,
         system_id: str,
         system_name: str,
         unique_id_suffix: str,

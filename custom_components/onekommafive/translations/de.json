@@ -248,6 +248,12 @@
       },
       "diag_optimization_update": {
         "name": "Letztes Optimierungs-Update"
+      },
+      "weather_sunshine_today": {
+        "name": "Sonnenscheindauer heute"
+      },
+      "weather_sunshine_tomorrow": {
+        "name": "Sonnenscheindauer morgen"
       }
     },
     "switch": {

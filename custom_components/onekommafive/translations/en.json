@@ -248,6 +248,12 @@
       },
       "diag_optimization_update": {
         "name": "Last optimization update"
+      },
+      "weather_sunshine_today": {
+        "name": "Sunshine today"
+      },
+      "weather_sunshine_tomorrow": {
+        "name": "Sunshine tomorrow"
       }
     },
     "switch": {

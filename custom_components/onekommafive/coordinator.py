@@ -15,6 +15,7 @@ from .const import (
     LIVE_UPDATE_INTERVAL_SECONDS,
     OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
     PRICE_UPDATE_INTERVAL_SECONDS,
+    WEATHER_UPDATE_INTERVAL_SECONDS,
 )
 from .helpers import (
     aggregate_optimization_events,
@@ -50,6 +51,13 @@ class PriceData:
     tomorrow_average_price: float | None = None
     tomorrow_lowest_price: float | None = None
     tomorrow_highest_price: float | None = None
+
+
+@dataclass
+class WeatherData:
+    """Container for weather data fetched from the API."""
+
+    weather: Any  # onekommafive.models.WeatherData
 
 
 @dataclass
@@ -301,3 +309,21 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
             self.hass.bus.async_fire(EVENT_OPTIMIZATION_DECISION, payload)
 
         self._last_fired_from_time = latest_from_time
+
+
+class OneKomma5WeatherCoordinator(OneKomma5BaseCoordinator[WeatherData]):
+    """Coordinator for weather forecast data."""
+
+    _data_label = "weather data"
+
+    def __init__(self, hass: HomeAssistant, system: Any) -> None:
+        super().__init__(
+            hass,
+            system,
+            name="1KOMMA5° Weather",
+            interval_seconds=WEATHER_UPDATE_INTERVAL_SECONDS,
+        )
+
+    def _fetch(self) -> WeatherData:
+        """Fetch weather data synchronously."""
+        return WeatherData(weather=self._system.get_weather())

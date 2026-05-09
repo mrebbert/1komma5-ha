@@ -28,6 +28,7 @@ from .sensor_descriptions import (
     OneKomma5OptimizationSensorDescription,
     OneKomma5PriceSensorDescription,
     OneKomma5SensorDescription,
+    OneKomma5WeatherSensorDescription,
 )
 from .sensor_entities import (
     CURRENCY_EUR_PER_KWH,
@@ -40,6 +41,7 @@ from .sensor_entities import (
     OneKomma5OptimizationSensor,
     OneKomma5PriceSensor,
     OneKomma5StablePriceSensor,
+    OneKomma5WeatherSensor,
 )
 
 # Power sensors for which an energy counterpart (kWh) is created.
@@ -362,6 +364,26 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
 )
 
 
+WEATHER_SENSORS: tuple[OneKomma5WeatherSensorDescription, ...] = (
+    OneKomma5WeatherSensorDescription(
+        key="weather_sunshine_today",
+        translation_key="weather_sunshine_today",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="min",
+        icon="mdi:weather-sunny",
+        value_fn=lambda d: d.weather.today.sunshine_minutes,
+    ),
+    OneKomma5WeatherSensorDescription(
+        key="weather_sunshine_tomorrow",
+        translation_key="weather_sunshine_tomorrow",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="min",
+        icon="mdi:weather-sunny",
+        value_fn=lambda d: d.weather.tomorrow.sunshine_minutes,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: OneKomma5ConfigEntry,
@@ -372,6 +394,7 @@ async def async_setup_entry(
     live_coordinator = data.live_coordinator
     price_coordinator = data.price_coordinator
     optimization_coordinator = data.optimization_coordinator
+    weather_coordinator = data.weather_coordinator
     system = data.system
     system_id = system.id()
     system_name = data.system_name
@@ -421,6 +444,12 @@ async def async_setup_entry(
     entities.extend(
         OneKomma5OptimizationSensor(optimization_coordinator, system_id, system_name, desc)
         for desc in OPTIMIZATION_SENSORS
+    )
+
+    # Weather sensors (sunshine forecast — extra to the WeatherEntity)
+    entities.extend(
+        OneKomma5WeatherSensor(weather_coordinator, system_id, system_name, desc)
+        for desc in WEATHER_SENSORS
     )
 
     # EV charger sensors (one set per charger)

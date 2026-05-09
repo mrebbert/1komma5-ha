@@ -27,6 +27,7 @@ from .entity import (
     OneKomma5EVEntity,
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
+    OneKomma5WeatherEntity,
     QuarterHourUpdateMixin,
     system_device_info,
 )
@@ -36,6 +37,7 @@ from .sensor_descriptions import (
     OneKomma5OptimizationSensorDescription,
     OneKomma5PriceSensorDescription,
     OneKomma5SensorDescription,
+    OneKomma5WeatherSensorDescription,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -396,6 +398,30 @@ class OneKomma5OptimizationSensor(OneKomma5OptimizationEntity, SensorEntity):
         if self.coordinator.data is None:
             return None
         return self.entity_description.attr_fn(self.coordinator.data)
+
+
+class OneKomma5WeatherSensor(OneKomma5WeatherEntity, SensorEntity):
+    """Sensor for weather coordinator data."""
+
+    entity_description: OneKomma5WeatherSensorDescription
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        description: OneKomma5WeatherSensorDescription,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, system_id, system_name, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> Any:
+        """Return the sensor value."""
+        if self.coordinator.data is None:
+            return None
+        return self.entity_description.value_fn(self.coordinator.data)
 
 
 class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):

@@ -13,7 +13,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntityDescription
 
-from .coordinator import LiveData, OptimizationData, PriceData
+from .coordinator import LiveData, OptimizationData, PriceData, WeatherData
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -43,3 +43,10 @@ class OneKomma5OptimizationSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[OptimizationData], Any]
     attr_fn: Callable[[OptimizationData], dict[str, Any] | None] = lambda _: None
+
+
+@dataclass(frozen=True, kw_only=True)
+class OneKomma5WeatherSensorDescription(SensorEntityDescription):
+    """Weather sensor entity description with value accessor."""
+
+    value_fn: Callable[[WeatherData], Any]

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Weather forecast** — exposes `system.get_weather()`. The integration adds a `weather` entity backed by the location 1KOMMA5° already knows about, supporting the standard HA weather card and the `weather.get_forecasts` service (hourly, ~48 h horizon in 3-hour buckets). Two extra sensors `Sunshine today` / `Sunshine tomorrow` (minutes) cover the PV-relevant data the WeatherEntity schema can't carry — useful for "only run the dishwasher if there's enough sun today" automations. New 1-hour weather coordinator; failures are non-fatal and retried on the next interval.
 - `CONTRIBUTING.md` covering local setup (venv, pre-commit, pytest), PR workflow, scope, translation guidelines and release process. Linked from the README development section.
 - **Tier-2 integration tests** under `tests/integration/` using `pytest-homeassistant-custom-component`. New `[test-integration]` extras group in `pyproject.toml`; new `integration-tests` CI job runs them on every push/PR alongside the existing helper tests. The Tier-1 helper suite stays the day-to-day fast feedback loop. Coverage so far (27 tests):
   - **Config flow**: single-system success, multi-system picker, invalid auth, cannot connect
@@ -18,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Options flow**: form pre-fills the current feed-in tariff, persists a new value, rejects values outside the [0.0, 0.5] range
   - **Stable price sensor**: holds the last valid price across an empty API payload — guards the cost-sensor multiplier
   - **Charging-mode select**: lowercase HA option `smart_charge` converts correctly to `ChargingMode.SMART_CHARGE` before the API call
+  - **Weather entity & sunshine sensors**: the WeatherEntity reports the current 3-hour slot's mapped condition; `weather.get_forecasts` returns one entry per slot; the two sunshine sensors register with the expected per-day minute values
 - `.github/PULL_REQUEST_TEMPLATE.md` — pre-fills new PRs with summary / type / how-tested / checklist sections.
 - `.github/SECURITY.md` — vulnerability-reporting policy via GitHub Security Advisories; clarifies in-scope vs upstream-HA / upstream-1KOMMA5° issues.
 - `.github/CODE_OF_CONDUCT.md` — adopts Contributor Covenant 2.1 by reference, with reporting channels matching the security policy.
