@@ -61,9 +61,14 @@ Tier 1 tests cover the pure helpers in `custom_components/onekommafive/helpers.p
 .venv/bin/pytest --cov=custom_components/onekommafive --cov-report=term-missing
 ```
 
-Tier 2 tests (full HA stack via `pytest-homeassistant-custom-component`) are intentionally not set up — keeping the test environment lightweight is more valuable than coverage of thin platform glue for a hobby project.
+Tier 2 tests use a real Home Assistant instance via `pytest-homeassistant-custom-component`. They live under `tests/integration/` and exercise the config flow, coordinators and services with the `onekommafive` library mocked. The dependency group is heavier (HA itself plus a numpy / sqlalchemy stack), so it is opt-in:
 
-If you change a pure helper or add one, please add tests under `tests/test_helpers.py`. If you change behaviour that's already covered, don't loosen existing tests just to make a change pass.
+```bash
+.venv/bin/pip install -e ".[test-integration]"
+.venv/bin/pytest tests/integration -v
+```
+
+If you change a pure helper or add one, please add tests under `tests/test_helpers.py`. For platform changes (sensor classes, coordinators, config flow), add tests under `tests/integration/`. If you change behaviour that's already covered, don't loosen existing tests just to make a change pass.
 
 ## Pull request workflow
 
