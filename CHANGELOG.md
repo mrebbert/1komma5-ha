@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Automation blueprints** — three ready-to-import blueprints in `blueprints/automation/onekommafive/`:
+  - `cheapest_window.yaml`: schedule a switch / `input_boolean` for the cheapest contiguous N-minute window in the price forecast (dishwasher, washing machine, EV manual run). Wraps the `onekommafive.get_cheapest_window` service.
+  - `follow_cheap_electricity.yaml`: mirror a switch's state to `binary_sensor.…_cheap_electricity` with optional time-of-day window — opportunistic loads like a hot-water booster or pool pump.
+  - `notify_grid_charge.yaml`: send a notification whenever the Heartbeat AI flips `binary_sensor.…_optimization_battery_grid_charge` to ON.
 - **Weather forecast** — exposes `system.get_weather()`. The integration adds a `weather` entity backed by the location 1KOMMA5° already knows about, supporting the standard HA weather card and the `weather.get_forecasts` service (hourly, ~48 h horizon in 3-hour buckets). Two extra sensors `Sunshine today` / `Sunshine tomorrow` (minutes) cover the PV-relevant data the WeatherEntity schema can't carry — useful for "only run the dishwasher if there's enough sun today" automations. New 1-hour weather coordinator; failures are non-fatal and retried on the next interval.
 - `CONTRIBUTING.md` covering local setup (venv, pre-commit, pytest), PR workflow, scope, translation guidelines and release process. Linked from the README development section.
 - **Tier-2 integration tests** under `tests/integration/` using `pytest-homeassistant-custom-component`. New `[test-integration]` extras group in `pyproject.toml`; new `integration-tests` CI job runs them on every push/PR alongside the existing helper tests. The Tier-1 helper suite stays the day-to-day fast feedback loop. Coverage so far (27 tests):

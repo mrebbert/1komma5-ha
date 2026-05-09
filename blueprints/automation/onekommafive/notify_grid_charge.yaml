@@ -1,0 +1,69 @@
+blueprint:
+  name: 1KOMMA5° — Notify on AI battery grid-charge decision
+  description: >
+    Send a notification whenever the 1KOMMA5° Heartbeat AI decides to charge
+    the home battery from the grid (i.e. when
+    `binary_sensor.…_optimization_battery_grid_charge` transitions from OFF
+    to ON).
+
+
+    The AI decides to grid-charge when it predicts that current electricity
+    is cheap enough to bridge an upcoming high-price period — taking the
+    full forecast and battery state into account. This is more accurate
+    than the simple "current price < today's average" heuristic, but
+    happens less frequently.
+
+
+    Pair this with the `follow_cheap_electricity` blueprint to combine
+    AI-driven battery management with opportunistic load shifting.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/notify_grid_charge.yaml
+
+  input:
+    grid_charge_sensor:
+      name: AI grid-charge binary sensor
+      description: >
+        The 1KOMMA5° `…_optimization_battery_grid_charge` binary sensor.
+      selector:
+        entity:
+          domain: binary_sensor
+          integration: onekommafive
+    notify_target:
+      name: Notification target
+      description: >
+        The `notify` service to call (e.g. `notify.mobile_app_pixel`,
+        `notify.persistent_notification`, `notify.notify`).
+      default: notify.persistent_notification
+      selector:
+        text: {}
+    title:
+      name: Notification title
+      default: "1KOMMA5°: Battery charging from grid"
+      selector:
+        text: {}
+    message:
+      name: Notification message
+      description: >
+        Supports Jinja templates. Available variables: `trigger`, plus the
+        last_decision attributes via the `optimization_last_decision` sensor.
+      default: >
+        The Heartbeat AI started charging the battery from the grid. This
+        usually means it expects a high-price period soon.
+      selector:
+        text:
+          multiline: true
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input grid_charge_sensor
+    to: "on"
+
+action:
+  - service: !input notify_target
+    data:
+      title: !input title
+      message: !input message

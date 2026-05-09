@@ -1,0 +1,109 @@
+blueprint:
+  name: 1KOMMA5° — Follow cheap electricity
+  description: >
+    Mirror a switch's state to the `binary_sensor.…_cheap_electricity`
+    sensor: turn it ON when electricity is cheap (current price below
+    today's average), turn it OFF when it isn't.
+
+
+    Use this for loads that are happy to opportunistically run whenever
+    power is cheap and idle otherwise — e.g. a domestic hot-water booster,
+    a pool pump, a battery charger for power tools.
+
+
+    Optional: restrict to a time window (e.g. 06:00–22:00) so the switch
+    doesn't kick on at 03:00 when electricity is cheap but the load
+    shouldn't actually run.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/follow_cheap_electricity.yaml
+
+  input:
+    cheap_electricity_sensor:
+      name: Cheap-electricity binary sensor
+      description: >
+        The 1KOMMA5° `…_cheap_electricity` binary sensor for your system.
+      selector:
+        entity:
+          domain: binary_sensor
+          integration: onekommafive
+    target_switch:
+      name: Switch entity
+      description: The switch (or input_boolean) that follows the cheap-electricity state.
+      selector:
+        entity:
+          domain:
+            - switch
+            - input_boolean
+    earliest_hour:
+      name: Earliest hour of day
+      description: Switch must not turn on before this hour (24h format).
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 23
+          step: 1
+          mode: slider
+    latest_hour:
+      name: Latest hour of day
+      description: Switch must turn off after this hour, even if electricity is still cheap.
+      default: 23
+      selector:
+        number:
+          min: 1
+          max: 24
+          step: 1
+          mode: slider
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input cheap_electricity_sensor
+    to: "on"
+    id: became_cheap
+  - platform: state
+    entity_id: !input cheap_electricity_sensor
+    to: "off"
+    id: became_expensive
+  - platform: time
+    at: "00:00:00"
+    id: midnight_safety_off
+
+variables:
+  earliest_hour: !input earliest_hour
+  latest_hour: !input latest_hour
+
+action:
+  - choose:
+      - alias: Cheap and within allowed time window → ON
+        conditions:
+          - condition: trigger
+            id: became_cheap
+          - condition: template
+            value_template: >
+              {{ now().hour >= earliest_hour and now().hour < latest_hour }}
+        sequence:
+          - service: homeassistant.turn_on
+            target:
+              entity_id: !input target_switch
+
+      - alias: No longer cheap → OFF
+        conditions:
+          - condition: trigger
+            id: became_expensive
+        sequence:
+          - service: homeassistant.turn_off
+            target:
+              entity_id: !input target_switch
+
+      - alias: Midnight safety OFF (covers timer drift / restarts)
+        conditions:
+          - condition: trigger
+            id: midnight_safety_off
+        sequence:
+          - service: homeassistant.turn_off
+            target:
+              entity_id: !input target_switch

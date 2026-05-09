@@ -357,6 +357,18 @@ The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant 
 
 ---
 
+## Automation Blueprints
+
+Three ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
+
+- **Run during cheapest window** — schedules a switch for the cheapest N-minute window each day (dishwasher, washing machine, EV)
+- **Follow cheap electricity** — mirrors a switch to `binary_sensor…_cheap_electricity` for opportunistic loads (water heater, pool pump)
+- **Notify on AI grid-charge decision** — pings you whenever the Heartbeat AI starts charging the battery from the grid
+
+→ [Blueprints README with import instructions](blueprints/automation/onekommafive/README.md)
+
+---
+
 ## Installation
 
 ### Via HACS (recommended)

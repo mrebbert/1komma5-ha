@@ -1,0 +1,132 @@
+blueprint:
+  name: 1KOMMA5° — Run during cheapest window
+  description: >
+    Once per day at a configurable planning time, find the cheapest contiguous
+    N-minute window in the dynamic-price forecast and switch a chosen entity
+    on for exactly that long.
+
+
+    Typical use cases: dishwasher, washing machine, dryer, water heater, EV
+    wallbox set to "manual run". The blueprint calls the
+    `onekommafive.get_cheapest_window` service, waits until the window
+    starts, then runs the switch for the configured duration.
+
+
+    The price forecast covers up to ~30 hours, so plan late in the evening
+    to schedule for tomorrow morning, or early in the morning for the same
+    day.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/cheapest_window.yaml
+
+  input:
+    plan_time:
+      name: Planning time
+      description: Time of day at which the cheapest window is searched.
+      default: "22:00:00"
+      selector:
+        time: {}
+    target_switch:
+      name: Switch entity
+      description: The switch (or input_boolean) that gets turned on inside the cheapest window.
+      selector:
+        entity:
+          domain:
+            - switch
+            - input_boolean
+    duration_minutes:
+      name: Run duration
+      description: How long the switch stays on (must be a multiple of 15 min).
+      default: 120
+      selector:
+        number:
+          min: 15
+          max: 480
+          step: 15
+          unit_of_measurement: min
+          mode: slider
+    earliest_start:
+      name: Earliest start
+      description: >
+        Inclusive lower bound for the search window (HH:MM, local time).
+        The blueprint interprets this as "today if still in the future,
+        otherwise tomorrow".
+      default: "00:00:00"
+      selector:
+        time: {}
+    latest_end:
+      name: Latest end
+      description: >
+        Inclusive upper bound for the search window (HH:MM, local time).
+        Always interpreted as the next occurrence after `earliest_start`.
+      default: "07:00:00"
+      selector:
+        time: {}
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: time
+    at: !input plan_time
+
+variables:
+  duration_minutes: !input duration_minutes
+  earliest_input: !input earliest_start
+  latest_input: !input latest_end
+
+action:
+  - alias: Compute absolute start/end bounds for tomorrow's planning window
+    variables:
+      now_local: "{{ now() }}"
+      base_date: >
+        {% set t = strptime(earliest_input, '%H:%M:%S') %}
+        {% set candidate = now_local.replace(hour=t.hour, minute=t.minute, second=0, microsecond=0) %}
+        {% if candidate < now_local %}
+          {{ (candidate + timedelta(days=1)).isoformat() }}
+        {% else %}
+          {{ candidate.isoformat() }}
+        {% endif %}
+      earliest_dt: "{{ base_date }}"
+      latest_dt: >
+        {% set start = as_datetime(base_date) %}
+        {% set te = strptime(latest_input, '%H:%M:%S') %}
+        {% set end = start.replace(hour=te.hour, minute=te.minute, second=0, microsecond=0) %}
+        {% if end <= start %}
+          {{ (end + timedelta(days=1)).isoformat() }}
+        {% else %}
+          {{ end.isoformat() }}
+        {% endif %}
+
+  - alias: Ask the integration for the cheapest contiguous window
+    service: onekommafive.get_cheapest_window
+    data:
+      duration_minutes: "{{ duration_minutes }}"
+      earliest_start: "{{ earliest_dt }}"
+      latest_end: "{{ latest_dt }}"
+    response_variable: window
+
+  - alias: Bail out if no window was found
+    if:
+      - condition: template
+        value_template: "{{ not window.found }}"
+    then:
+      - stop: "No cheapest window found in the forecast horizon"
+
+  - alias: Wait until the window starts (with a generous safety timeout)
+    wait_template: "{{ now() >= as_datetime(window.start) }}"
+    timeout:
+      hours: 30
+    continue_on_timeout: false
+
+  - alias: Run the switch for the planned duration
+    service: homeassistant.turn_on
+    target:
+      entity_id: !input target_switch
+
+  - delay:
+      minutes: !input duration_minutes
+
+  - service: homeassistant.turn_off
+    target:
+      entity_id: !input target_switch
