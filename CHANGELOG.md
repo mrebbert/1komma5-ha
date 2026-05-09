@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `CONTRIBUTING.md` covering local setup (venv, pre-commit, pytest), PR workflow, scope, translation guidelines and release process. Linked from the README development section.
-- **Tier-2 integration tests** under `tests/integration/` using `pytest-homeassistant-custom-component`. New `[test-integration]` extras group in `pyproject.toml`; new `integration-tests` CI job runs them on every push/PR alongside the existing helper tests. The Tier-1 helper suite stays the day-to-day fast feedback loop. Coverage so far (25 tests):
+- **Tier-2 integration tests** under `tests/integration/` using `pytest-homeassistant-custom-component`. New `[test-integration]` extras group in `pyproject.toml`; new `integration-tests` CI job runs them on every push/PR alongside the existing helper tests. The Tier-1 helper suite stays the day-to-day fast feedback loop. Coverage so far (27 tests):
   - **Config flow**: single-system success, multi-system picker, invalid auth, cannot connect
   - **Reauth flow**: success path, invalid credentials, system gone from account
   - **Reconfigure flow**: success path, cannot-connect error
@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Optimization bus events**: first refresh fires exactly one event for the latest decision; subsequent refreshes fire only events strictly newer than the last fired; idempotent on identical data
   - **Cost sensor**: accumulates trapezoidally with positive prices, decreases with negative prices, stays at zero when no stable price is available
   - **Options flow**: form pre-fills the current feed-in tariff, persists a new value, rejects values outside the [0.0, 0.5] range
+  - **Stable price sensor**: holds the last valid price across an empty API payload — guards the cost-sensor multiplier
+  - **Charging-mode select**: lowercase HA option `smart_charge` converts correctly to `ChargingMode.SMART_CHARGE` before the API call
 - `.github/PULL_REQUEST_TEMPLATE.md` — pre-fills new PRs with summary / type / how-tested / checklist sections.
 - `.github/SECURITY.md` — vulnerability-reporting policy via GitHub Security Advisories; clarifies in-scope vs upstream-HA / upstream-1KOMMA5° issues.
 - `.github/CODE_OF_CONDUCT.md` — adopts Contributor Covenant 2.1 by reference, with reporting channels matching the security policy.
