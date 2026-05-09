@@ -7,12 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `CONTRIBUTING.md` covering local setup (venv, pre-commit, pytest), PR workflow, scope, translation guidelines and release process. Linked from the README development section.
-- **Tier-2 integration tests** under `tests/integration/` using `pytest-homeassistant-custom-component`. New `[test-integration]` extras group in `pyproject.toml`; new `integration-tests` CI job runs them on every push/PR alongside the existing helper tests. The Tier-1 helper suite stays the day-to-day fast feedback loop. Coverage so far (16 tests):
+- **Tier-2 integration tests** under `tests/integration/` using `pytest-homeassistant-custom-component`. New `[test-integration]` extras group in `pyproject.toml`; new `integration-tests` CI job runs them on every push/PR alongside the existing helper tests. The Tier-1 helper suite stays the day-to-day fast feedback loop. Coverage so far (25 tests):
   - **Config flow**: single-system success, multi-system picker, invalid auth, cannot connect
   - **Reauth flow**: success path, invalid credentials, system gone from account
   - **Reconfigure flow**: success path, cannot-connect error
   - **Coordinators**: EMS gateway missing falls back to `ems_settings=None`; price and optimization first refresh failures do not block setup
   - **Services**: `get_cheapest_window` finds minimum-average window, `get_most_expensive_window` finds maximum, "no integration configured" raises clear error, voluptuous rejects sub-15-minute durations
+  - **Optimization bus events**: first refresh fires exactly one event for the latest decision; subsequent refreshes fire only events strictly newer than the last fired; idempotent on identical data
+  - **Cost sensor**: accumulates trapezoidally with positive prices, decreases with negative prices, stays at zero when no stable price is available
+  - **Options flow**: form pre-fills the current feed-in tariff, persists a new value, rejects values outside the [0.0, 0.5] range
 - `.github/PULL_REQUEST_TEMPLATE.md` — pre-fills new PRs with summary / type / how-tested / checklist sections.
 - `.github/SECURITY.md` — vulnerability-reporting policy via GitHub Security Advisories; clarifies in-scope vs upstream-HA / upstream-1KOMMA5° issues.
 - `.github/CODE_OF_CONDUCT.md` — adopts Contributor Covenant 2.1 by reference, with reporting channels matching the security policy.
