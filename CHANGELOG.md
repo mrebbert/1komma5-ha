@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.35] - 2026-05-11
+
 ### Added
 - **Per-consumer cost sensors** — four new sensors (`Stromkosten Wärmepumpe`, `Stromkosten Wallbox`, `Stromkosten Haushalt`, `Stromkosten Klimaanlage`) that allocate the grid-import cost proportionally to each consumer's share of total consumption (`consumer_power / consumption_power × grid_consumption_power × stable_price`). The four values sum to the existing `electricity_cost` sensor at every sample (invariant verified by a Tier-2 test). When PV/battery cover all consumption the grid bill is zero — all four sensors stop accumulating. Note: the API mocks `acs_power` even for users without an AC unit, so `Stromkosten Klimaanlage` may be non-zero in those setups (same quirk as the existing `acs_energy` sensor).
 - **Automation blueprints** — three ready-to-import blueprints in `blueprints/automation/onekommafive/`:
@@ -34,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dashboard now requires the `button-card` HACS custom card and an `input_select.stromkosten_zeitspanne` helper (`Täglich` / `Wöchentlich` / `Monatlich` / `Jährlich`) for the new cost-time-range switcher. Both prerequisites are documented in `dashboard/README.md`.
 - Dashboard screenshots optimised with `pngquant` (~60 % smaller, no perceptible quality loss).
 - `dashboard/README.md` translated to fully English prose; literal config strings stay German on purpose.
+- Dashboard cost view now has a second `statistics-graph` below the existing cost/feed-in chart that breaks `Stromkosten` into its four per-consumer slices (heat pump / wallbox / household / AC). Reuses the existing day/week/month/year switcher — no new helper needed.
 
 ## [0.1.34] - 2026-05-08
 
