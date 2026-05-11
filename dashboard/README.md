@@ -66,6 +66,7 @@ An overview of dynamic electricity prices and accumulated costs, split into four
 | Price forecast | 30-hour price-forecast bar chart with colour tiers (green / orange / red), powered by `apexcharts-card` |
 | Cost / feed-in totals | Accumulated electricity cost and feed-in revenue as statistic cards for today, this month and this year |
 | Cost & feed-in (switcher) | `button-card` row to switch between day / week / month / year; below it a `statistics-graph` that follows the selected range |
+| Per-consumer costs | Same switcher drives a second `statistics-graph` showing the four per-consumer cost sensors (heat pump / wallbox / household / AC) for the same range |
 
 ## Usage
 

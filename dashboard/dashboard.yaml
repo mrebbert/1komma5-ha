@@ -678,3 +678,91 @@ views:
                       name: Stromkosten
                     - entity: sensor.SYSTEM_NAME_einspeisevergutung
                       name: Einspeisevergütung
+
+              # Per-consumer cost breakdown — reacts to the same input_select
+              # switcher above. Sum of the four bars equals the total
+              # `Stromkosten` bar at the corresponding period.
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Täglich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten – Täglich
+                  chart_type: bar
+                  period: day
+                  days_to_show: 7
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                      name: Klimaanlage
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Wöchentlich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten – Wöchentlich
+                  chart_type: bar
+                  period: week
+                  days_to_show: 28
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                      name: Klimaanlage
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Monatlich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten – Monatlich
+                  chart_type: bar
+                  period: month
+                  days_to_show: 180
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                      name: Klimaanlage
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Jährlich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten – 3-Jahres-Übersicht
+                  chart_type: bar
+                  period: year
+                  days_to_show: 1095
+                  stat_types:
+                    - change
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                      name: Klimaanlage
