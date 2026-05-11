@@ -336,6 +336,50 @@ class OneKomma5CostSensor(OneKomma5AccumulatingSensor):
         return self._stable_price_sensor.stable_price
 
 
+class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
+    """Per-consumer share of the grid-import cost.
+
+    Allocates ``grid_consumption_power × stable_price × dt`` proportionally to
+    the consumer's share of ``consumption_power``. The four instances
+    therefore sum to ``electricity_cost``.
+    """
+
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_native_unit_of_measurement = "EUR"
+    _attr_suggested_display_precision = 2
+    _attr_icon = "mdi:currency-eur"
+    _accumulator_precision = 4
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        stable_price_sensor: OneKomma5StablePriceSensor,
+        consumer_power_attr: str,
+        translation_key: str,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, translation_key)
+        self._attr_translation_key = translation_key
+        self._stable_price_sensor = stable_price_sensor
+        self._consumer_power_attr = consumer_power_attr
+
+    def _get_power_w(self, data: LiveData) -> float | None:
+        lo = data.live_overview
+        total = lo.consumption_power
+        if total is None or total <= 0:
+            return None
+        consumer_power = getattr(lo, self._consumer_power_attr, None)
+        grid = lo.grid_consumption_power
+        if consumer_power is None or grid is None:
+            return None
+        return grid * (consumer_power / total)
+
+    def _get_kwh_multiplier(self) -> float | None:
+        return self._stable_price_sensor.stable_price
+
+
 class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
     """Accumulated feed-in revenue sensor (€) derived from grid export power × fixed tariff.
 

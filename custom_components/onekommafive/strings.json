@@ -201,6 +201,18 @@
       "electricity_cost": {
         "name": "Stromkosten"
       },
+      "heat_pump_cost": {
+        "name": "Stromkosten Wärmepumpe"
+      },
+      "ev_charger_cost": {
+        "name": "Stromkosten Wallbox"
+      },
+      "household_cost": {
+        "name": "Stromkosten Haushalt"
+      },
+      "ac_cost": {
+        "name": "Stromkosten Klimaanlage"
+      },
       "feed_in_revenue": {
         "name": "Einspeisevergütung"
       },

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Per-consumer cost sensors** — four new sensors (`Stromkosten Wärmepumpe`, `Stromkosten Wallbox`, `Stromkosten Haushalt`, `Stromkosten Klimaanlage`) that allocate the grid-import cost proportionally to each consumer's share of total consumption (`consumer_power / consumption_power × grid_consumption_power × stable_price`). The four values sum to the existing `electricity_cost` sensor at every sample (invariant verified by a Tier-2 test). When PV/battery cover all consumption the grid bill is zero — all four sensors stop accumulating. Note: the API mocks `acs_power` even for users without an AC unit, so `Stromkosten Klimaanlage` may be non-zero in those setups (same quirk as the existing `acs_energy` sensor).
 - **Automation blueprints** — three ready-to-import blueprints in `blueprints/automation/onekommafive/`:
   - `cheapest_window.yaml`: schedule a switch / `input_boolean` for the cheapest contiguous N-minute window in the price forecast (dishwasher, washing machine, EV manual run). Wraps the `onekommafive.get_cheapest_window` service.
   - `follow_cheap_electricity.yaml`: mirror a switch's state to `binary_sensor.…_cheap_electricity` with optional time-of-day window — opportunistic loads like a hot-water booster or pool pump.

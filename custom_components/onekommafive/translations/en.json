@@ -201,6 +201,18 @@
       "electricity_cost": {
         "name": "Electricity cost"
       },
+      "heat_pump_cost": {
+        "name": "Heat pump cost"
+      },
+      "ev_charger_cost": {
+        "name": "EV charger cost"
+      },
+      "household_cost": {
+        "name": "Household cost"
+      },
+      "ac_cost": {
+        "name": "AC cost"
+      },
       "feed_in_revenue": {
         "name": "Feed-in revenue"
       },

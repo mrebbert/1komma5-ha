@@ -177,7 +177,13 @@ Accumulated monetary sensors derived from energy flow and dynamic pricing. Both 
 | Entity | Key | Description | Unit |
 |--------|-----|-------------|------|
 | Electricity Cost | `electricity_cost` | Cumulative electricity cost — integrates grid import power × current dynamic price (from *Last Valid Electricity Price*). Guards prevent accumulation when price is unavailable. | EUR |
+| Heat Pump Cost | `heat_pump_cost` | Cumulative grid-import cost share allocated to the heat pump (`heat_pumps_power / consumption_power × grid_consumption_power × stable_price`). | EUR |
+| EV Charger Cost | `ev_charger_cost` | Same allocation for the EV charger(s). | EUR |
+| Household Cost | `household_cost` | Same allocation for all remaining household appliances. | EUR |
+| AC Cost | `ac_cost` | Same allocation for the air-conditioning unit. The API currently mocks `acs_power` for systems without an AC — this sensor may be non-zero even then. | EUR |
 | Feed-in Revenue | `feed_in_revenue` | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
+
+The four per-consumer cost sensors always sum to `electricity_cost` — when PV/battery cover all consumption, the grid bill is zero and all five sensors stop accumulating together.
 
 The feed-in tariff can be changed at any time under **Settings → Devices & Services → 1KOMMA5° → Configure**.
 

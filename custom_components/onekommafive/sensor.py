@@ -32,6 +32,7 @@ from .sensor_descriptions import (
 )
 from .sensor_entities import (
     CURRENCY_EUR_PER_KWH,
+    OneKomma5ConsumerCostSensor,
     OneKomma5CostSensor,
     OneKomma5DiagnosticSensor,
     OneKomma5EnergySensor,
@@ -42,6 +43,13 @@ from .sensor_entities import (
     OneKomma5PriceSensor,
     OneKomma5StablePriceSensor,
     OneKomma5WeatherSensor,
+)
+
+CONSUMER_COST_SPECS: tuple[tuple[str, str], ...] = (
+    ("heat_pumps_power", "heat_pump_cost"),
+    ("ev_chargers_power", "ev_charger_cost"),
+    ("household_power", "household_cost"),
+    ("acs_power", "ac_cost"),
 )
 
 # Power sensors for which an energy counterpart (kWh) is created.
@@ -432,6 +440,20 @@ async def async_setup_entry(
     # Accumulated electricity cost sensor
     entities.append(
         OneKomma5CostSensor(live_coordinator, system_id, system_name, stable_price_sensor)
+    )
+
+    # Per-consumer cost sensors — proportional share of the grid-import cost.
+    # Sum of the four equals `electricity_cost` (invariant verified by tests).
+    entities.extend(
+        OneKomma5ConsumerCostSensor(
+            live_coordinator,
+            system_id,
+            system_name,
+            stable_price_sensor,
+            attr,
+            key,
+        )
+        for attr, key in CONSUMER_COST_SPECS
     )
 
     # Feed-in revenue sensor

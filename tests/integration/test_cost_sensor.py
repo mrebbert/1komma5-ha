@@ -103,6 +103,49 @@ def _cost_sensor(hass: HomeAssistant) -> tuple[str, float]:
     raise AssertionError("electricity_cost sensor not registered")
 
 
+def _consumer_costs(hass: HomeAssistant) -> dict[str, float]:
+    """Return {translation_key_suffix: cost} for the four consumer cost sensors."""
+    out: dict[str, float] = {}
+    for state in hass.states.async_all("sensor"):
+        for suffix in (
+            "_heat_pump_cost",
+            "_ev_charger_cost",
+            "_household_cost",
+            "_ac_cost",
+        ):
+            if state.entity_id.endswith(suffix):
+                out[suffix.lstrip("_")] = float(state.state)
+    if len(out) != 4:
+        raise AssertionError(f"expected 4 consumer cost sensors, got {sorted(out)}")
+    return out
+
+
+def _mixed_live_overview(
+    *,
+    grid: float,
+    consumption: float,
+    heat_pump: float = 0.0,
+    ev: float = 0.0,
+    household: float = 0.0,
+    ac: float = 0.0,
+) -> MagicMock:
+    """Build a LiveOverview mock with custom per-consumer power values."""
+    return MagicMock(
+        pv_power=0.0,
+        battery_power=0.0,
+        battery_soc=0,
+        grid_power=grid,
+        grid_consumption_power=grid,
+        grid_feed_in_power=0.0,
+        consumption_power=consumption,
+        household_power=household,
+        ev_chargers_power=ev,
+        heat_pumps_power=heat_pump,
+        acs_power=ac,
+        self_sufficiency=0.0,
+    )
+
+
 async def test_cost_sensor_accumulates_for_positive_price(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
@@ -170,3 +213,127 @@ async def test_cost_sensor_skips_when_price_unavailable(
 
     _, cost = _cost_sensor(hass)
     assert cost == 0.0
+
+
+async def test_consumer_cost_sum_equals_total(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """The four consumer cost values sum to electricity_cost (within rounding)."""
+    freezer.move_to("2026-05-08T12:00:00+00:00")
+    entry, system = await _setup_with_price(
+        hass, mock_system_factory, price=0.30, initial_power=0.0
+    )
+
+    overview = _mixed_live_overview(
+        grid=4000.0,
+        consumption=4000.0,
+        heat_pump=1000.0,
+        ev=1000.0,
+        household=1000.0,
+        ac=1000.0,
+    )
+
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    freezer.move_to("2026-05-08T12:01:00+00:00")
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    _, total = _cost_sensor(hass)
+    parts = _consumer_costs(hass)
+    assert total > 0
+    assert abs(sum(parts.values()) - total) < 0.0001
+
+
+async def test_consumer_cost_zero_when_full_pv(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """grid_consumption_power=0 → no money paid → all consumer costs are 0."""
+    freezer.move_to("2026-05-08T12:00:00+00:00")
+    entry, system = await _setup_with_price(
+        hass, mock_system_factory, price=0.30, initial_power=0.0
+    )
+
+    overview = _mixed_live_overview(
+        grid=0.0,
+        consumption=4000.0,
+        heat_pump=1000.0,
+        ev=1000.0,
+        household=1000.0,
+        ac=1000.0,
+    )
+
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    freezer.move_to("2026-05-08T12:01:00+00:00")
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    _, total = _cost_sensor(hass)
+    parts = _consumer_costs(hass)
+    assert total == 0.0
+    assert all(v == 0.0 for v in parts.values())
+
+
+async def test_consumer_cost_proportional_allocation(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """heat_pump:ev = 3:1, others 0 → cost ratio is 3:1, others 0."""
+    freezer.move_to("2026-05-08T12:00:00+00:00")
+    entry, system = await _setup_with_price(
+        hass, mock_system_factory, price=0.30, initial_power=0.0
+    )
+
+    overview = _mixed_live_overview(
+        grid=4000.0,
+        consumption=4000.0,
+        heat_pump=3000.0,
+        ev=1000.0,
+    )
+
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    freezer.move_to("2026-05-08T12:01:00+00:00")
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    parts = _consumer_costs(hass)
+    assert parts["household_cost"] == 0.0
+    assert parts["ac_cost"] == 0.0
+    assert parts["heat_pump_cost"] > 0
+    assert parts["ev_charger_cost"] > 0
+    # 3:1 ratio (with rounding tolerance — _accumulator_precision=4 → ±0.0001)
+    assert abs(parts["heat_pump_cost"] - 3 * parts["ev_charger_cost"]) < 0.0002
+
+
+async def test_consumer_cost_skips_when_no_consumption(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """consumption_power=0 → no allocation possible → all four stay at 0, no crash."""
+    freezer.move_to("2026-05-08T12:00:00+00:00")
+    entry, system = await _setup_with_price(
+        hass, mock_system_factory, price=0.30, initial_power=0.0
+    )
+
+    overview = _mixed_live_overview(grid=0.0, consumption=0.0)
+
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    freezer.move_to("2026-05-08T12:01:00+00:00")
+    system.get_live_overview.return_value = overview
+    await entry.runtime_data.live_coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    parts = _consumer_costs(hass)
+    assert all(v == 0.0 for v in parts.values())
