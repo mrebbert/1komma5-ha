@@ -337,6 +337,7 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
             name=None,
             source="recorder",
             statistic_id=statistic_id,
+            unit_class="energy",
             unit_of_measurement="kWh",
         )
         typed_stats: list[StatisticData] = [
@@ -398,6 +399,7 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
                     name=None,
                     source="recorder",
                     statistic_id=statistic_id,
+                    unit_class=None,
                     unit_of_measurement="EUR",
                 ),
                 [StatisticData(start=s["start"], sum=s["sum"]) for s in stats],
@@ -433,6 +435,7 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
                         name=None,
                         source="recorder",
                         statistic_id=soc_statistic_id,
+                        unit_class=None,
                         unit_of_measurement="%",
                     ),
                     soc_stats,
