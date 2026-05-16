@@ -8,7 +8,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/test.yml?label=Tests&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the [1KOMMA5° Heartbeat](https://www.1komma5grad.com/) home energy platform. Exposes your PV system, battery storage, heat pump, EV charger and dynamic electricity prices as sensors and controls.
+Unofficial [Home Assistant](https://www.home-assistant.io/) integration for the [1KOMMA5° Heartbeat](https://www.1komma5grad.com/) home energy platform, distributed via [HACS](https://hacs.xyz). Exposes your PV system, battery storage, heat pump, EV wallbox, dynamic electricity prices and weather forecast as Home Assistant sensors, services and dashboard cards — fully compatible with the Home Assistant Energy Dashboard.
 
 ---
 
@@ -355,7 +355,7 @@ These sensors are hidden by default (`entity_category: diagnostic`) and useful f
 
 ---
 
-## Example Dashboard
+## Example Home Assistant Dashboard
 
 The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant dashboard with two views — one for energy & grid data and one for EV charger control. All cards are native HA types, no extra frontend components needed.
 
@@ -363,7 +363,7 @@ The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant 
 
 ---
 
-## Automation Blueprints
+## Home Assistant Automation Blueprints
 
 Three ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
 
@@ -375,7 +375,7 @@ Three ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blue
 
 ---
 
-## Installation
+## Installation in Home Assistant (HACS)
 
 ### Via HACS (recommended)
 

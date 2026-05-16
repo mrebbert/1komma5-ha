@@ -29,7 +29,7 @@ The option labels and the helper name are German on purpose because the dashboar
 
 ### Grid (energy use and generation)
 
-![Energy & Grid view](1k5_energy.png)
+![Home Assistant Energy & Grid dashboard view](1komma5-home-assistant-energy.png)
 
 The main view groups gauges, daily/monthly bar charts and a 24-hour line chart:
 
@@ -47,7 +47,7 @@ The view header shows four **badges**: EMS auto mode switch, self-sufficiency ra
 
 ### EV (electric vehicle)
 
-![EV view](1k5_ev.png)
+![Home Assistant EV charging dashboard view](1komma5-home-assistant-ev.png)
 
 A focused view for controlling the EV charger:
 
@@ -56,7 +56,7 @@ A focused view for controlling the EV charger:
 
 ### Prices and costs
 
-![Prices & Costs view](1k5_costs.png)
+![Home Assistant dynamic electricity prices & costs dashboard view](1komma5-home-assistant-costs.png)
 
 An overview of dynamic electricity prices and accumulated costs, split into four sections:
 
