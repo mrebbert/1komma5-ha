@@ -175,25 +175,10 @@ async def _oldest_statistic(
     *,
     has_sum: bool,
 ) -> tuple[float, datetime.datetime | None]:
-    """Resolve the (anchor_sum, end_before) pair for backfilling a sensor.
+    """Return ``(anchor_sum, oldest_start)`` from the recorder for the given id.
 
-    Two scenarios:
-
-    1. Existing statistics: anchor at the OLDEST stored stat — backfill must
-       end with the same cumulative sum so the boundary is continuous.
-
-    2. No stats yet (fresh install OR after ``clear_history``): fall back to
-       the live sensor's current state. The live cost/energy sensor keeps a
-       persistent in-memory accumulator across restarts (via RestoreSensor);
-       its current state reflects everything accumulated by live polling. We
-       anchor the backfill's last bucket at that value and set ``end_before``
-       to the start of the current hour — the live sensor's next aggregation
-       tick continues from there seamlessly.
-
-       Without this fallback, after ``clear_history`` the backfill would
-       anchor at 0.0 while the live sensor's next stat would jump to ~state,
-       creating a ~state-Euro gap at the boundary that the Energy Dashboard
-       paints as a huge spike on the transition day.
+    Returns ``(0.0, None)`` when no stats exist yet — callers handle the
+    no-stats path explicitly (via ``_rebase_live_accumulator``).
     """
     floor = datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)
     rows = await get_instance_executor(
@@ -208,27 +193,52 @@ async def _oldest_statistic(
         {"sum"} if has_sum else {"mean"},
     )
     sensor_rows = rows.get(statistic_id) or []
-    if sensor_rows:
-        oldest = sensor_rows[0]
-        start_ts = oldest.get("start")
-        oldest_start = (
-            datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC)
-            if start_ts is not None
-            else None
-        )
-        anchor = float(oldest.get("sum") or 0.0) if has_sum else 0.0
-        return anchor, oldest_start
+    if not sensor_rows:
+        return 0.0, None
+    oldest = sensor_rows[0]
+    start_ts = oldest.get("start")
+    oldest_start = (
+        datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC) if start_ts is not None else None
+    )
+    anchor = float(oldest.get("sum") or 0.0) if has_sum else 0.0
+    return anchor, oldest_start
 
-    # Fall back to the live sensor's current state value.
-    state = hass.states.get(statistic_id)
-    if state is None or state.state in (None, "unknown", "unavailable"):
-        return 0.0, None
-    try:
-        anchor = float(state.state)
-    except (ValueError, TypeError):
-        return 0.0, None
-    current_hour = dt_util.utcnow().replace(minute=0, second=0, microsecond=0)
-    return anchor, current_hour
+
+def _find_accumulating_entity(hass: HomeAssistant, entity_id: str) -> Any | None:
+    """Locate the OneKomma5AccumulatingSensor instance for an entity_id.
+
+    Used to rebase the live accumulator after a fresh backfill so the live
+    sensor's cumulative state matches the imported historical total. Without
+    rebasing the live accumulator would still hold only the post-install
+    cumulative (often a tiny value), and the boundary between backfill and
+    live would create a huge spike or sink in the Energy Dashboard's
+    per-period arithmetic.
+    """
+    from homeassistant.helpers.entity_platform import async_get_platforms
+
+    for platform in async_get_platforms(hass, DOMAIN):
+        for entity in platform.entities.values():
+            if getattr(entity, "entity_id", None) == entity_id and hasattr(entity, "_accumulated"):
+                return entity
+    return None
+
+
+def _rebase_live_accumulator(
+    hass: HomeAssistant, statistic_id: str, total_delta: float
+) -> float | None:
+    """Boost the live entity's cumulative by ``total_delta`` so the historical
+    total becomes the new "since install" zero point.
+
+    Returns the new accumulator value, or ``None`` when no entity is found
+    (the caller falls back to writing stats anchored at zero).
+    """
+    entity = _find_accumulating_entity(hass, statistic_id)
+    if entity is None:
+        return None
+    new_value = float(entity._accumulated) + total_delta  # noqa: SLF001
+    entity._accumulated = new_value  # noqa: SLF001
+    entity.async_write_ha_state()
+    return new_value
 
 
 async def _fetch_hourly_prices(
@@ -380,6 +390,14 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
             )
             continue
         anchor_sum, oldest_existing = await _oldest_statistic(hass, statistic_id, has_sum=True)
+        if oldest_existing is None:
+            # No existing stats → rebase the live entity's accumulator so the
+            # historical total becomes the new "since install" zero point.
+            total_delta = sum(d for _, d in deltas)
+            rebased = _rebase_live_accumulator(hass, statistic_id, total_delta)
+            if rebased is not None:
+                anchor_sum = rebased
+                oldest_existing = dt_util.utcnow().replace(minute=0, second=0, microsecond=0)
         stats = accumulate_to_stats(deltas, anchor_sum, end_before=oldest_existing)
         if not stats:
             continue
@@ -430,6 +448,12 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
                 )
                 continue
             anchor_sum, oldest_existing = await _oldest_statistic(hass, statistic_id, has_sum=True)
+            if oldest_existing is None:
+                total_delta = sum(d for _, d in deltas)
+                rebased = _rebase_live_accumulator(hass, statistic_id, total_delta)
+                if rebased is not None:
+                    anchor_sum = rebased
+                    oldest_existing = dt_util.utcnow().replace(minute=0, second=0, microsecond=0)
             stats = accumulate_to_stats(deltas, anchor_sum, end_before=oldest_existing)
             if not stats:
                 continue
