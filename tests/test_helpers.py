@@ -8,12 +8,15 @@ from unittest.mock import patch
 
 import pytest
 from helpers import (  # type: ignore[import-not-found]
+    accumulate_to_stats,
     active_optimization_event,
     aggregate_optimization_events,
     build_forecast,
+    energy_buckets_to_kwh_deltas,
     find_cheapest_window,
     find_most_expensive_window,
     get_current_price,
+    soc_buckets_to_measurement_stats,
     split_prices_by_date,
     trapezoidal_delta_kwh,
     weather_symbol_to_ha_condition,
@@ -519,3 +522,123 @@ class TestWeatherSymbolToHaCondition:
         # 999 is not in our mapping; the WeatherEntity should fall back rather
         # than crash, so the helper returns None.
         assert weather_symbol_to_ha_condition(999) is None
+
+
+# ----------------------------------------------------------------------------
+# energy_buckets_to_kwh_deltas / soc_buckets_to_measurement_stats / accumulate_to_stats
+# ----------------------------------------------------------------------------
+
+
+@dataclass
+class _StubSlot:
+    """Stand-in for ``EnergySlot`` — exposes the attributes the helpers read."""
+
+    production: float | None = None
+    grid_supply: float | None = None
+    grid_feed_in: float | None = None
+    consumption_household_total: float | None = None
+    consumption_heat_pump_total: float | None = None
+    consumption_ev_total: float | None = None
+    consumption_ac_total: float | None = None
+    battery_charge: float | None = None
+    battery_discharge: float | None = None
+    battery_soc: float | None = None
+
+
+def _h(hour: int) -> datetime.datetime:
+    return datetime.datetime(2026, 1, 1, hour, 0, tzinfo=UTC)
+
+
+class TestEnergyBucketsToKwhDeltas:
+    def test_empty_dict_returns_empty_list(self) -> None:
+        assert energy_buckets_to_kwh_deltas({}, "production") == []
+
+    def test_extracts_per_hour_kwh(self) -> None:
+        ts = {
+            "2026-01-01T00:00Z": _StubSlot(production=0.5),
+            "2026-01-01T01:00Z": _StubSlot(production=1.25),
+        }
+        result = sorted(energy_buckets_to_kwh_deltas(ts, "production"))
+        assert result == [(_h(0), 0.5), (_h(1), 1.25)]
+
+    def test_skips_none_values(self) -> None:
+        # AC unit not installed → consumption_ac_total is None
+        ts = {
+            "2026-01-01T00:00Z": _StubSlot(consumption_ac_total=None),
+            "2026-01-01T01:00Z": _StubSlot(consumption_ac_total=0.2),
+        }
+        result = energy_buckets_to_kwh_deltas(ts, "consumption_ac_total")
+        assert len(result) == 1
+        assert result[0] == (_h(1), 0.2)
+
+    def test_unknown_field_returns_empty(self) -> None:
+        ts = {"2026-01-01T00:00Z": _StubSlot(production=0.5)}
+        # `getattr(slot, field, None)` for an unknown field returns None → skip
+        assert energy_buckets_to_kwh_deltas(ts, "nonexistent_field") == []
+
+    def test_accepts_full_iso_timestamp(self) -> None:
+        ts = {"2026-01-01T01:00:00Z": _StubSlot(production=1.0)}
+        result = energy_buckets_to_kwh_deltas(ts, "production")
+        assert result == [(_h(1), 1.0)]
+
+
+class TestSocBucketsToMeasurementStats:
+    def test_fraction_to_percent(self) -> None:
+        ts = {
+            "2026-01-01T00:00Z": _StubSlot(battery_soc=0.05),
+            "2026-01-01T01:00Z": _StubSlot(battery_soc=0.92),
+        }
+        result = dict(soc_buckets_to_measurement_stats(ts))
+        assert result[_h(0)] == pytest.approx(5.0)
+        assert result[_h(1)] == pytest.approx(92.0)
+
+    def test_skips_none(self) -> None:
+        ts = {
+            "2026-01-01T00:00Z": _StubSlot(battery_soc=None),
+            "2026-01-01T01:00Z": _StubSlot(battery_soc=0.5),
+        }
+        result = soc_buckets_to_measurement_stats(ts)
+        assert len(result) == 1
+        assert result[0] == (_h(1), pytest.approx(50.0))
+
+    def test_empty_input(self) -> None:
+        assert soc_buckets_to_measurement_stats({}) == []
+
+
+class TestAccumulateToStats:
+    def test_empty_deltas(self) -> None:
+        assert accumulate_to_stats([], anchor_sum=0.0) == []
+
+    def test_anchor_zero(self) -> None:
+        deltas = [(_h(0), 1.0), (_h(1), 2.0), (_h(2), 0.5)]
+        result = accumulate_to_stats(deltas, anchor_sum=0.0)
+        assert result == [
+            {"start": _h(0), "sum": 1.0},
+            {"start": _h(1), "sum": 3.0},
+            {"start": _h(2), "sum": 3.5},
+        ]
+
+    def test_anchor_nonzero(self) -> None:
+        deltas = [(_h(0), 1.0), (_h(1), 2.0)]
+        result = accumulate_to_stats(deltas, anchor_sum=5.5)
+        assert result[-1]["sum"] == pytest.approx(8.5)
+
+    def test_sorts_chronologically(self) -> None:
+        deltas = [(_h(2), 0.5), (_h(0), 1.0), (_h(1), 2.0)]
+        result = accumulate_to_stats(deltas, anchor_sum=0.0)
+        assert [r["start"] for r in result] == [_h(0), _h(1), _h(2)]
+        assert [r["sum"] for r in result] == [1.0, 3.0, 3.5]
+
+    def test_end_before_cuts_list(self) -> None:
+        deltas = [(_h(0), 1.0), (_h(1), 2.0), (_h(2), 0.5)]
+        # Caller has existing stats starting at hour 1 — only hour 0 is new.
+        result = accumulate_to_stats(deltas, anchor_sum=0.0, end_before=_h(1))
+        assert result == [{"start": _h(0), "sum": 1.0}]
+
+    def test_end_before_equal_excludes(self) -> None:
+        # The condition is `start >= end_before`, so the bucket AT end_before
+        # is excluded — that's the bucket the caller already has.
+        deltas = [(_h(0), 1.0), (_h(1), 2.0)]
+        result = accumulate_to_stats(deltas, anchor_sum=0.0, end_before=_h(1))
+        assert len(result) == 1
+        assert result[0]["start"] == _h(0)

@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Energy history backfill** — new service `onekommafive.import_history` retrospectively imports hourly energy statistics from the 1KOMMA5° cloud into HA Long-Term Statistics. Called without parameters it walks backwards day-by-day until it hits 7 consecutive empty days (= before system installation), so first-install users get their full Energy Dashboard history with a single click. Optional `days_back: N` parameter bounds the range for self-healing or cautious testing. Idempotent: re-running writes nothing already present. Covers 10 cumulative kWh sensors (PV, grid in/out, household, heat pump, EV chargers, AC, battery charge/discharge, total consumption) and the `battery_soc` measurement sensor (mean/min/max). Energy Dashboard sees the imported history immediately.
+- **Statistics clear service** — companion `onekommafive.clear_history` bulk-removes all 11 long-term statistics owned by this integration for a config entry. Useful for redoing a botched backfill or decommissioning. Mandatory `confirm: true` parameter guards against accidental clicks. Live recorder state history is untouched.
+
 ## [0.1.36] - 2026-05-16
 
 ### Added

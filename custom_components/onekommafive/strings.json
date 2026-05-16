@@ -102,6 +102,34 @@
           "description": "Bei mehreren konfigurierten 1KOMMA5°-Systemen: das gewünschte System auswählen."
         }
       }
+    },
+    "import_history": {
+      "name": "Historie importieren",
+      "description": "Importiert rückwirkend Energie-Statistiken aus der 1KOMMA5°-Cloud in die HA Long-Term-Statistics. Ohne Parameter wird die komplette verfügbare Historie geladen.",
+      "fields": {
+        "days_back": {
+          "name": "Tage zurück",
+          "description": "Optional: Anzahl Tage, die maximal rückwärts importiert werden. Ohne Angabe läuft der Import, bis 7 leere Tage in Folge auftreten (= vor Anlageninstallation)."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Bei mehreren konfigurierten 1KOMMA5°-Systemen: das gewünschte System auswählen."
+        }
+      }
+    },
+    "clear_history": {
+      "name": "Statistiken löschen (destruktiv)",
+      "description": "Löscht ALLE Long-Term-Statistics, die diese Integration besitzt. Live-Daten im Recorder bleiben erhalten. Nur nutzen, wenn der Import neu gemacht werden soll oder die Integration entfernt wird.",
+      "fields": {
+        "confirm": {
+          "name": "Bestätigen",
+          "description": "Muss auf an stehen — Sicherheitsbestätigung gegen versehentliches Auslösen."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Bei mehreren konfigurierten 1KOMMA5°-Systemen: das gewünschte System auswählen."
+        }
+      }
     }
   },
   "entity": {

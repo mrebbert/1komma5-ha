@@ -102,6 +102,34 @@
           "description": "When multiple 1KOMMA5° systems are configured: select the target system."
         }
       }
+    },
+    "import_history": {
+      "name": "Import history",
+      "description": "Retrospectively imports energy statistics from the 1KOMMA5° cloud into HA Long-Term Statistics. Without parameters the full available history is loaded.",
+      "fields": {
+        "days_back": {
+          "name": "Days back",
+          "description": "Optional: maximum number of days to walk back. Without it the import runs until 7 consecutive empty days are seen (= before system installation)."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "When multiple 1KOMMA5° systems are configured: select the target system."
+        }
+      }
+    },
+    "clear_history": {
+      "name": "Clear statistics (destructive)",
+      "description": "Deletes ALL Long-Term Statistics owned by this integration. Live recorder data is untouched. Use only when redoing the import or removing the integration.",
+      "fields": {
+        "confirm": {
+          "name": "Confirm",
+          "description": "Must be on — safety acknowledgement against accidental triggers."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "When multiple 1KOMMA5° systems are configured: select the target system."
+        }
+      }
     }
   },
   "entity": {

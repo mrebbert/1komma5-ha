@@ -270,3 +270,76 @@ def weather_symbol_to_ha_condition(symbol_id: int | None) -> str | None:
     if symbol_id is None:
         return None
     return _WEATHER_SYMBOL_TO_CONDITION.get(symbol_id)
+
+
+def _parse_iso_hour(iso: str) -> datetime.datetime:
+    """Parse an API hour key like ``"2026-01-01T01:00Z"`` to a UTC datetime."""
+    return datetime.datetime.fromisoformat(iso)
+
+
+def energy_buckets_to_kwh_deltas(
+    timeseries: dict[str, Any],
+    field: str,
+) -> list[tuple[datetime.datetime, float]]:
+    """Extract ``(hour_start_utc, kwh)`` pairs for one field of a day's energy buckets.
+
+    ``timeseries`` is ``EnergyData.timeseries`` — a dict keyed by the API's
+    ISO-hour string (``"2026-01-01T01:00Z"``) with ``EnergySlot`` values.
+    Buckets where the named field is ``None`` are skipped (e.g. ``consumption_ac_total``
+    for systems without an AC unit).
+    """
+    out: list[tuple[datetime.datetime, float]] = []
+    for iso_key, slot in timeseries.items():
+        value = getattr(slot, field, None)
+        if value is None:
+            continue
+        out.append((_parse_iso_hour(iso_key), float(value)))
+    return out
+
+
+def soc_buckets_to_measurement_stats(
+    timeseries: dict[str, Any],
+) -> list[tuple[datetime.datetime, float]]:
+    """Extract ``(hour_start_utc, soc_percent)`` pairs from a day's energy buckets.
+
+    The API returns ``battery_soc`` as a fraction ``[0..1]``; HA's
+    ``battery_soc`` sensor uses percent. Multiplied by 100 here. Buckets with
+    ``None`` SoC are skipped.
+    """
+    out: list[tuple[datetime.datetime, float]] = []
+    for iso_key, slot in timeseries.items():
+        soc = getattr(slot, "battery_soc", None)
+        if soc is None:
+            continue
+        out.append((_parse_iso_hour(iso_key), float(soc) * 100.0))
+    return out
+
+
+def accumulate_to_stats(
+    deltas: list[tuple[datetime.datetime, float]],
+    anchor_sum: float,
+    end_before: datetime.datetime | None = None,
+) -> list[dict[str, Any]]:
+    """Build ``StatisticData``-shape dicts from per-hour deltas.
+
+    Each output dict has ``{"start": datetime, "sum": cumulative_value}``.
+
+    ``anchor_sum`` seeds the running total — set this to the existing live
+    sensor's last ``sum`` so the boundary between backfilled history and
+    live-collected data is continuous.
+
+    ``end_before`` excludes any bucket whose ``start`` is at or after that
+    timestamp — caller passes the start of the oldest existing statistic to
+    avoid duplicate inserts.
+
+    Output is sorted chronologically regardless of input order.
+    """
+    sorted_deltas = sorted(deltas, key=lambda pair: pair[0])
+    running = anchor_sum
+    out: list[dict[str, Any]] = []
+    for start, delta in sorted_deltas:
+        if end_before is not None and start >= end_before:
+            continue
+        running += delta
+        out.append({"start": start, "sum": running})
+    return out
