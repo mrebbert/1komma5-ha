@@ -571,24 +571,10 @@ def async_setup_services(hass: HomeAssistant) -> None:
         supports_response=SupportsResponse.ONLY,
     )
 
-    async def _import_history(call: ServiceCall) -> ServiceResponse:
-        return await _handle_import_history(hass, call)
-
-    async def _clear_history(call: ServiceCall) -> ServiceResponse:
-        return await _handle_clear_history(hass, call)
-
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_IMPORT_HISTORY,
-        _import_history,
-        schema=IMPORT_HISTORY_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
-
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_CLEAR_HISTORY,
-        _clear_history,
-        schema=CLEAR_HISTORY_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
+    # NOTE: import_history / clear_history are DISABLED pending a redesign
+    # that uses async_add_external_statistics with a separate namespace
+    # instead of writing into the live entities' statistic_ids. The current
+    # implementation conflicted with HA's own stats compilation from the
+    # live state and produced incorrect cumulative values at the boundary.
+    # The handler code is kept in place for the future reimplementation;
+    # only the service registration is removed so users cannot invoke them.

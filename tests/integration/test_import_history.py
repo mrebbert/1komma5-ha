@@ -1,8 +1,10 @@
 """Tier-2 tests for the `onekommafive.import_history` and `clear_history` services.
 
-These tests stub the recorder API surface (`async_import_statistics`,
-`get_last_statistics`) and the `system.get_energy_historical` SDK call, then
-drive the service and assert on the captured writes.
+NOTE: the services are DISABLED in this release pending a redesign that uses
+`async_add_external_statistics` with a separate namespace instead of writing
+into the live entities' statistic_ids. The whole module is skipped to keep
+the test suite green while the helpers stay in the codebase for the
+reimplementation.
 """
 
 from __future__ import annotations
@@ -22,6 +24,10 @@ from custom_components.onekommafive.const import (
     CONF_SYSTEM_ID,
     CONF_USERNAME,
     DOMAIN,
+)
+
+pytestmark = pytest.mark.skip(
+    reason="Backfill services disabled pending redesign — see services.py"
 )
 
 # ----------------------------------------------------------------------------
