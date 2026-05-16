@@ -1,7 +1,6 @@
 {
   "domain": "onekommafive",
   "name": "1KOMMA5°",
-  "after_dependencies": ["recorder"],
   "codeowners": ["@mrebbert"],
   "config_flow": true,
   "documentation": "https://github.com/mrebbert/1komma5-ha",

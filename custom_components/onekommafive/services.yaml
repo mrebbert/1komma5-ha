@@ -47,6 +47,3 @@ get_most_expensive_window:
       selector:
         config_entry:
           integration: onekommafive
-
-# import_history and clear_history are DISABLED pending a redesign — see
-# the note in services.py async_setup_services.

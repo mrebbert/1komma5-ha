@@ -5,9 +5,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Changed
-- **Backfill services disabled** — the `import_history` and `clear_history` services from the v0.2.0 development branch are unregistered for now. The implementation wrote into the same `statistic_id` namespace as the live entities, which conflicted with HA's automatic stats compilation and produced unreliable cumulative values at the live/backfill boundary. The helper code stays in the repository for a future redesign based on `async_add_external_statistics` (separate namespace, no live-entity rebase). Users who already ran the broken service: delete the config entry and re-add the integration for a clean slate, or use Developer Tools → Statistics to remove the affected statistic_ids manually.
-
 ## [0.1.36] - 2026-05-16
 
 ### Added
