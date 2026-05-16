@@ -175,13 +175,25 @@ async def _oldest_statistic(
     *,
     has_sum: bool,
 ) -> tuple[float, datetime.datetime | None]:
-    """Return ``(anchor_sum, oldest_start)`` for the given statistic_id.
+    """Resolve the (anchor_sum, end_before) pair for backfilling a sensor.
 
-    Used as the boundary anchor for the backfill: the newest backfilled bucket
-    must align with the oldest existing live bucket so cumulative sums are
-    continuous across the boundary.
+    Two scenarios:
 
-    Returns ``(0.0, None)`` when no statistics exist yet (fresh install).
+    1. Existing statistics: anchor at the OLDEST stored stat — backfill must
+       end with the same cumulative sum so the boundary is continuous.
+
+    2. No stats yet (fresh install OR after ``clear_history``): fall back to
+       the live sensor's current state. The live cost/energy sensor keeps a
+       persistent in-memory accumulator across restarts (via RestoreSensor);
+       its current state reflects everything accumulated by live polling. We
+       anchor the backfill's last bucket at that value and set ``end_before``
+       to the start of the current hour — the live sensor's next aggregation
+       tick continues from there seamlessly.
+
+       Without this fallback, after ``clear_history`` the backfill would
+       anchor at 0.0 while the live sensor's next stat would jump to ~state,
+       creating a ~state-Euro gap at the boundary that the Energy Dashboard
+       paints as a huge spike on the transition day.
     """
     floor = datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)
     rows = await get_instance_executor(
@@ -196,15 +208,27 @@ async def _oldest_statistic(
         {"sum"} if has_sum else {"mean"},
     )
     sensor_rows = rows.get(statistic_id) or []
-    if not sensor_rows:
+    if sensor_rows:
+        oldest = sensor_rows[0]
+        start_ts = oldest.get("start")
+        oldest_start = (
+            datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC)
+            if start_ts is not None
+            else None
+        )
+        anchor = float(oldest.get("sum") or 0.0) if has_sum else 0.0
+        return anchor, oldest_start
+
+    # Fall back to the live sensor's current state value.
+    state = hass.states.get(statistic_id)
+    if state is None or state.state in (None, "unknown", "unavailable"):
         return 0.0, None
-    oldest = sensor_rows[0]
-    start_ts = oldest.get("start")
-    oldest_start = (
-        datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC) if start_ts is not None else None
-    )
-    anchor = float(oldest.get("sum") or 0.0) if has_sum else 0.0
-    return anchor, oldest_start
+    try:
+        anchor = float(state.state)
+    except (ValueError, TypeError):
+        return 0.0, None
+    current_hour = dt_util.utcnow().replace(minute=0, second=0, microsecond=0)
+    return anchor, current_hour
 
 
 async def _fetch_hourly_prices(
