@@ -114,6 +114,9 @@
       },
       "optimization_battery_grid_charge": {
         "name": "AI: Battery grid charging"
+      },
+      "optimization_heat_pump_recommended": {
+        "name": "AI: Heat pump recommendation"
       }
     },
     "sensor": {

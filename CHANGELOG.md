@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **AI: Heat pump recommendation** binary sensor (`optimization_heat_pump_recommended`) — ON when the Heartbeat AI's currently active HEATPUMP decision is `HEATPUMP_RECOMMEND_ON`. Symmetric to the existing `optimization_battery_grid_charge` sensor; lets users automate the heat pump on AI-curated cheap slots without subscribing to the bus event. Off when the active HEATPUMP decision is `HEATPUMP_AUTO` or when no HEATPUMP event covers the current slot.
 - **Diagnostics download** — Home Assistant's standard `diagnostics` platform is now wired up. Settings → Devices & Services → 1KOMMA5° → ⋮ → Download diagnostics produces a JSON dump useful for issue triage: redacted entry data (no username, password, system_id, unique_id), per-coordinator state snapshot (last_update_success, last_exception, update interval, summary of cached data), and the installed `onekommafive` SDK version. Three Tier-2 tests guard the redaction contract and JSON-serialisability.
 
 ## [0.1.35] - 2026-05-11

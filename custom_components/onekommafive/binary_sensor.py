@@ -43,6 +43,11 @@ async def async_setup_entry(
                 system_id,
                 data.system_name,
             ),
+            OneKomma5OptimizationHeatPumpRecommendedSensor(
+                data.optimization_coordinator,
+                system_id,
+                data.system_name,
+            ),
         ]
     )
 
@@ -202,4 +207,61 @@ class OneKomma5OptimizationBatteryGridChargeSensor(
             "to": event.to_time,
             "market_price": event.market_price,
             "state_of_charge": event.state_of_charge,
+        }
+
+
+class OneKomma5OptimizationHeatPumpRecommendedSensor(
+    QuarterHourUpdateMixin, OneKomma5OptimizationEntity, BinarySensorEntity
+):
+    """Binary sensor that is ON when the AI's currently active HEATPUMP decision
+    is ``HEATPUMP_RECOMMEND_ON`` — i.e. the HEMS suggests running the heat pump
+    in the current slot to exploit favourable electricity prices.
+    """
+
+    _attr_translation_key = "optimization_heat_pump_recommended"
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, system_id, system_name, "optimization_heat_pump_recommended")
+
+    async def async_added_to_hass(self) -> None:
+        """Register quarter-hour update so the sensor flips at slot ends."""
+        await super().async_added_to_hass()
+        self._async_register_quarter_hour_update()
+
+    def _active_heat_pump_event(self) -> Any | None:
+        if self.coordinator.data is None:
+            return None
+        return active_optimization_event(
+            self.coordinator.data.events,
+            asset="HEATPUMP",
+            now=datetime.datetime.now(tz=datetime.UTC),
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True only when an active HEATPUMP_RECOMMEND_ON slot exists."""
+        if self.coordinator.data is None:
+            return None
+        event = self._active_heat_pump_event()
+        if event is None:
+            return False
+        return event.decision == "HEATPUMP_RECOMMEND_ON"
+
+    @property
+    def icon(self) -> str:
+        """Return icon reflecting state."""
+        return "mdi:heat-pump" if self.is_on else "mdi:heat-pump-outline"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose the active HEATPUMP decision details, if any."""
+        event = self._active_heat_pump_event()
+        if event is None:
+            return None
+        return {
+            "decision": event.decision,
+            "from": event.from_time,
+            "to": event.to_time,
+            "market_price": event.market_price,
         }

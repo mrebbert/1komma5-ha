@@ -114,6 +114,9 @@
       },
       "optimization_battery_grid_charge": {
         "name": "AI: Batterie aus Netz laden"
+      },
+      "optimization_heat_pump_recommended": {
+        "name": "AI: Wärmepumpen-Empfehlung"
       }
     },
     "sensor": {
