@@ -126,6 +126,15 @@ def no_throttle():
         yield
 
 
+def _market_prices_for(days: list[datetime.date], price: float = 0.30) -> MagicMock:
+    """Build a MarketPrices mock with hourly prices for the given days."""
+    pricedict: dict[str, float] = {}
+    for d in days:
+        for h in range(24):
+            pricedict[f"{d.isoformat()}T{h:02d}:00Z"] = price
+    return MagicMock(prices_with_grid_costs_and_vat=pricedict)
+
+
 # ----------------------------------------------------------------------------
 # import_history
 # ----------------------------------------------------------------------------
@@ -165,22 +174,28 @@ async def test_import_history_writes_expected_stats_count(
     no_existing_stats,
     no_throttle,
 ) -> None:
+    """2 days × 24 h × 17 sensors = 816 stats written when prices are available."""
     system = mock_system_factory(system_id="sys-1")
     system.get_energy_historical.side_effect = lambda d, _e, _r: _day_payload(d)
+    today = datetime.date.fromisoformat("2026-05-14")
+    days = [today - datetime.timedelta(days=i) for i in (1, 2)]
+    system.get_prices.return_value = _market_prices_for(days)
     await _setup(hass, system)
     entry = hass.config_entries.async_entries(DOMAIN)[0]
 
-    await hass.services.async_call(
-        DOMAIN,
-        "import_history",
-        {"days_back": 2, "config_entry_id": entry.entry_id},
-        blocking=True,
-        return_response=True,
-    )
+    with patch("custom_components.onekommafive.services.dt_util") as mock_dt:
+        mock_dt.utcnow.return_value = datetime.datetime(2026, 5, 14, 12, 0, tzinfo=UTC)
+        await hass.services.async_call(
+            DOMAIN,
+            "import_history",
+            {"days_back": 2, "config_entry_id": entry.entry_id},
+            blocking=True,
+            return_response=True,
+        )
 
-    # 2 days × 24h = 48 buckets per sensor; expect 11 sensors
+    # 10 kWh + 1 derived consumption + 1 SoC + 5 cost + 1 revenue = 17 sensors
     sensors_written = {sid: len(s) for sid, s in captured_imports}
-    assert len(sensors_written) == 11, sensors_written
+    assert len(sensors_written) == 17, sensors_written
     assert all(count == 48 for count in sensors_written.values())
 
 
@@ -299,6 +314,117 @@ async def test_import_history_one_failing_day_bounded(
 # ----------------------------------------------------------------------------
 # clear_history
 # ----------------------------------------------------------------------------
+
+
+async def test_cost_invariant_sum_equals_total_per_hour(
+    hass: HomeAssistant,
+    mock_system_factory,
+    captured_imports,
+    no_existing_stats,
+    no_throttle,
+) -> None:
+    """`heat_pump + ev_charger + household + ac == electricity_cost` per hour."""
+    system = mock_system_factory(system_id="sys-1")
+    system.get_energy_historical.side_effect = lambda d, _e, _r: _day_payload(d)
+    today = datetime.date.fromisoformat("2026-05-14")
+    days = [today - datetime.timedelta(days=1)]
+    system.get_prices.return_value = _market_prices_for(days, price=0.25)
+    await _setup(hass, system)
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+
+    with patch("custom_components.onekommafive.services.dt_util") as mock_dt:
+        mock_dt.utcnow.return_value = datetime.datetime(2026, 5, 14, 12, 0, tzinfo=UTC)
+        await hass.services.async_call(
+            DOMAIN,
+            "import_history",
+            {"days_back": 1, "config_entry_id": entry.entry_id},
+            blocking=True,
+            return_response=True,
+        )
+
+    # Pull stats per sensor key from captured imports
+    def deltas_for(suffix: str) -> list[float]:
+        for sid, stats in captured_imports:
+            if sid.endswith(suffix):
+                return _stat_deltas(stats)
+        raise AssertionError(f"Sensor ending in {suffix!r} not written")
+
+    total = deltas_for("_electricity_cost")
+    parts_per_hour = [
+        sum(p)
+        for p in zip(
+            deltas_for("_heat_pump_cost"),
+            deltas_for("_ev_charger_cost"),
+            deltas_for("_household_cost"),
+            deltas_for("_ac_cost"),
+            strict=True,
+        )
+    ]
+    assert len(total) == 24
+    for t, p in zip(total, parts_per_hour, strict=True):
+        assert p == pytest.approx(t, abs=1e-9)
+
+
+async def test_missing_price_hour_skips_cost_only(
+    hass: HomeAssistant,
+    mock_system_factory,
+    captured_imports,
+    no_existing_stats,
+    no_throttle,
+) -> None:
+    """A price gap → cost sensors skip that hour; energy sensors unaffected."""
+    system = mock_system_factory(system_id="sys-1")
+    system.get_energy_historical.side_effect = lambda d, _e, _r: _day_payload(d)
+    today = datetime.date.fromisoformat("2026-05-14")
+    days = [today - datetime.timedelta(days=1)]
+
+    # Build a price dict missing hour 12 specifically
+    price_dict: dict[str, float] = {}
+    target_day = days[0]
+    for h in range(24):
+        if h == 12:
+            continue
+        price_dict[f"{target_day.isoformat()}T{h:02d}:00Z"] = 0.30
+    system.get_prices.return_value = MagicMock(prices_with_grid_costs_and_vat=price_dict)
+
+    await _setup(hass, system)
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+
+    with patch("custom_components.onekommafive.services.dt_util") as mock_dt:
+        mock_dt.utcnow.return_value = datetime.datetime(2026, 5, 14, 12, 0, tzinfo=UTC)
+        await hass.services.async_call(
+            DOMAIN,
+            "import_history",
+            {"days_back": 1, "config_entry_id": entry.entry_id},
+            blocking=True,
+            return_response=True,
+        )
+
+    counts = {sid: len(stats) for sid, stats in captured_imports}
+    # Cost sensors: 24 - 1 = 23 hours
+    for suffix in (
+        "_electricity_cost",
+        "_heat_pump_cost",
+        "_ev_charger_cost",
+        "_household_cost",
+        "_ac_cost",
+    ):
+        matched = next(c for sid, c in counts.items() if sid.endswith(suffix))
+        assert matched == 23, f"{suffix}: {matched}"
+    # An energy sensor (PV) is unaffected: full 24 hours
+    pv_count = next(c for sid, c in counts.items() if sid.endswith("_pv_energy"))
+    assert pv_count == 24
+
+
+def _stat_deltas(stats: list) -> list[float]:
+    """Extract per-hour deltas from a list of cumulative StatisticData entries."""
+    out = []
+    prev = 0.0
+    for s in stats:
+        cur = s["sum"]
+        out.append(cur - prev)
+        prev = cur
+    return out
 
 
 async def test_clear_history_requires_confirm(hass: HomeAssistant, mock_system_factory) -> None:

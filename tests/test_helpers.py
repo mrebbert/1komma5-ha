@@ -12,7 +12,10 @@ from helpers import (  # type: ignore[import-not-found]
     active_optimization_event,
     aggregate_optimization_events,
     build_forecast,
+    consumer_cost_deltas,
     energy_buckets_to_kwh_deltas,
+    extract_hourly_prices,
+    feed_in_revenue_deltas,
     find_cheapest_window,
     find_most_expensive_window,
     get_current_price,
@@ -642,3 +645,138 @@ class TestAccumulateToStats:
         result = accumulate_to_stats(deltas, anchor_sum=0.0, end_before=_h(1))
         assert len(result) == 1
         assert result[0]["start"] == _h(0)
+
+
+# ----------------------------------------------------------------------------
+# consumer_cost_deltas / feed_in_revenue_deltas / extract_hourly_prices
+# ----------------------------------------------------------------------------
+
+
+class TestConsumerCostDeltas:
+    def _slot(self, **kwargs: float | None) -> _StubSlot:
+        defaults = {
+            "grid_supply": 1.0,
+            "consumption_household_total": 0.5,
+            "consumption_heat_pump_total": 0.3,
+            "consumption_ev_total": 0.2,
+            "consumption_ac_total": 0.0,
+        }
+        return _StubSlot(**(defaults | kwargs))
+
+    def test_full_allocation_sums_to_total_cost(self) -> None:
+        # All non-zero consumers, single hour
+        ts = {"2026-01-01T01:00Z": self._slot()}
+        prices = {_h(1): 0.30}
+        result = consumer_cost_deltas(ts, prices)
+        total = result["electricity_cost"][0][1]
+        parts = sum(
+            v[0][1]
+            for v in (
+                result["heat_pump_cost"],
+                result["ev_charger_cost"],
+                result["household_cost"],
+                result["ac_cost"],
+            )
+        )
+        assert parts == pytest.approx(total, abs=1e-9)
+
+    def test_missing_price_hour_is_skipped(self) -> None:
+        ts = {
+            "2026-01-01T00:00Z": self._slot(),  # has price
+            "2026-01-01T01:00Z": self._slot(),  # missing price
+        }
+        prices = {_h(0): 0.30}
+        result = consumer_cost_deltas(ts, prices)
+        # Only hour 0 has entries
+        assert len(result["electricity_cost"]) == 1
+        assert result["electricity_cost"][0][0] == _h(0)
+        for k in ("heat_pump_cost", "ev_charger_cost", "household_cost", "ac_cost"):
+            assert len(result[k]) == 1
+            assert result[k][0][0] == _h(0)
+
+    def test_zero_consumption_skips_per_consumer(self) -> None:
+        # Hour with grid_supply but zero consumption everywhere — division
+        # by zero would crash; helper skips the per-consumer split.
+        ts = {
+            "2026-01-01T01:00Z": _StubSlot(
+                grid_supply=1.0,
+                consumption_household_total=0.0,
+                consumption_heat_pump_total=0.0,
+                consumption_ev_total=0.0,
+                consumption_ac_total=0.0,
+            )
+        }
+        prices = {_h(1): 0.30}
+        result = consumer_cost_deltas(ts, prices)
+        # Total IS recorded — grid_supply was paid for, regardless of consumer split
+        assert len(result["electricity_cost"]) == 1
+        # Per-consumer slots are empty because we don't know the split
+        for k in ("heat_pump_cost", "ev_charger_cost", "household_cost", "ac_cost"):
+            assert result[k] == []
+
+    def test_ac_none_treated_as_zero_share(self) -> None:
+        ts = {
+            "2026-01-01T01:00Z": _StubSlot(
+                grid_supply=1.0,
+                consumption_household_total=0.5,
+                consumption_heat_pump_total=0.5,
+                consumption_ev_total=0.0,
+                consumption_ac_total=None,  # no AC installed
+            )
+        }
+        prices = {_h(1): 0.30}
+        result = consumer_cost_deltas(ts, prices)
+        assert result["ac_cost"][0][1] == pytest.approx(0.0)
+        # The 1 kWh at 0.30 €/kWh is split 50/50 between household and heat_pump
+        assert result["household_cost"][0][1] == pytest.approx(0.15)
+        assert result["heat_pump_cost"][0][1] == pytest.approx(0.15)
+
+    def test_grid_supply_none_skips_hour_entirely(self) -> None:
+        ts = {"2026-01-01T01:00Z": _StubSlot(grid_supply=None)}
+        prices = {_h(1): 0.30}
+        result = consumer_cost_deltas(ts, prices)
+        for v in result.values():
+            assert v == []
+
+    def test_negative_price_hour_produces_negative_cost(self) -> None:
+        ts = {"2026-01-01T01:00Z": self._slot()}
+        prices = {_h(1): -0.05}
+        result = consumer_cost_deltas(ts, prices)
+        # 1 kWh × -0.05 €/kWh = -0.05 € total
+        assert result["electricity_cost"][0][1] == pytest.approx(-0.05)
+
+
+class TestFeedInRevenueDeltas:
+    def test_basic_multiplication(self) -> None:
+        ts = {
+            "2026-01-01T00:00Z": _StubSlot(grid_feed_in=0.0),
+            "2026-01-01T01:00Z": _StubSlot(grid_feed_in=2.5),
+        }
+        result = feed_in_revenue_deltas(ts, feed_in_tariff=0.0803)
+        result_dict = dict(result)
+        assert result_dict[_h(0)] == pytest.approx(0.0)
+        assert result_dict[_h(1)] == pytest.approx(2.5 * 0.0803)
+
+    def test_none_feed_in_skipped(self) -> None:
+        ts = {"2026-01-01T01:00Z": _StubSlot(grid_feed_in=None)}
+        result = feed_in_revenue_deltas(ts, feed_in_tariff=0.0803)
+        assert result == []
+
+
+class TestExtractHourlyPrices:
+    def test_parses_iso_keys_to_utc_datetimes(self) -> None:
+        class _MP:
+            prices_with_grid_costs_and_vat = {
+                "2026-01-01T00:00Z": "0.10",
+                "2026-01-01T01:00Z": 0.15,
+            }
+
+        result = extract_hourly_prices(_MP())
+        assert result[_h(0)] == pytest.approx(0.10)
+        assert result[_h(1)] == pytest.approx(0.15)
+
+    def test_handles_missing_field(self) -> None:
+        class _MP:
+            pass
+
+        assert extract_hourly_prices(_MP()) == {}

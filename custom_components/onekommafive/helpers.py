@@ -315,6 +315,94 @@ def soc_buckets_to_measurement_stats(
     return out
 
 
+def consumer_cost_deltas(
+    timeseries: dict[str, Any],
+    prices_by_hour: dict[datetime.datetime, float],
+) -> dict[str, list[tuple[datetime.datetime, float]]]:
+    """Compute per-consumer hourly cost (€) deltas via proportional allocation.
+
+    Mirrors the live cost-sensor formulas:
+
+        share = consumer_h_kwh / consumption_h_kwh
+        cost  = grid_supply_h × share × price_h
+
+    The total ``electricity_cost`` is ``grid_supply × price`` for the same hour
+    — therefore the four consumer-cost deltas sum to ``electricity_cost`` at
+    every hour (invariant, tested).
+
+    Hours are skipped (no entries written) when:
+    - the price for that hour is missing (would silently understate cost)
+    - ``grid_supply`` is ``None``
+    - the total consumption is 0 (no allocation possible without dividing by
+      zero — matches the live sensor's None-skip)
+
+    ``consumption_ac_total = None`` (no AC installed) is treated as 0 in the
+    denominator so AC share is naturally 0.
+
+    Returns a dict keyed by translation_key:
+    ``electricity_cost``, ``heat_pump_cost``, ``ev_charger_cost``,
+    ``household_cost``, ``ac_cost``.
+    """
+    result: dict[str, list[tuple[datetime.datetime, float]]] = {
+        "electricity_cost": [],
+        "heat_pump_cost": [],
+        "ev_charger_cost": [],
+        "household_cost": [],
+        "ac_cost": [],
+    }
+    for iso_key, slot in timeseries.items():
+        hour = _parse_iso_hour(iso_key)
+        price = prices_by_hour.get(hour)
+        if price is None:
+            continue
+        grid_supply = getattr(slot, "grid_supply", None)
+        if grid_supply is None:
+            continue
+        # Total cost
+        result["electricity_cost"].append((hour, grid_supply * price))
+        # Per-consumer share — None means 0 share for that consumer
+        ht = getattr(slot, "consumption_household_total", None) or 0.0
+        hp = getattr(slot, "consumption_heat_pump_total", None) or 0.0
+        ev = getattr(slot, "consumption_ev_total", None) or 0.0
+        ac = getattr(slot, "consumption_ac_total", None) or 0.0
+        consumption_total = ht + hp + ev + ac
+        if consumption_total == 0:
+            continue
+        scale = grid_supply * price / consumption_total
+        result["heat_pump_cost"].append((hour, hp * scale))
+        result["ev_charger_cost"].append((hour, ev * scale))
+        result["household_cost"].append((hour, ht * scale))
+        result["ac_cost"].append((hour, ac * scale))
+    return result
+
+
+def feed_in_revenue_deltas(
+    timeseries: dict[str, Any],
+    feed_in_tariff: float,
+) -> list[tuple[datetime.datetime, float]]:
+    """Compute hourly feed-in revenue (€) deltas.
+
+    Returns ``(hour_start_utc, kwh × tariff)`` for every bucket where
+    ``grid_feed_in`` is non-None. Hours without feed-in produce a 0-value
+    entry (the cumulative sum is still well-defined).
+    """
+    out: list[tuple[datetime.datetime, float]] = []
+    for iso_key, slot in timeseries.items():
+        feed_in = getattr(slot, "grid_feed_in", None)
+        if feed_in is None:
+            continue
+        out.append((_parse_iso_hour(iso_key), float(feed_in) * feed_in_tariff))
+    return out
+
+
+def extract_hourly_prices(
+    market_prices: Any,
+) -> dict[datetime.datetime, float]:
+    """Parse ``MarketPrices.prices_with_grid_costs_and_vat`` to UTC-hour → price."""
+    raw = getattr(market_prices, "prices_with_grid_costs_and_vat", None) or {}
+    return {_parse_iso_hour(k): float(v) for k, v in raw.items()}
+
+
 def accumulate_to_stats(
     deltas: list[tuple[datetime.datetime, float]],
     anchor_sum: float,

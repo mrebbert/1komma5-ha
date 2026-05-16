@@ -24,16 +24,23 @@ from homeassistant.util import dt as dt_util
 from .const import (
     ALL_STATISTIC_KEYS,
     BACKFILL_THROTTLE_SECONDS,
+    CONF_FEED_IN_TARIFF,
     CONSUMPTION_TOTAL_KEY,
+    COST_HISTORY_KEYS,
+    DEFAULT_FEED_IN_TARIFF,
     DOMAIN,
     EMPTY_DAY_LIMIT,
     ENERGY_HISTORY_FIELD_MAP,
+    FEED_IN_REVENUE_KEY,
     HARD_CEILING_DAYS,
     SOC_STATISTIC_KEY,
 )
 from .helpers import (
     accumulate_to_stats,
+    consumer_cost_deltas,
     energy_buckets_to_kwh_deltas,
+    extract_hourly_prices,
+    feed_in_revenue_deltas,
     find_cheapest_window,
     find_most_expensive_window,
     soc_buckets_to_measurement_stats,
@@ -158,6 +165,40 @@ def _statistic_id_for(hass: HomeAssistant, entry: Any, sensor_key: str) -> str |
     return registry.async_get_entity_id("sensor", DOMAIN, f"{system_id}_{sensor_key}")
 
 
+async def _fetch_hourly_prices(
+    hass: HomeAssistant,
+    system: Any,
+    start: datetime.date,
+    end: datetime.date,
+) -> dict[datetime.datetime, float]:
+    """Fetch hourly market prices for ``[start, end)`` in 30-day chunks.
+
+    Failures on individual chunks are logged at warning level and the chunk's
+    hours are simply omitted — cost-stat writes will skip those hours instead
+    of substituting zero (which would silently understate costs).
+    """
+    prices: dict[datetime.datetime, float] = {}
+    chunk_start = start
+    while chunk_start < end:
+        chunk_end = min(chunk_start + datetime.timedelta(days=30), end)
+        chunk_start_dt = datetime.datetime.combine(
+            chunk_start, datetime.time.min, tzinfo=datetime.UTC
+        )
+        chunk_end_dt = datetime.datetime.combine(chunk_end, datetime.time.min, tzinfo=datetime.UTC)
+        try:
+            market = await hass.async_add_executor_job(
+                system.get_prices, chunk_start_dt, chunk_end_dt, "1h"
+            )
+        except Exception as err:
+            _LOGGER.warning("Price fetch failed for %s..%s: %s", chunk_start, chunk_end, err)
+            chunk_start = chunk_end
+            continue
+        prices.update(extract_hourly_prices(market))
+        chunk_start = chunk_end
+        await asyncio.sleep(BACKFILL_THROTTLE_SECONDS)
+    return prices
+
+
 async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
     """Walk the energy-historical API backwards, write Long-Term Statistics.
 
@@ -184,6 +225,9 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
     deltas_by_sensor[CONSUMPTION_TOTAL_KEY] = []
     soc_measurements: list[tuple[datetime.datetime, float]] = []
     failed_days: list[datetime.date] = []
+    # Collected raw energy responses keyed by day — used in the second pass to
+    # compute monetary stats once prices are fetched.
+    energy_by_day: dict[datetime.date, Any] = {}
     consecutive_empty = 0
     walked = 0
 
@@ -231,6 +275,7 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
             tag -= datetime.timedelta(days=1)
             continue
         consecutive_empty = 0
+        energy_by_day[tag] = energy
 
         # Per-sensor extraction
         for field, sensor_key in ENERGY_HISTORY_FIELD_MAP.items():
@@ -295,6 +340,65 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
         ]
         async_import_statistics(hass, metadata, typed_stats)
         written += len(typed_stats)
+
+    # Monetary stats: fetch prices for the walked range, compute cost+revenue
+    # deltas, write the 6 monetary sensors. Skipped when no energy days were
+    # successfully fetched (no range to back-fill).
+    if energy_by_day:
+        oldest_day = min(energy_by_day)
+        newest_day = max(energy_by_day)
+        prices_by_hour = await _fetch_hourly_prices(
+            hass, data.system, oldest_day, newest_day + datetime.timedelta(days=1)
+        )
+        feed_in_tariff = entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
+
+        cost_deltas: dict[str, list[tuple[datetime.datetime, float]]] = {
+            key: [] for key in COST_HISTORY_KEYS
+        }
+        revenue_deltas: list[tuple[datetime.datetime, float]] = []
+        for energy in energy_by_day.values():
+            for k, v in consumer_cost_deltas(energy.timeseries, prices_by_hour).items():
+                cost_deltas[k].extend(v)
+            revenue_deltas.extend(feed_in_revenue_deltas(energy.timeseries, feed_in_tariff))
+
+        monetary_deltas = {**cost_deltas, FEED_IN_REVENUE_KEY: revenue_deltas}
+        for sensor_key, deltas in monetary_deltas.items():
+            if not deltas:
+                continue
+            statistic_id = _statistic_id_for(hass, entry, sensor_key)
+            if statistic_id is None:
+                _LOGGER.warning(
+                    "Skipping %s — entity not registered yet (reload the integration)",
+                    sensor_key,
+                )
+                continue
+            last = await get_instance_executor(
+                hass, get_last_statistics, hass, 1, statistic_id, True, {"start", "sum"}
+            )
+            anchor_sum = 0.0
+            oldest_existing = None
+            if last and statistic_id in last and last[statistic_id]:
+                row = last[statistic_id][0]
+                anchor_sum = float(row.get("sum") or 0.0)
+                start_ts = row.get("start")
+                if start_ts is not None:
+                    oldest_existing = datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC)
+            stats = accumulate_to_stats(deltas, anchor_sum, end_before=oldest_existing)
+            if not stats:
+                continue
+            async_import_statistics(
+                hass,
+                StatisticMetaData(
+                    has_mean=False,
+                    has_sum=True,
+                    name=None,
+                    source="recorder",
+                    statistic_id=statistic_id,
+                    unit_of_measurement="EUR",
+                ),
+                [StatisticData(start=s["start"], sum=s["sum"]) for s in stats],
+            )
+            written += len(stats)
 
     # Measurement (SoC). end_before still applies; mean=min=max since the API
     # gives us one value per hour.

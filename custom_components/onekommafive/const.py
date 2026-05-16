@@ -46,9 +46,27 @@ CONSUMPTION_TOTAL_KEY = "consumption_power_energy"
 # Measurement (mean/min/max) sensor backfilled from the API.
 SOC_STATISTIC_KEY = "battery_soc"
 
+# Monetary keys (sum-based, EUR) — backfilled by combining energy buckets
+# with hourly market prices.
+COST_HISTORY_KEYS: frozenset[str] = frozenset(
+    {
+        "electricity_cost",
+        "heat_pump_cost",
+        "ev_charger_cost",
+        "household_cost",
+        "ac_cost",
+    }
+)
+FEED_IN_REVENUE_KEY = "feed_in_revenue"
+
 # Frozenset of every statistic_id key the integration owns. Used by the
 # clear_history service to bulk-remove all our stats for a config entry.
-# Commit 2 will extend this with the monetary keys.
 ALL_STATISTIC_KEYS: frozenset[str] = frozenset(
-    {*ENERGY_HISTORY_FIELD_MAP.values(), CONSUMPTION_TOTAL_KEY, SOC_STATISTIC_KEY}
+    {
+        *ENERGY_HISTORY_FIELD_MAP.values(),
+        CONSUMPTION_TOTAL_KEY,
+        SOC_STATISTIC_KEY,
+        *COST_HISTORY_KEYS,
+        FEED_IN_REVENUE_KEY,
+    }
 )
