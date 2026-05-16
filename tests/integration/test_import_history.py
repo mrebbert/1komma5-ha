@@ -113,7 +113,7 @@ def no_existing_stats():
         mock_get_instance.return_value = recorder
 
         with patch(
-            "custom_components.onekommafive.services.get_last_statistics",
+            "custom_components.onekommafive.services.statistics_during_period",
             return_value={},
         ):
             yield recorder

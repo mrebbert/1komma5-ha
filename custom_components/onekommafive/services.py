@@ -17,7 +17,7 @@ from homeassistant.components.recorder.models import (
 )
 from homeassistant.components.recorder.statistics import (
     async_import_statistics,
-    get_last_statistics,
+    statistics_during_period,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError
@@ -169,6 +169,44 @@ def _statistic_id_for(hass: HomeAssistant, entry: Any, sensor_key: str) -> str |
     return registry.async_get_entity_id("sensor", DOMAIN, f"{system_id}_{sensor_key}")
 
 
+async def _oldest_statistic(
+    hass: HomeAssistant,
+    statistic_id: str,
+    *,
+    has_sum: bool,
+) -> tuple[float, datetime.datetime | None]:
+    """Return ``(anchor_sum, oldest_start)`` for the given statistic_id.
+
+    Used as the boundary anchor for the backfill: the newest backfilled bucket
+    must align with the oldest existing live bucket so cumulative sums are
+    continuous across the boundary.
+
+    Returns ``(0.0, None)`` when no statistics exist yet (fresh install).
+    """
+    floor = datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)
+    rows = await get_instance_executor(
+        hass,
+        statistics_during_period,
+        hass,
+        floor,
+        None,
+        {statistic_id},
+        "hour",
+        None,
+        {"sum"} if has_sum else {"mean"},
+    )
+    sensor_rows = rows.get(statistic_id) or []
+    if not sensor_rows:
+        return 0.0, None
+    oldest = sensor_rows[0]
+    start_ts = oldest.get("start")
+    oldest_start = (
+        datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC) if start_ts is not None else None
+    )
+    anchor = float(oldest.get("sum") or 0.0) if has_sum else 0.0
+    return anchor, oldest_start
+
+
 async def _fetch_hourly_prices(
     hass: HomeAssistant,
     system: Any,
@@ -317,17 +355,7 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
                 sensor_key,
             )
             continue
-        last = await get_instance_executor(
-            hass, get_last_statistics, hass, 1, statistic_id, True, {"start", "sum"}
-        )
-        anchor_sum = 0.0
-        oldest_existing: datetime.datetime | None = None
-        if last and statistic_id in last and last[statistic_id]:
-            row = last[statistic_id][0]
-            anchor_sum = float(row.get("sum") or 0.0)
-            start_ts = row.get("start")
-            if start_ts is not None:
-                oldest_existing = datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC)
+        anchor_sum, oldest_existing = await _oldest_statistic(hass, statistic_id, has_sum=True)
         stats = accumulate_to_stats(deltas, anchor_sum, end_before=oldest_existing)
         if not stats:
             continue
@@ -377,17 +405,7 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
                     sensor_key,
                 )
                 continue
-            last = await get_instance_executor(
-                hass, get_last_statistics, hass, 1, statistic_id, True, {"start", "sum"}
-            )
-            anchor_sum = 0.0
-            oldest_existing = None
-            if last and statistic_id in last and last[statistic_id]:
-                row = last[statistic_id][0]
-                anchor_sum = float(row.get("sum") or 0.0)
-                start_ts = row.get("start")
-                if start_ts is not None:
-                    oldest_existing = datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC)
+            anchor_sum, oldest_existing = await _oldest_statistic(hass, statistic_id, has_sum=True)
             stats = accumulate_to_stats(deltas, anchor_sum, end_before=oldest_existing)
             if not stats:
                 continue
@@ -413,14 +431,7 @@ async def _handle_import_history(hass: HomeAssistant, call: ServiceCall) -> Serv
         if soc_statistic_id is None:
             _LOGGER.warning("Skipping battery_soc — entity not registered yet")
         else:
-            soc_last = await get_instance_executor(
-                hass, get_last_statistics, hass, 1, soc_statistic_id, True, {"start"}
-            )
-            soc_oldest: datetime.datetime | None = None
-            if soc_last and soc_statistic_id in soc_last and soc_last[soc_statistic_id]:
-                start_ts = soc_last[soc_statistic_id][0].get("start")
-                if start_ts is not None:
-                    soc_oldest = datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC)
+            _, soc_oldest = await _oldest_statistic(hass, soc_statistic_id, has_sum=False)
             soc_stats = [
                 StatisticData(start=t, mean=v, min=v, max=v)
                 for t, v in soc_measurements
