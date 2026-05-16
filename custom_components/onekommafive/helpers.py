@@ -412,9 +412,21 @@ def accumulate_to_stats(
 
     Each output dict has ``{"start": datetime, "sum": cumulative_value}``.
 
-    ``anchor_sum`` seeds the running total — set this to the existing live
-    sensor's last ``sum`` so the boundary between backfilled history and
-    live-collected data is continuous.
+    Backfilled buckets are OLDER than the live anchor (we only ever fill in
+    front of existing data) — so the cumulative ``sum`` must rise from a low
+    starting point up to ``anchor_sum`` at the most recent backfilled bucket.
+    That way the Energy Dashboard's per-period ``sum[end] - sum[start]``
+    arithmetic stays continuous at the backfill/live boundary.
+
+    Concretely:
+
+    - oldest emitted bucket: ``sum = anchor_sum - total_delta + first_delta``
+    - newest emitted bucket: ``sum = anchor_sum``
+
+    where ``total_delta`` is the sum of all deltas that survive ``end_before``.
+
+    ``anchor_sum`` is the existing live sensor's ``sum`` at its earliest
+    timestamp — pass ``0.0`` if no live stats exist yet.
 
     ``end_before`` excludes any bucket whose ``start`` is at or after that
     timestamp — caller passes the start of the oldest existing statistic to
@@ -423,11 +435,15 @@ def accumulate_to_stats(
     Output is sorted chronologically regardless of input order.
     """
     sorted_deltas = sorted(deltas, key=lambda pair: pair[0])
-    running = anchor_sum
+    if end_before is not None:
+        sorted_deltas = [(s, d) for s, d in sorted_deltas if s < end_before]
+    if not sorted_deltas:
+        return []
+
+    total_delta = sum(d for _, d in sorted_deltas)
+    running = anchor_sum - total_delta
     out: list[dict[str, Any]] = []
     for start, delta in sorted_deltas:
-        if end_before is not None and start >= end_before:
-            continue
         running += delta
         out.append({"start": start, "sum": running})
     return out

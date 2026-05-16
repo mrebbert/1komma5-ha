@@ -343,24 +343,25 @@ async def test_cost_invariant_sum_equals_total_per_hour(
         )
 
     # Pull stats per sensor key from captured imports
-    def deltas_for(suffix: str) -> list[float]:
+    def diffs_for(suffix: str) -> list[float]:
         for sid, stats in captured_imports:
             if sid.endswith(suffix):
-                return _stat_deltas(stats)
+                return _consecutive_diffs(stats)
         raise AssertionError(f"Sensor ending in {suffix!r} not written")
 
-    total = deltas_for("_electricity_cost")
+    total = diffs_for("_electricity_cost")
     parts_per_hour = [
         sum(p)
         for p in zip(
-            deltas_for("_heat_pump_cost"),
-            deltas_for("_ev_charger_cost"),
-            deltas_for("_household_cost"),
-            deltas_for("_ac_cost"),
+            diffs_for("_heat_pump_cost"),
+            diffs_for("_ev_charger_cost"),
+            diffs_for("_household_cost"),
+            diffs_for("_ac_cost"),
             strict=True,
         )
     ]
-    assert len(total) == 24
+    # 24 stat entries → 23 consecutive diffs
+    assert len(total) == 23
     for t, p in zip(total, parts_per_hour, strict=True):
         assert p == pytest.approx(t, abs=1e-9)
 
@@ -416,15 +417,13 @@ async def test_missing_price_hour_skips_cost_only(
     assert pv_count == 24
 
 
-def _stat_deltas(stats: list) -> list[float]:
-    """Extract per-hour deltas from a list of cumulative StatisticData entries."""
-    out = []
-    prev = 0.0
-    for s in stats:
-        cur = s["sum"]
-        out.append(cur - prev)
-        prev = cur
-    return out
+def _consecutive_diffs(stats: list) -> list[float]:
+    """Differences between consecutive cumulative sums.
+
+    Returns ``N-1`` values for ``N`` input entries; the first sum is the
+    anchor offset (not a real per-bucket delta) and is dropped.
+    """
+    return [stats[i]["sum"] - stats[i - 1]["sum"] for i in range(1, len(stats))]
 
 
 async def test_clear_history_requires_confirm(hass: HomeAssistant, mock_system_factory) -> None:

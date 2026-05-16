@@ -612,31 +612,40 @@ class TestAccumulateToStats:
     def test_empty_deltas(self) -> None:
         assert accumulate_to_stats([], anchor_sum=0.0) == []
 
-    def test_anchor_zero(self) -> None:
+    def test_ends_at_anchor(self) -> None:
+        """Newest backfilled bucket has sum == anchor; live continues from there."""
         deltas = [(_h(0), 1.0), (_h(1), 2.0), (_h(2), 0.5)]
-        result = accumulate_to_stats(deltas, anchor_sum=0.0)
-        assert result == [
-            {"start": _h(0), "sum": 1.0},
-            {"start": _h(1), "sum": 3.0},
-            {"start": _h(2), "sum": 3.5},
-        ]
+        result = accumulate_to_stats(deltas, anchor_sum=10.0)
+        assert result[-1]["sum"] == pytest.approx(10.0)
 
-    def test_anchor_nonzero(self) -> None:
-        deltas = [(_h(0), 1.0), (_h(1), 2.0)]
-        result = accumulate_to_stats(deltas, anchor_sum=5.5)
-        assert result[-1]["sum"] == pytest.approx(8.5)
+    def test_starts_below_anchor_by_total_minus_first_delta(self) -> None:
+        """Oldest bucket sum = anchor - total + first_delta."""
+        deltas = [(_h(0), 1.0), (_h(1), 2.0), (_h(2), 0.5)]
+        # total = 3.5; anchor - total = -3.5; +first_delta(1.0) = -2.5
+        result = accumulate_to_stats(deltas, anchor_sum=0.0)
+        assert result[0]["sum"] == pytest.approx(-2.5)
+
+    def test_consecutive_diffs_recover_input_deltas(self) -> None:
+        """Differences between consecutive sums == input deltas (post-first)."""
+        deltas = [(_h(0), 1.0), (_h(1), 2.0), (_h(2), 0.5)]
+        result = accumulate_to_stats(deltas, anchor_sum=10.0)
+        diffs = [result[i]["sum"] - result[i - 1]["sum"] for i in range(1, len(result))]
+        assert diffs == [pytest.approx(2.0), pytest.approx(0.5)]
 
     def test_sorts_chronologically(self) -> None:
         deltas = [(_h(2), 0.5), (_h(0), 1.0), (_h(1), 2.0)]
         result = accumulate_to_stats(deltas, anchor_sum=0.0)
         assert [r["start"] for r in result] == [_h(0), _h(1), _h(2)]
-        assert [r["sum"] for r in result] == [1.0, 3.0, 3.5]
+        # Sums end at anchor (0.0), so reversed cumulative
+        assert result[-1]["sum"] == pytest.approx(0.0)
 
-    def test_end_before_cuts_list(self) -> None:
+    def test_end_before_cuts_list_and_anchors_to_cut(self) -> None:
+        """`end_before` cuts deltas; the LAST remaining bucket anchors to anchor."""
         deltas = [(_h(0), 1.0), (_h(1), 2.0), (_h(2), 0.5)]
         # Caller has existing stats starting at hour 1 — only hour 0 is new.
-        result = accumulate_to_stats(deltas, anchor_sum=0.0, end_before=_h(1))
-        assert result == [{"start": _h(0), "sum": 1.0}]
+        result = accumulate_to_stats(deltas, anchor_sum=10.0, end_before=_h(1))
+        # Only hour 0 survives, and its sum equals the anchor (cut-over point)
+        assert result == [{"start": _h(0), "sum": pytest.approx(10.0)}]
 
     def test_end_before_equal_excludes(self) -> None:
         # The condition is `start >= end_before`, so the bucket AT end_before
