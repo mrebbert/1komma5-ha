@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Diagnostics download** — Home Assistant's standard `diagnostics` platform is now wired up. Settings → Devices & Services → 1KOMMA5° → ⋮ → Download diagnostics produces a JSON dump useful for issue triage: redacted entry data (no username, password, system_id, unique_id), per-coordinator state snapshot (last_update_success, last_exception, update interval, summary of cached data), and the installed `onekommafive` SDK version. Three Tier-2 tests guard the redaction contract and JSON-serialisability.
+
 ## [0.1.35] - 2026-05-11
 
 ### Added
