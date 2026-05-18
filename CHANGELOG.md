@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.37] - 2026-05-18
+
+### Changed
+- Bumped `onekommafive` dependency to `>=0.1.21`. New release exposes three documented endpoints on the `System` client (`get_active_features`, `get_details`, `get_status_and_assets`) that this integration does not yet consume — kept on the backlog for a future feature release.
+
 ## [0.1.36] - 2026-05-16
 
 ### Added

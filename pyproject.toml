@@ -24,7 +24,7 @@ test-integration = [
     # back-track over hundreds of older releases (some of which pull in
     # pre-Python-3.13 numpy wheels that fail to build).
     "pytest-homeassistant-custom-component==0.13.316",
-    "onekommafive>=0.1.20",
+    "onekommafive>=0.1.21",
 ]
 
 [tool.setuptools]
