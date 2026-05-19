@@ -81,6 +81,66 @@ def _weather_summary(data: Any) -> dict[str, Any]:
     }
 
 
+def _system_status_summary(data: Any) -> dict[str, Any]:
+    if data is None:
+        return {}
+    asset_types = sorted({a.type for a in (data.assets or [])})
+    return {
+        "site_status": data.site_status,
+        "asset_count": len(data.assets) if data.assets else 0,
+        "asset_types": asset_types,
+        "active_feature_count": len(data.active_features) if data.active_features else 0,
+    }
+
+
+def _details_redacted(details: Any) -> dict[str, Any]:
+    """Redacted view of SystemDetails.
+
+    Strictly excludes PII and gateway-coupling secrets:
+    customer block, address fields, lat/lon, technical contact,
+    third-party meter IDs, and the DeviceGateway.gridx_start_code /
+    serial_number / id fields.
+    """
+    return {
+        "emp_type": getattr(details, "emp_type", None),
+        "status": getattr(details, "status", None),
+        "dynamic_pulse_compatible": getattr(details, "dynamic_pulse_compatible", None),
+        "energy_trader_active": getattr(details, "energy_trader_active", None),
+        "electricity_contract_active": getattr(details, "electricity_contract_active", None),
+        "has_third_party_smart_meter": getattr(details, "has_third_party_smart_meter", None),
+        "earliest_measurement": getattr(details, "earliest_measurement", None),
+        "created_at": getattr(details, "created_at", None),
+        "updated_at": getattr(details, "updated_at", None),
+        "device_gateway_count": len(getattr(details, "device_gateways", []) or []),
+    }
+
+
+def _assets_redacted(status_data: Any) -> dict[str, Any]:
+    """Redacted view of SystemStatusData.
+
+    Strictly excludes Asset.id, Asset.name (often contains site address),
+    Asset.serial_number and Asset.network_address (local IP).
+    """
+    if status_data is None:
+        return {}
+    return {
+        "site_status": status_data.site_status,
+        "asset_count": len(status_data.assets) if status_data.assets else 0,
+        "assets": [
+            {
+                "type": getattr(a, "type", None),
+                "manufacturer": getattr(a, "manufacturer", None),
+                "model": getattr(a, "model", None),
+                "firmware": getattr(a, "firmware", None),
+                "connection_status": getattr(a, "connection_status", None),
+                "heat_pump_meter_type": getattr(a, "heat_pump_meter_type", None),
+            }
+            for a in (status_data.assets or [])
+        ],
+        "active_features": list(status_data.active_features or []),
+    }
+
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: OneKomma5ConfigEntry
 ) -> dict[str, Any]:
@@ -111,6 +171,14 @@ async def async_get_config_entry_diagnostics(
                 **_coordinator_snapshot(data.weather_coordinator),
                 "summary": _weather_summary(data.weather_coordinator.data),
             },
+            "system_status": {
+                **_coordinator_snapshot(data.system_status_coordinator),
+                "summary": _system_status_summary(data.system_status_coordinator.data),
+            },
+        },
+        "system": {
+            "details": _details_redacted(data.details) if data.details else None,
+            "status_and_assets": _assets_redacted(data.system_status_coordinator.data),
         },
     }
 

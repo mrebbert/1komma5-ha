@@ -32,6 +32,7 @@ from .sensor_descriptions import (
 )
 from .sensor_entities import (
     CURRENCY_EUR_PER_KWH,
+    OneKomma5ActiveFeaturesSensor,
     OneKomma5ConsumerCostSensor,
     OneKomma5CostSensor,
     OneKomma5DiagnosticSensor,
@@ -510,6 +511,14 @@ async def async_setup_entry(
             system_name,
             "diag_optimization_update",
             "diag_optimization_update",
+        )
+    )
+
+    entities.append(
+        OneKomma5ActiveFeaturesSensor(
+            data.system_status_coordinator,
+            system_id,
+            system_name,
         )
     )
 

@@ -27,6 +27,7 @@ from .entity import (
     OneKomma5EVEntity,
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
+    OneKomma5SystemStatusEntity,
     OneKomma5WeatherEntity,
     QuarterHourUpdateMixin,
     system_device_info,
@@ -506,3 +507,31 @@ class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
     def native_value(self) -> datetime | None:
         """Return the last successful update timestamp."""
         return self._last_success
+
+
+class OneKomma5ActiveFeaturesSensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """Diagnostic sensor exposing the customer's enabled feature flags.
+
+    State is the number of active features; the full list lives in the
+    ``features`` attribute. Hidden from the main device card by default
+    via ``entity_category=DIAGNOSTIC``.
+    """
+
+    _attr_translation_key = "active_features"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:feature-search-outline"
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        super().__init__(coordinator, system_id, system_name, "active_features")
+
+    @property
+    def native_value(self) -> int | None:
+        if self.coordinator.data is None:
+            return None
+        return len(self.coordinator.data.active_features)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self.coordinator.data is None:
+            return None
+        return {"features": list(self.coordinator.data.active_features)}

@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.38] - 2026-05-19
+
+### Added
+- **Site connectivity** binary sensor (`site_connected`, `device_class=connectivity`) reflecting whether the 1KOMMA5° cloud sees the system as `CONNECTED`. Pairs cleanly with HA's standard "device unavailable" notifications.
+- **Per-asset-type connectivity** binary sensors (`inverter_connected`, `heat_pump_connected`, `meter_connected`, `wallbox_connected`, all `device_class=connectivity`). Each is registered only when an asset of that type is observed in the cloud's inventory — installs without e.g. a heat pump don't get a permanently unavailable sensor. AND-logic for multi-asset installs: a single disconnected device flips the sensor OFF. Attributes carry redacted per-asset detail (manufacturer / model / firmware / connection_status) — no serial numbers, no local IPs, no opaque IDs, no device names.
+- **Active features** diagnostic sensor (`active_features`, `entity_category=diagnostic`) exposing the customer's enabled Heartbeat feature flags (`DYNAMIC_TARIFF`, `TIME_OF_USE_OPTIMIZATION`, `SMART_CHARGING`, …). State is the count; the full list lives in the `features` attribute.
+- Diagnostics download now includes a new `system` block with redacted `details` (emp_type, dynamic_pulse_compatible, energy_trader_active, electricity_contract_active, earliest_measurement, …) and `status_and_assets` (site_status, asset_count, per-asset manufacturer/model/firmware/connection_status, active_features). Customer info, addresses, lat/lon, gateway gridx start codes, gateway/asset serial numbers, asset network IPs and asset opaque IDs/names are explicitly redacted.
+
+### Changed
+- New `SystemStatusCoordinator` (5-minute interval) drives the connectivity sensors. Combines `system.get_status_and_assets()` and `system.get_active_features(customer_id)` in one refresh; failure of the second call is silently swallowed (features fall back to `[]`) so a partial outage doesn't take the connectivity sensors offline.
+- `system.get_details()` is fetched once at config-entry setup. Its `customer_id` is the only input required for the active-features endpoint; the rest is surfaced as redacted diagnostics. Failure is non-fatal: `customer_id=None` simply means the active-features list stays empty.
+
 ## [0.1.37] - 2026-05-18
 
 ### Changed

@@ -53,6 +53,10 @@ def mock_system_factory():
         prices: MagicMock | None = None,
         optimizations: MagicMock | None = None,
         weather: MagicMock | None = None,
+        details: MagicMock | None = None,
+        site_status: str | None = "CONNECTED",
+        assets: list | None = None,
+        active_features: list[str] | None = None,
     ) -> MagicMock:
         system = MagicMock()
         system.id.return_value = system_id
@@ -115,6 +119,27 @@ def mock_system_factory():
                 forecasts=[],
             )
         system.get_weather.return_value = weather
+
+        if details is None:
+            details = MagicMock(
+                customer_id="cust-uuid-1",
+                emp_type="GRIDX",
+                status="ACTIVE",
+                dynamic_pulse_compatible=True,
+                energy_trader_active=True,
+                electricity_contract_active=True,
+                has_third_party_smart_meter=None,
+                earliest_measurement="2024-01-15",
+                created_at="2024-01-10T00:00:00Z",
+                updated_at="2026-05-01T00:00:00Z",
+                device_gateways=[],
+            )
+        system.get_details.return_value = details
+
+        site = MagicMock(status=site_status, assets=assets or [])
+        system.get_status_and_assets.return_value = site
+
+        system.get_active_features.return_value = list(active_features or [])
 
         return system
 

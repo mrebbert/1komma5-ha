@@ -15,6 +15,7 @@ from .const import (
     LIVE_UPDATE_INTERVAL_SECONDS,
     OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
     PRICE_UPDATE_INTERVAL_SECONDS,
+    SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS,
     WEATHER_UPDATE_INTERVAL_SECONDS,
 )
 from .helpers import (
@@ -58,6 +59,15 @@ class WeatherData:
     """Container for weather data fetched from the API."""
 
     weather: Any  # onekommafive.models.WeatherData
+
+
+@dataclass
+class SystemStatusData:
+    """Container for site status + asset inventory + active feature flags."""
+
+    site_status: str | None  # "CONNECTED" / "DISCONNECTED" / None
+    assets: list[Any]  # list[onekommafive.models.sites.Asset]
+    active_features: list[str]  # [] when customer_id unknown or fetch failed
 
 
 @dataclass
@@ -327,3 +337,44 @@ class OneKomma5WeatherCoordinator(OneKomma5BaseCoordinator[WeatherData]):
     def _fetch(self) -> WeatherData:
         """Fetch weather data synchronously."""
         return WeatherData(weather=self._system.get_weather())
+
+
+class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData]):
+    """Coordinator for site connectivity, asset inventory and active features.
+
+    Combines two endpoints in one refresh:
+
+    - ``get_status_and_assets()`` provides the site connectivity state and the
+      list of devices known to the 1KOMMA5° cloud, each with their own
+      ``connection_status``.
+    - ``get_active_features(customer_id)`` returns the customer's enabled
+      feature flags (``DYNAMIC_TARIFF``, ``SMART_CHARGING``, ...). The
+      customer_id is captured once at setup from ``get_details()`` — if that
+      failed (None passed in) we skip the features call and return an empty
+      list rather than failing the whole refresh.
+    """
+
+    _data_label = "system status data"
+
+    def __init__(self, hass: HomeAssistant, system: Any, customer_id: str | None) -> None:
+        super().__init__(
+            hass,
+            system,
+            name="1KOMMA5° System Status",
+            interval_seconds=SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS,
+        )
+        self._customer_id = customer_id
+
+    def _fetch(self) -> SystemStatusData:
+        site = self._system.get_status_and_assets()
+        features: list[str] = []
+        if self._customer_id:
+            try:
+                features = list(self._system.get_active_features(self._customer_id))
+            except Exception as err:
+                _LOGGER.debug("Active features fetch failed: %s", err)
+        return SystemStatusData(
+            site_status=site.status,
+            assets=list(site.assets or []),
+            active_features=features,
+        )

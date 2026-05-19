@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -13,6 +13,7 @@ from . import OneKomma5ConfigEntry
 from .entity import (
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
+    OneKomma5SystemStatusEntity,
     QuarterHourUpdateMixin,
 )
 from .helpers import active_optimization_event
@@ -26,30 +27,52 @@ async def async_setup_entry(
     """Set up binary sensor entities from a config entry."""
     data = entry.runtime_data
     system_id = data.system.id()
-    async_add_entities(
-        [
-            OneKomma5CheapElectricitySensor(
-                data.price_coordinator,
-                system_id,
-                data.system_name,
-            ),
-            OneKomma5CheapestHourNowSensor(
-                data.price_coordinator,
-                system_id,
-                data.system_name,
-            ),
-            OneKomma5OptimizationBatteryGridChargeSensor(
-                data.optimization_coordinator,
-                system_id,
-                data.system_name,
-            ),
-            OneKomma5OptimizationHeatPumpRecommendedSensor(
-                data.optimization_coordinator,
-                system_id,
-                data.system_name,
-            ),
-        ]
+    entities: list = [
+        OneKomma5CheapElectricitySensor(
+            data.price_coordinator,
+            system_id,
+            data.system_name,
+        ),
+        OneKomma5CheapestHourNowSensor(
+            data.price_coordinator,
+            system_id,
+            data.system_name,
+        ),
+        OneKomma5OptimizationBatteryGridChargeSensor(
+            data.optimization_coordinator,
+            system_id,
+            data.system_name,
+        ),
+        OneKomma5OptimizationHeatPumpRecommendedSensor(
+            data.optimization_coordinator,
+            system_id,
+            data.system_name,
+        ),
+        OneKomma5SiteConnectivitySensor(
+            data.system_status_coordinator,
+            system_id,
+            data.system_name,
+        ),
+    ]
+
+    # Per-asset connectivity sensors — only register the asset types that the
+    # cloud reports for this site. Avoids permanently "unavailable" sensors on
+    # systems without e.g. a heat pump.
+    status_data = data.system_status_coordinator.data
+    observed_types: set[str] = (
+        {a.type for a in status_data.assets} if status_data and status_data.assets else set()
     )
+    for asset_type, _suffix, sensor_cls in ASSET_CONNECTIVITY_SENSORS:
+        if asset_type in observed_types:
+            entities.append(
+                sensor_cls(
+                    data.system_status_coordinator,
+                    system_id,
+                    data.system_name,
+                )
+            )
+
+    async_add_entities(entities)
 
 
 class OneKomma5CheapElectricitySensor(
@@ -265,3 +288,113 @@ class OneKomma5OptimizationHeatPumpRecommendedSensor(
             "to": event.to_time,
             "market_price": event.market_price,
         }
+
+
+def _redact_asset(asset: Any) -> dict[str, Any]:
+    """Strip asset attrs that may carry secrets (serial, IP, opaque id/name)."""
+    return {
+        "manufacturer": getattr(asset, "manufacturer", None),
+        "model": getattr(asset, "model", None),
+        "firmware": getattr(asset, "firmware", None),
+        "connection_status": getattr(asset, "connection_status", None),
+    }
+
+
+class OneKomma5SiteConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+    """Binary sensor reflecting whether the 1KOMMA5° cloud sees the site as CONNECTED."""
+
+    _attr_translation_key = "site_connected"
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        super().__init__(coordinator, system_id, system_name, "site_connected")
+
+    @property
+    def is_on(self) -> bool | None:
+        if self.coordinator.data is None or self.coordinator.data.site_status is None:
+            return None
+        return self.coordinator.data.site_status == "CONNECTED"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self.coordinator.data is None:
+            return None
+        return {
+            "site_status": self.coordinator.data.site_status,
+            "asset_count": len(self.coordinator.data.assets),
+        }
+
+
+class _AssetTypeConnectivityBase(OneKomma5SystemStatusEntity, BinarySensorEntity):
+    """Reusable base for per-asset-type connectivity binary sensors.
+
+    AND-logic: ``is_on`` is True only when **every** asset of the configured
+    type reports ``connection_status == "CONNECTED"``. A single offline device
+    flips the sensor OFF.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _asset_type: str = ""  # set by subclasses
+
+    def _assets(self) -> list[Any]:
+        if self.coordinator.data is None:
+            return []
+        return [a for a in self.coordinator.data.assets if a.type == self._asset_type]
+
+    @property
+    def is_on(self) -> bool | None:
+        assets = self._assets()
+        if not assets:
+            return None
+        return all(a.connection_status == "CONNECTED" for a in assets)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        assets = self._assets()
+        if not assets:
+            return None
+        return {
+            "count": len(assets),
+            "connected_count": sum(1 for a in assets if a.connection_status == "CONNECTED"),
+            "assets": [_redact_asset(a) for a in assets],
+        }
+
+
+class OneKomma5InverterConnectivitySensor(_AssetTypeConnectivityBase):
+    _attr_translation_key = "inverter_connected"
+    _asset_type = "HYBRID"
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        super().__init__(coordinator, system_id, system_name, "inverter_connected")
+
+
+class OneKomma5HeatPumpConnectivitySensor(_AssetTypeConnectivityBase):
+    _attr_translation_key = "heat_pump_connected"
+    _asset_type = "HEAT_PUMP"
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        super().__init__(coordinator, system_id, system_name, "heat_pump_connected")
+
+
+class OneKomma5MeterConnectivitySensor(_AssetTypeConnectivityBase):
+    _attr_translation_key = "meter_connected"
+    _asset_type = "METER"
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        super().__init__(coordinator, system_id, system_name, "meter_connected")
+
+
+class OneKomma5WallboxConnectivitySensor(_AssetTypeConnectivityBase):
+    _attr_translation_key = "wallbox_connected"
+    _asset_type = "EV_CHARGER"
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        super().__init__(coordinator, system_id, system_name, "wallbox_connected")
+
+
+ASSET_CONNECTIVITY_SENSORS = (
+    ("HYBRID", "inverter_connected", OneKomma5InverterConnectivitySensor),
+    ("HEAT_PUMP", "heat_pump_connected", OneKomma5HeatPumpConnectivitySensor),
+    ("METER", "meter_connected", OneKomma5MeterConnectivitySensor),
+    ("EV_CHARGER", "wallbox_connected", OneKomma5WallboxConnectivitySensor),
+)

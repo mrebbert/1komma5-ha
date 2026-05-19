@@ -117,6 +117,21 @@
       },
       "optimization_heat_pump_recommended": {
         "name": "AI: Heat pump recommendation"
+      },
+      "site_connected": {
+        "name": "Site connected"
+      },
+      "inverter_connected": {
+        "name": "Inverter connected"
+      },
+      "heat_pump_connected": {
+        "name": "Heat pump connected"
+      },
+      "meter_connected": {
+        "name": "Meter connected"
+      },
+      "wallbox_connected": {
+        "name": "Wallbox connected"
       }
     },
     "sensor": {
@@ -263,6 +278,9 @@
       },
       "diag_optimization_update": {
         "name": "Last optimization update"
+      },
+      "active_features": {
+        "name": "Active features"
       },
       "weather_sunshine_today": {
         "name": "Sunshine today"

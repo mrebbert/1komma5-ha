@@ -117,6 +117,21 @@
       },
       "optimization_heat_pump_recommended": {
         "name": "AI: Wärmepumpen-Empfehlung"
+      },
+      "site_connected": {
+        "name": "Anlage verbunden"
+      },
+      "inverter_connected": {
+        "name": "Wechselrichter verbunden"
+      },
+      "heat_pump_connected": {
+        "name": "Wärmepumpe verbunden"
+      },
+      "meter_connected": {
+        "name": "Zähler verbunden"
+      },
+      "wallbox_connected": {
+        "name": "Wallbox verbunden"
       }
     },
     "sensor": {
@@ -263,6 +278,9 @@
       },
       "diag_optimization_update": {
         "name": "Letztes Optimierungs-Update"
+      },
+      "active_features": {
+        "name": "Aktive Funktionen"
       },
       "weather_sunshine_today": {
         "name": "Sonnenscheindauer heute"

@@ -15,6 +15,7 @@ from .coordinator import (
     OneKomma5LiveCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
+    OneKomma5SystemStatusCoordinator,
     OneKomma5WeatherCoordinator,
 )
 from .services import async_setup_services
@@ -40,8 +41,13 @@ class OneKomma5Data:
     price_coordinator: OneKomma5PriceCoordinator
     optimization_coordinator: OneKomma5OptimizationCoordinator
     weather_coordinator: OneKomma5WeatherCoordinator
+    system_status_coordinator: OneKomma5SystemStatusCoordinator
     system: object  # onekommafive.system.System
     system_name: str  # pre-fetched in executor to avoid blocking calls in async context
+    # Full SystemDetails captured once at setup. Used only for diagnostics —
+    # never surfaced as entities. None if the call failed at setup.
+    details: object | None
+    customer_id: str | None  # sliced off details for the system-status coordinator
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -65,7 +71,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 
     try:
 
-        def _fetch_system() -> tuple[object, str]:
+        def _fetch_system() -> tuple[object, str, object | None]:
             client = Client(username, password)
             system = Systems(client).get_system(system_id)
             # system.info() makes a blocking HTTP call — keep it in the executor
@@ -75,24 +81,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
                 or (f"1KOMMA5° {info.address_city}" if info.address_city else None)
                 or f"1KOMMA5° {system.id()[:8]}"
             )
-            return system, name
+            # SystemDetails is rarely-changing metadata — fetched once at setup
+            # and cached. Failure is non-fatal: it only means the diagnostics
+            # dump lacks the extra fields and the active-features endpoint
+            # is skipped (customer_id is required for that call).
+            try:
+                details = system.get_details()
+            except Exception as err:  # pragma: no cover - defensive
+                _LOGGER.warning("System details fetch failed: %s", err)
+                details = None
+            return system, name, details
 
-        system, system_name = await hass.async_add_executor_job(_fetch_system)
+        system, system_name, details = await hass.async_add_executor_job(_fetch_system)
     except AuthenticationError as err:
         raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
     except RequestError as err:
         raise ConfigEntryNotReady(f"Cannot connect to 1KOMMA5° API: {err}") from err
 
+    customer_id = getattr(details, "customer_id", None) if details else None
+
     live_coordinator = OneKomma5LiveCoordinator(hass, system)
     price_coordinator = OneKomma5PriceCoordinator(hass, system)
     optimization_coordinator = OneKomma5OptimizationCoordinator(hass, system)
     weather_coordinator = OneKomma5WeatherCoordinator(hass, system)
+    system_status_coordinator = OneKomma5SystemStatusCoordinator(hass, system, customer_id)
 
     await live_coordinator.async_config_entry_first_refresh()
 
-    # Price, optimization and weather data is non-critical — don't block setup
-    # if the API rate-limits or is temporarily unavailable. Data will be
-    # fetched on the next scheduled interval.
+    # Price, optimization, weather and system-status data is non-critical —
+    # don't block setup if the API rate-limits or is temporarily unavailable.
+    # Data will be fetched on the next scheduled interval.
     try:
         await price_coordinator.async_refresh()
     except Exception:
@@ -108,13 +126,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     except Exception:
         _LOGGER.warning("Initial weather fetch failed, will retry on next interval")
 
+    try:
+        await system_status_coordinator.async_refresh()
+    except Exception:
+        _LOGGER.warning("Initial system-status fetch failed, will retry on next interval")
+
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,
         price_coordinator=price_coordinator,
         optimization_coordinator=optimization_coordinator,
         weather_coordinator=weather_coordinator,
+        system_status_coordinator=system_status_coordinator,
         system=system,
         system_name=system_name,
+        details=details,
+        customer_id=customer_id,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
