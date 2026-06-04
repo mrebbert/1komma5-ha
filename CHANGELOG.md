@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- New blueprint `notify_connectivity_lost.yaml` — fires a notification when one of the v0.1.38 connectivity sensors (site, inverter, heat pump, meter, wallbox) stays OFF for a configurable debounce duration (default 5 min). Picker is filtered to `device_class=connectivity` from this integration; default message templates the friendly entity name so a single blueprint serves all five sensors.
+
 ## [0.1.39] - 2026-06-04
 
 ### Changed

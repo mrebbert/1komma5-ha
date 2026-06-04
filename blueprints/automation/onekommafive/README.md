@@ -1,6 +1,6 @@
 # 1KOMMA5° automation blueprints
 
-Three ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
+Four ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
 common automations on top of this integration.
 
 ## Importing
@@ -49,6 +49,16 @@ the full forecast and the current battery state.
 
 Inputs: grid-charge binary sensor, notify service, title, message
 (Jinja-templatable).
+
+### `notify_connectivity_lost.yaml` — Notify when a device goes offline
+Sends a notification when one of the v0.1.38 connectivity sensors (site,
+inverter, heat pump, meter, wallbox) stays OFF for a debounce duration
+(default 5 minutes). The default message uses `{{ trigger.to_state.name }}`
+so a single import covers any of the five sensors — instantiate one
+automation per sensor you want to watch.
+
+Inputs: connectivity binary sensor, offline debounce duration, notify
+service, title, message (Jinja-templatable).
 
 ## Note about the `entity.integration: onekommafive` selector
 

@@ -1,0 +1,84 @@
+blueprint:
+  name: 1KOMMA5° — Notify when a device goes offline
+  description: >
+    Send a notification when one of the 1KOMMA5° connectivity binary sensors
+    stays OFF for a configurable debounce duration. Works with any of the
+    five connectivity sensors introduced in v0.1.38: site, inverter, heat
+    pump, meter, wallbox.
+
+
+    The debounce avoids spam from brief cloud hiccups — a 5-minute default
+    catches real outages without firing on every transient reconnect.
+
+
+    Tip: instantiate this blueprint once per sensor you care about. The
+    `{{ trigger.to_state.name }}` template in the default message
+    substitutes the friendly entity name, so the same blueprint produces
+    correctly-worded notifications for "Wallbox connected", "Heat pump
+    connected", etc.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/notify_connectivity_lost.yaml
+
+  input:
+    connectivity_sensor:
+      name: Connectivity binary sensor
+      description: >
+        One of the 1KOMMA5° connectivity sensors (site, inverter, heat
+        pump, meter, wallbox). Picker is filtered to `device_class:
+        connectivity` from this integration.
+      selector:
+        entity:
+          domain: binary_sensor
+          integration: onekommafive
+          device_class: connectivity
+    delay:
+      name: Offline debounce
+      description: >
+        How long the sensor must stay OFF before the notification fires.
+        Filters out brief cloud reconnects.
+      default:
+        hours: 0
+        minutes: 5
+        seconds: 0
+      selector:
+        duration: {}
+    notify_target:
+      name: Notification target
+      description: >
+        The `notify` service to call (e.g. `notify.mobile_app_pixel`,
+        `notify.persistent_notification`, `notify.notify`).
+      default: notify.persistent_notification
+      selector:
+        text: {}
+    title:
+      name: Notification title
+      default: "1KOMMA5°: Connection lost"
+      selector:
+        text: {}
+    message:
+      name: Notification message
+      description: >
+        Supports Jinja templates. `trigger.to_state.name` resolves to the
+        friendly entity name (e.g. "1k5 Wallbox connected").
+      default: >
+        {{ trigger.to_state.name }} has been reporting OFFLINE for
+        {{ trigger.for }}.
+      selector:
+        text:
+          multiline: true
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input connectivity_sensor
+    to: "off"
+    for: !input delay
+
+action:
+  - service: !input notify_target
+    data:
+      title: !input title
+      message: !input message
