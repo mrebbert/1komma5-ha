@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.39] - 2026-06-04
+
+### Changed
+- Bundled the hDPI variant of the brand icon (`brand/icon@2x.png`, 512×512 RGBA) next to the existing `icon.png`. Home Assistant's brands proxy (HA ≥ 2026.3) serves both via `/api/brands/integration/onekommafive/`, replacing the grey "Icon not available" placeholder in HACS' list and integration views.
+- README image references switched to absolute URLs so the corner logo and the License badge render correctly in HACS' README panel — the previous relative `<img src="custom_components/…">` was stripped by HACS' HTML sanitiser, and the relative License link target broke the entire `[![]()](…)` element under the same sanitiser.
+
+### Removed
+- `brand-prep/` working directory. `home-assistant/brands` no longer accepts PRs for custom integrations (2026-02-24 announcement); the directory was a staging area for that workflow and is now obsolete.
+
 ## [0.1.38] - 2026-05-19
 
 ### Added
