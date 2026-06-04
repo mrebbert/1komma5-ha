@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - New blueprint `notify_connectivity_lost.yaml` — fires a notification when one of the v0.1.38 connectivity sensors (site, inverter, heat pump, meter, wallbox) stays OFF for a configurable debounce duration (default 5 min). Picker is filtered to `device_class=connectivity` from this integration; default message templates the friendly entity name so a single blueprint serves all five sensors.
+- README **Energy Dashboard setup** section mapping every supported HA Energy Dashboard slot (grid import/export, solar, battery in/out, individual devices) to the friendly name + underlying translation_key, plus grid-pricing and feed-in-revenue sensor wiring.
+
+### Changed
+- Reordered the top-level README so installation and configuration come before the entity reference. Old order had a ~300-line "Features" section ahead of the install instructions, which buried both setup steps and the dashboard/blueprint links. New order: Disclaimer → Installation → Configuration → Energy Dashboard setup → Example Dashboard → Blueprints → Entities → Services & Events → Requirements / Tech / Development / Credits. The "Features" H2 was renamed to "Entities", and the services + bus event were lifted to their own "Services & Events" H2. No content was removed or shortened.
 
 ## [0.1.39] - 2026-06-04
 

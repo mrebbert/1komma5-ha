@@ -33,11 +33,111 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 
 ---
 
-## Features
+## Installation
+
+### Via HACS (recommended)
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mrebbert&repository=1komma5-ha&category=integration)
+
+Or manually:
+
+1. Open **HACS** → **Integrations** → ⋮ → **Custom repositories**
+2. Add `https://github.com/mrebbert/1komma5-ha` with category **Integration**
+3. Search for **1KOMMA5°** and install it
+4. Restart Home Assistant
+
+### Manual
+
+1. Download the [latest release](https://github.com/mrebbert/1komma5-ha/releases/latest) (`onekommafive.zip`)
+2. Extract and copy the `onekommafive/` folder to `<config>/custom_components/`
+3. Restart Home Assistant
+
+---
+
+## Configuration
+
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=onekommafive)
+
+1. Go to **Settings → Devices & Services → Add Integration**
+2. Search for **1KOMMA5°**
+3. Enter your 1KOMMA5° account e-mail and password
+4. If you have multiple systems, select the one you want to integrate
+
+Credentials are stored securely in the Home Assistant config entry.
+
+### Updating Credentials
+
+Two flows handle credential changes without losing your sensor history:
+
+- **Re-authentication** — If your 1KOMMA5° password changes (or the API rejects authentication), Home Assistant automatically detects this and shows a "Re-authentication required" notification. Click it, enter your new password, and the integration recovers seamlessly.
+- **Reconfigure** — To proactively change credentials, go to **Settings → Devices & Services → 1KOMMA5°** → ⋮ menu → **Reconfigure**. Enter the new credentials; the integration reloads with the same `system_id`.
+
+Both flows preserve all sensor history, restored states, and Energy Dashboard configuration.
+
+### Options
+
+After setup, additional options can be configured via **Settings → Devices & Services → 1KOMMA5° → Configure**:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Feed-in Tariff | 0.0803 €/kWh | Feed-in tariff used to calculate the *Feed-in Revenue* sensor. Set this to your actual contract rate (incl. all bonuses). |
+
+---
+
+## Energy Dashboard setup
+
+All energy sensors use `state_class: total_increasing` and the cost/revenue sensors use `state_class: total` + `device_class: monetary`, so they drop straight into Home Assistant's **Energy Dashboard** with no helper sensors needed.
+
+**Settings → Dashboards → Energy → Add Source** — pick by friendly name:
+
+| Energy Dashboard slot | Friendly name | Underlying key |
+|---|---|---|
+| Grid consumption (import) | *Grid Import Energy* | `grid_consumption_power_energy` |
+| Return to grid (export) | *Grid Export Energy* | `grid_feed_in_power_energy` |
+| Solar production | *PV Energy* | `pv_power_energy` |
+| Home battery → Energy going in | *Battery Charge Energy* | `battery_charge_power_energy` |
+| Home battery → Energy coming out | *Battery Discharge Energy* | `battery_discharge_power_energy` |
+| Individual device → Heat pump | *Heat Pump Energy* | `heat_pumps_power_energy` |
+| Individual device → EV charger | *EV Charging Energy* | `ev_chargers_power_energy` |
+| Individual device → AC | *AC Energy* | `acs_power_energy` |
+| Individual device → Household | *Household Energy* | `household_power_energy` |
+
+**Grid pricing:**
+On the grid-import source, pick *Use a sensor tracking the total costs* and select **Electricity Cost** (`electricity_cost`). It already integrates the live dynamic price (incl. negative slots), so no static price field needed.
+
+**Return-to-grid revenue:**
+On the grid-export source, pick *Use a sensor tracking the total costs* and select **Feed-in Revenue** (`feed_in_revenue`). The underlying tariff is configurable under **Settings → Devices & Services → 1KOMMA5° → Configure**.
+
+> The Battery Power and Grid Power sensors are bidirectional and therefore not Energy-Dashboard-compatible. Use the dedicated charge/discharge and import/export pairs above instead.
+
+---
+
+## Example Home Assistant Dashboard
+
+The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant dashboard with two views — one for energy & grid data and one for EV charger control. All cards are native HA types, no extra frontend components needed.
+
+→ [Dashboard README with screenshots](dashboard/README.md)
+
+---
+
+## Home Assistant Automation Blueprints
+
+Four ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
+
+- **Run during cheapest window** — schedules a switch for the cheapest N-minute window each day (dishwasher, washing machine, EV)
+- **Follow cheap electricity** — mirrors a switch to `binary_sensor…_cheap_electricity` for opportunistic loads (water heater, pool pump)
+- **Notify on AI grid-charge decision** — pings you whenever the Heartbeat AI starts charging the battery from the grid
+- **Notify when a device goes offline** — alerts you when site, inverter, heat pump, meter or wallbox connectivity sensor stays OFF for a configurable debounce
+
+→ [Blueprints README with import instructions](blueprints/automation/onekommafive/README.md)
+
+---
+
+## Entities
+
+> **Note:** Entity names in Home Assistant depend on your language settings. The tables below show English names; German translations are provided via i18n.
 
 ### Power Sensors
-
-> **Note:** Entity names in Home Assistant depend on your language settings. The table below shows English names; German translations are provided via i18n.
 
 | Entity | Key | Description | Unit | Update |
 |--------|-----|-------------|------|--------|
@@ -258,6 +358,26 @@ mode: single
 
 Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor entity ID and `CAR_IDENTIFIER` with your EV charger prefix. The second condition ensures the automation only runs in `SMART_CHARGE` mode — the entity is unavailable otherwise.
 
+### EMS Controls
+
+| Entity | Key | Type | Description |
+|--------|-----|------|-------------|
+| EMS Auto Mode | `ems_auto_mode` | Switch | Toggle EMS auto / manual mode |
+
+### Diagnostic Sensors
+
+These sensors are hidden by default (`entity_category: diagnostic`) and useful for troubleshooting API connectivity.
+
+| Entity | Key | Description |
+|--------|-----|-------------|
+| Last Live Update | `diag_live_update` | Timestamp of the last successful live data fetch |
+| Last Price Update | `diag_price_update` | Timestamp of the last successful price data fetch |
+| Last Optimization Update | `diag_optimization_update` | Timestamp of the last successful optimization data fetch |
+
+---
+
+## Services & Events
+
 ### Services: `onekommafive.get_cheapest_window` / `get_most_expensive_window`
 
 Find the cheapest (or most expensive) contiguous time window in the price forecast.
@@ -336,94 +456,6 @@ action:
     target:
       entity_id: switch.dishwasher
 ```
-
-### EMS Controls
-
-| Entity | Key | Type | Description |
-|--------|-----|------|-------------|
-| EMS Auto Mode | `ems_auto_mode` | Switch | Toggle EMS auto / manual mode |
-
-### Diagnostic Sensors
-
-These sensors are hidden by default (`entity_category: diagnostic`) and useful for troubleshooting API connectivity.
-
-| Entity | Key | Description |
-|--------|-----|-------------|
-| Last Live Update | `diag_live_update` | Timestamp of the last successful live data fetch |
-| Last Price Update | `diag_price_update` | Timestamp of the last successful price data fetch |
-| Last Optimization Update | `diag_optimization_update` | Timestamp of the last successful optimization data fetch |
-
----
-
-## Example Home Assistant Dashboard
-
-The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant dashboard with two views — one for energy & grid data and one for EV charger control. All cards are native HA types, no extra frontend components needed.
-
-→ [Dashboard README with screenshots](dashboard/README.md)
-
----
-
-## Home Assistant Automation Blueprints
-
-Four ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
-
-- **Run during cheapest window** — schedules a switch for the cheapest N-minute window each day (dishwasher, washing machine, EV)
-- **Follow cheap electricity** — mirrors a switch to `binary_sensor…_cheap_electricity` for opportunistic loads (water heater, pool pump)
-- **Notify on AI grid-charge decision** — pings you whenever the Heartbeat AI starts charging the battery from the grid
-- **Notify when a device goes offline** — alerts you when site, inverter, heat pump, meter or wallbox connectivity sensor stays OFF for a configurable debounce
-
-→ [Blueprints README with import instructions](blueprints/automation/onekommafive/README.md)
-
----
-
-## Installation in Home Assistant (HACS)
-
-### Via HACS (recommended)
-
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mrebbert&repository=1komma5-ha&category=integration)
-
-Or manually:
-
-1. Open **HACS** → **Integrations** → ⋮ → **Custom repositories**
-2. Add `https://github.com/mrebbert/1komma5-ha` with category **Integration**
-3. Search for **1KOMMA5°** and install it
-4. Restart Home Assistant
-
-### Manual
-
-1. Download the [latest release](https://github.com/mrebbert/1komma5-ha/releases/latest) (`onekommafive.zip`)
-2. Extract and copy the `onekommafive/` folder to `<config>/custom_components/`
-3. Restart Home Assistant
-
----
-
-## Configuration
-
-[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=onekommafive)
-
-1. Go to **Settings → Devices & Services → Add Integration**
-2. Search for **1KOMMA5°**
-3. Enter your 1KOMMA5° account e-mail and password
-4. If you have multiple systems, select the one you want to integrate
-
-Credentials are stored securely in the Home Assistant config entry.
-
-### Updating Credentials
-
-Two flows handle credential changes without losing your sensor history:
-
-- **Re-authentication** — If your 1KOMMA5° password changes (or the API rejects authentication), Home Assistant automatically detects this and shows a "Re-authentication required" notification. Click it, enter your new password, and the integration recovers seamlessly.
-- **Reconfigure** — To proactively change credentials, go to **Settings → Devices & Services → 1KOMMA5°** → ⋮ menu → **Reconfigure**. Enter the new credentials; the integration reloads with the same `system_id`.
-
-Both flows preserve all sensor history, restored states, and Energy Dashboard configuration.
-
-### Options
-
-After setup, additional options can be configured via **Settings → Devices & Services → 1KOMMA5° → Configure**:
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| Feed-in Tariff | 0.0803 €/kWh | Feed-in tariff used to calculate the *Feed-in Revenue* sensor. Set this to your actual contract rate (incl. all bonuses). |
 
 ---
 
