@@ -37,14 +37,16 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 
 ### Via HACS (recommended)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mrebbert&repository=1komma5-ha&category=integration)
+This integration is part of the **HACS default store** — no custom repository setup required.
 
-Or manually:
-
-1. Open **HACS** → **Integrations** → ⋮ → **Custom repositories**
-2. Add `https://github.com/mrebbert/1komma5-ha` with category **Integration**
-3. Search for **1KOMMA5°** and install it
+1. Open **HACS** in Home Assistant
+2. Search for **1KOMMA5°**
+3. Click **Download**
 4. Restart Home Assistant
+
+One-click open in HACS:
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mrebbert&repository=1komma5-ha&category=integration)
 
 ### Manual
 
