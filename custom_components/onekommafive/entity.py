@@ -36,42 +36,35 @@ def get_ev_label(ev: Any) -> str:
     return " ".join(parts) if parts else f"EV {ev.id()[:8]}"
 
 
-class OneKomma5Entity(CoordinatorEntity[OneKomma5LiveCoordinator]):
+class _BaseSystemEntity[C](CoordinatorEntity[C]):
+    """Generic base for all entities tied to a 1KOMMA5° system device.
+
+    The five typed `OneKomma5*Entity` aliases below just bind the coordinator
+    type parameter — same idiom as `OneKomma5BaseCoordinator[T]`.
+    """
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: C,
+        system_id: str,
+        system_name: str,
+        unique_id_suffix: str,
+    ) -> None:
+        """Initialize the entity."""
+        super().__init__(coordinator)
+        self._system_id = system_id
+        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
+        self._attr_device_info = system_device_info(system_id, system_name)
+
+
+class OneKomma5Entity(_BaseSystemEntity[OneKomma5LiveCoordinator]):
     """Base entity for live-data entities."""
 
-    _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        coordinator: OneKomma5LiveCoordinator,
-        system_id: str,
-        system_name: str,
-        unique_id_suffix: str,
-    ) -> None:
-        """Initialize the entity."""
-        super().__init__(coordinator)
-        self._system_id = system_id
-        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = system_device_info(system_id, system_name)
-
-
-class OneKomma5PriceEntity(CoordinatorEntity[OneKomma5PriceCoordinator]):
+class OneKomma5PriceEntity(_BaseSystemEntity[OneKomma5PriceCoordinator]):
     """Base entity for price-data entities."""
-
-    _attr_has_entity_name = True
-
-    def __init__(
-        self,
-        coordinator: OneKomma5PriceCoordinator,
-        system_id: str,
-        system_name: str,
-        unique_id_suffix: str,
-    ) -> None:
-        """Initialize the entity."""
-        super().__init__(coordinator)
-        self._system_id = system_id
-        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = system_device_info(system_id, system_name)
 
     def _dynamic_current_price(self) -> float | None:
         """Look up the current price using the dynamic helper if available."""
@@ -84,61 +77,16 @@ class OneKomma5PriceEntity(CoordinatorEntity[OneKomma5PriceCoordinator]):
         return self.coordinator.data.current_price
 
 
-class OneKomma5OptimizationEntity(CoordinatorEntity[OneKomma5OptimizationCoordinator]):
+class OneKomma5OptimizationEntity(_BaseSystemEntity[OneKomma5OptimizationCoordinator]):
     """Base entity for optimization-data entities."""
 
-    _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        coordinator: OneKomma5OptimizationCoordinator,
-        system_id: str,
-        system_name: str,
-        unique_id_suffix: str,
-    ) -> None:
-        """Initialize the entity."""
-        super().__init__(coordinator)
-        self._system_id = system_id
-        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = system_device_info(system_id, system_name)
-
-
-class OneKomma5SystemStatusEntity(CoordinatorEntity[OneKomma5SystemStatusCoordinator]):
+class OneKomma5SystemStatusEntity(_BaseSystemEntity[OneKomma5SystemStatusCoordinator]):
     """Base entity for system-status entities (connectivity, active features)."""
 
-    _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        coordinator: OneKomma5SystemStatusCoordinator,
-        system_id: str,
-        system_name: str,
-        unique_id_suffix: str,
-    ) -> None:
-        """Initialize the entity."""
-        super().__init__(coordinator)
-        self._system_id = system_id
-        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = system_device_info(system_id, system_name)
-
-
-class OneKomma5WeatherEntity(CoordinatorEntity[OneKomma5WeatherCoordinator]):
+class OneKomma5WeatherEntity(_BaseSystemEntity[OneKomma5WeatherCoordinator]):
     """Base entity for sensors backed by the weather coordinator."""
-
-    _attr_has_entity_name = True
-
-    def __init__(
-        self,
-        coordinator: OneKomma5WeatherCoordinator,
-        system_id: str,
-        system_name: str,
-        unique_id_suffix: str,
-    ) -> None:
-        """Initialize the entity."""
-        super().__init__(coordinator)
-        self._system_id = system_id
-        self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = system_device_info(system_id, system_name)
 
 
 class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
