@@ -492,31 +492,12 @@ async def async_setup_entry(
             )
 
     # Diagnostic sensors (last successful update per coordinator)
-    entities.append(
-        OneKomma5DiagnosticSensor(
-            live_coordinator,
-            system_id,
-            system_name,
-            "diag_live_update",
-            "diag_live_update",
-        )
-    )
-    entities.append(
-        OneKomma5DiagnosticSensor(
-            price_coordinator,
-            system_id,
-            system_name,
-            "diag_price_update",
-            "diag_price_update",
-        )
-    )
-    entities.append(
-        OneKomma5DiagnosticSensor(
-            optimization_coordinator,
-            system_id,
-            system_name,
-            "diag_optimization_update",
-            "diag_optimization_update",
+    entities.extend(
+        OneKomma5DiagnosticSensor(coordinator, system_id, system_name, key)
+        for coordinator, key in (
+            (live_coordinator, "diag_live_update"),
+            (price_coordinator, "diag_price_update"),
+            (optimization_coordinator, "diag_optimization_update"),
         )
     )
 

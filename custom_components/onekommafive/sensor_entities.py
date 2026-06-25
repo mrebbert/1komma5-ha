@@ -546,12 +546,11 @@ class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
         system_id: str,
         system_name: str,
         key: str,
-        translation_key: str,
     ) -> None:
-        """Initialize the diagnostic sensor."""
+        """Initialize the diagnostic sensor. ``key`` doubles as the translation key."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{system_id}_{key}"
-        self._attr_translation_key = translation_key
+        self._attr_translation_key = key
         self._attr_device_info = system_device_info(system_id, system_name)
         self._last_success: datetime | None = None
 
