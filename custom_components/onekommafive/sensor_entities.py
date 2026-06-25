@@ -115,10 +115,15 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
         return attrs
 
 
-class OneKomma5CheapestChargingWindowSensor(
-    QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity
-):
-    """Cheapest 60-min charging window that still ends today (local time)."""
+class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor):
+    """Cheapest 60-min charging window that still ends today (local time).
+
+    Locked-in: once a window is chosen, it stays as state until its end has
+    passed (or the day rolls over). Restored across HA restarts. After the
+    locked window ends, the sensor re-locks the next-cheapest window of the
+    remaining day; once less than 60 min remain today, state is ``unknown``
+    until midnight.
+    """
 
     _attr_translation_key = "cheapest_charging_window_today"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
@@ -130,22 +135,74 @@ class OneKomma5CheapestChargingWindowSensor(
     def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
         """Initialize the cheapest-window sensor."""
         super().__init__(coordinator, system_id, system_name, "cheapest_charging_window_today")
+        self._window: dict[str, Any] | None = None
 
     async def async_added_to_hass(self) -> None:
-        """Re-evaluate at quarter-hour boundaries — the forecast horizon shrinks."""
+        """Restore the previous window (if still valid), then evaluate."""
         await super().async_added_to_hass()
-        self._async_register_quarter_hour_update()
+        last_state = await self.async_get_last_state()
+        if last_state is not None and last_state.state not in (
+            None,
+            "",
+            "unknown",
+            "unavailable",
+        ):
+            self._window = self._restore_window_from_state(last_state)
+        self._refresh_window()
 
-    def _compute(self) -> dict[str, Any] | None:
-        if self.coordinator.data is None:
+    def _restore_window_from_state(self, last_state: Any) -> dict[str, Any] | None:
+        """Reconstruct a window dict from a restored State, validated for today."""
+        try:
+            end_iso = last_state.attributes.get("end")
+            avg_price = last_state.attributes.get("average_price")
+            slot_count = last_state.attributes.get("slot_count", self._SLOT_COUNT)
+            if not end_iso or avg_price is None:
+                return None
+            return self._validate_window(
+                {
+                    "start": last_state.state,
+                    "end": end_iso,
+                    "average_price": float(avg_price),
+                    "slot_count": int(slot_count),
+                }
+            )
+        except (ValueError, TypeError, AttributeError):
             return None
-        forecast = self.coordinator.data.forecast
-        if not forecast:
+
+    def _validate_window(self, window: dict[str, Any]) -> dict[str, Any] | None:
+        """Return the window unchanged if its lock-in is still valid; else None."""
+        try:
+            now_local = dt_util.now()
+            start_dt = datetime.fromisoformat(window["start"])
+            end_dt = datetime.fromisoformat(window["end"])
+        except (ValueError, KeyError):
             return None
+        # End passed → re-lock for the rest of today.
+        if end_dt <= dt_util.as_utc(now_local):
+            return None
+        # Day rolled over → previous day's window no longer applies.
+        if start_dt.astimezone(now_local.tzinfo).date() != now_local.date():
+            return None
+        return window
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """On fresh coordinator data, re-evaluate the locked window."""
+        self._refresh_window()
+        super()._handle_coordinator_update()
+
+    def _refresh_window(self) -> None:
+        """Discard expired/wrong-day windows and lock in a fresh one if missing."""
+        if self._window is not None:
+            self._window = self._validate_window(self._window)
+        if self._window is not None:
+            return
+        if self.coordinator.data is None or not self.coordinator.data.forecast:
+            return
         now_local = dt_util.now()
         end_of_today_local = now_local.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return find_cheapest_window(
-            forecast,
+        self._window = find_cheapest_window(
+            self.coordinator.data.forecast,
             self._SLOT_COUNT,
             earliest_start=dt_util.as_utc(now_local),
             latest_end=dt_util.as_utc(end_of_today_local),
@@ -153,24 +210,22 @@ class OneKomma5CheapestChargingWindowSensor(
 
     @property
     def native_value(self) -> datetime | None:
-        """Return the start of the cheapest 60-min window remaining today."""
-        window = self._compute()
-        if window is None:
+        """Return the start of the locked-in cheapest window."""
+        if self._window is None:
             return None
-        return datetime.fromisoformat(window["start"])
+        return datetime.fromisoformat(self._window["start"])
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Expose start/end/avg-price/duration on the sensor."""
-        window = self._compute()
-        if window is None:
+        if self._window is None:
             return None
         return {
-            "start": window["start"],
-            "end": window["end"],
-            "average_price": window["average_price"],
+            "start": self._window["start"],
+            "end": self._window["end"],
+            "average_price": self._window["average_price"],
             "duration_minutes": self._DURATION_MINUTES,
-            "slot_count": window["slot_count"],
+            "slot_count": self._window["slot_count"],
         }
 
 

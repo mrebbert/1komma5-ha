@@ -11,8 +11,11 @@ from __future__ import annotations
 import datetime
 from unittest.mock import MagicMock, patch
 
-from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.core import HomeAssistant, State
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    mock_restore_cache,
+)
 
 from custom_components.onekommafive.const import (
     CONF_PASSWORD,
@@ -162,3 +165,155 @@ async def test_cheapest_window_clips_at_end_of_today_local(
     assert state.attributes["average_price"] == 0.30
     end_dt = datetime.datetime.fromisoformat(state.attributes["end"])
     assert end_dt <= datetime.datetime(2026, 6, 15, 23, 59, 59, 999999, tzinfo=datetime.UTC)
+
+
+async def test_cheapest_window_locks_in_across_time_advance(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """Once chosen, the window is held — time moving on does NOT re-pick it.
+
+    Regression test for the v0.1.41 bug where the sensor flickered to the
+    next 15-min slot at every quarter-hour boundary.
+    """
+    freezer.move_to("2026-06-15T12:00:00+00:00")
+    base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    # Slots 8-11 form the only cheap 60-min block; everything else is flat.
+    prices = {base + slot * (i + 1): (0.10 if i in (8, 9, 10, 11) else 0.50) for i in range(16)}
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-lock",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-lock"},
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        initial_start = _cheapest_window_state(hass).state
+
+        # Time advances past several quarter-hour boundaries that USED to
+        # cause flicker in v0.1.41.
+        freezer.move_to("2026-06-15T13:30:00+00:00")
+        await entry.runtime_data.price_coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+    state = _cheapest_window_state(hass)
+    # Locked-in window persists — same start, still 0.10 € average.
+    assert state.state == initial_start
+    assert state.attributes["average_price"] == 0.10
+
+
+async def test_cheapest_window_restores_valid_previous_state(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """A previously-chosen window (end in the future) survives an HA restart.
+
+    Prices changed in the meantime — but the lock-in keeps the original
+    pick instead of bouncing to whatever the fresh forecast says is cheapest.
+    """
+    freezer.move_to("2026-06-15T12:00:00+00:00")
+    base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    # Fresh forecast: slots 0-3 are now the cheapest — but the restored
+    # window points elsewhere, so the lock-in must keep the restored pick.
+    prices = {base + slot * (i + 1): (0.10 if i in (0, 1, 2, 3) else 0.50) for i in range(16)}
+
+    restored_start = "2026-06-15T14:15:00+00:00"  # slot-8 start
+    restored_end = "2026-06-15T15:15:00+00:00"  # slot-12 end
+    mock_restore_cache(
+        hass,
+        (
+            State(
+                "sensor.test_home_cheapest_charging_window_today",
+                restored_start,
+                attributes={
+                    "start": restored_start,
+                    "end": restored_end,
+                    "average_price": 0.10,
+                    "duration_minutes": 60,
+                    "slot_count": 4,
+                },
+            ),
+        ),
+    )
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-restore",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-restore"},
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = _cheapest_window_state(hass)
+    assert state.state == restored_start
+    assert state.attributes["end"] == restored_end
+
+
+async def test_cheapest_window_ignores_restored_state_after_expiry(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """If the restored window has already ended, the sensor picks fresh."""
+    freezer.move_to("2026-06-15T18:00:00+00:00")
+    base = datetime.datetime(2026, 6, 15, 18, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    # Slots 0-3 are the only cheap 60-min block in the remaining day.
+    prices = {base + slot * (i + 1): (0.10 if i in (0, 1, 2, 3) else 0.50) for i in range(16)}
+
+    # Restored window ended at 11:00 UTC — well before now (18:00 UTC).
+    mock_restore_cache(
+        hass,
+        (
+            State(
+                "sensor.test_home_cheapest_charging_window_today",
+                "2026-06-15T10:00:00+00:00",
+                attributes={
+                    "start": "2026-06-15T10:00:00+00:00",
+                    "end": "2026-06-15T11:00:00+00:00",
+                    "average_price": 0.05,
+                    "duration_minutes": 60,
+                    "slot_count": 4,
+                },
+            ),
+        ),
+    )
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-expired",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-expired"},
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = _cheapest_window_state(hass)
+    # Fresh pick — first cheap slot starts at 18:15 (slot-0 start).
+    assert state.state == base.isoformat()
+    assert state.attributes["average_price"] == 0.10

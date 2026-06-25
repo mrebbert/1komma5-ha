@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.42] - 2026-06-25
+
+### Fixed
+- `cheapest_charging_window_today` flickered to the next 15-min slot at every quarter-hour boundary — on flat-price days the state moved forward by 15 minutes every 15 minutes, which made it useless as an automation trigger. The sensor now **locks in** the chosen window: once selected, it stays as state until its end has passed (or the day rolls over). After expiry the next-cheapest window of the remaining day is locked in; once less than 60 min remain today, state is `unknown` until midnight.
+
+### Changed
+- `cheapest_charging_window_today` is now restored across HA restarts via `RestoreSensor`. A previously-chosen window survives a restart as long as its end is still in the future and its start is still today.
+
 ## [0.1.41] - 2026-06-25
 
 ### Added
