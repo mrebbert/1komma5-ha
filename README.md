@@ -170,6 +170,7 @@ Four ready-to-import blueprints in [`blueprints/automation/onekommafive/`](bluep
 | Average Electricity Price Tomorrow | `tomorrow_average_price` | Tomorrow's average all-in price (available after ~13:00 CET) | EUR/kWh | 1 h |
 | Lowest Electricity Price Tomorrow | `tomorrow_lowest_price` | Tomorrow's lowest all-in price | EUR/kWh | 1 h |
 | Highest Electricity Price Tomorrow | `tomorrow_highest_price` | Tomorrow's highest all-in price | EUR/kWh | 1 h |
+| Cheapest Charging Window Today | `cheapest_charging_window_today` | Start timestamp of the cheapest contiguous 60-min window remaining today. Attributes: `start`, `end`, `average_price`, `duration_minutes`, `slot_count`. Returns "unknown" once less than 60 min remain today. | timestamp | 15 min |
 
 All price sensors use `state_class: measurement`, so Home Assistant automatically records **long-term statistics** (hourly min/max/mean). Price history is visible in the History panel and can be used for trend analysis.
 

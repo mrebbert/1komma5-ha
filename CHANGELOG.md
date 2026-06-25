@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- New sensor `cheapest_charging_window_today` (timestamp + window attributes). State = start of the cheapest 60-minute window that still ends today (HA local time). Attributes: `start`, `end`, `average_price`, `duration_minutes`, `slot_count`. Re-evaluates at every quarter-hour boundary as the day shrinks. Drop straight into a "Charge at" automation trigger — no `get_cheapest_window` service call needed for the common case.
+
+### Changed
+- README installation section simplified — integration is now in the HACS default store, so the custom-repository workflow is no longer documented.
+
 ## [0.1.40] - 2026-06-04
 
 ### Added

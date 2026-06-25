@@ -33,6 +33,7 @@ from .sensor_descriptions import (
 from .sensor_entities import (
     CURRENCY_EUR_PER_KWH,
     OneKomma5ActiveFeaturesSensor,
+    OneKomma5CheapestChargingWindowSensor,
     OneKomma5ConsumerCostSensor,
     OneKomma5CostSensor,
     OneKomma5DiagnosticSensor,
@@ -437,6 +438,11 @@ async def async_setup_entry(
     # Stable price sensor (hold-last-valid)
     stable_price_sensor = OneKomma5StablePriceSensor(price_coordinator, system_id, system_name)
     entities.append(stable_price_sensor)
+
+    # Cheapest charging window today (timestamp sensor + window attributes)
+    entities.append(
+        OneKomma5CheapestChargingWindowSensor(price_coordinator, system_id, system_name)
+    )
 
     # Accumulated electricity cost sensor
     entities.append(

@@ -216,6 +216,9 @@
       "stable_electricity_price": {
         "name": "Letzter gültiger Strompreis"
       },
+      "cheapest_charging_window_today": {
+        "name": "Günstigstes Ladefenster heute"
+      },
       "electricity_cost": {
         "name": "Stromkosten"
       },

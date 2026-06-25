@@ -32,7 +32,7 @@ from .entity import (
     QuarterHourUpdateMixin,
     system_device_info,
 )
-from .helpers import trapezoidal_delta_kwh
+from .helpers import find_cheapest_window, trapezoidal_delta_kwh
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
     OneKomma5OptimizationSensorDescription,
@@ -113,6 +113,65 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
             attrs["cheapest_future_hour"] = cheapest["start"]
             attrs["cheapest_future_price"] = cheapest["price"]
         return attrs
+
+
+class OneKomma5CheapestChargingWindowSensor(
+    QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity
+):
+    """Cheapest 60-min charging window that still ends today (local time)."""
+
+    _attr_translation_key = "cheapest_charging_window_today"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:ev-station"
+
+    _DURATION_MINUTES = 60
+    _SLOT_COUNT = 4  # 4 × 15-min slots
+
+    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+        """Initialize the cheapest-window sensor."""
+        super().__init__(coordinator, system_id, system_name, "cheapest_charging_window_today")
+
+    async def async_added_to_hass(self) -> None:
+        """Re-evaluate at quarter-hour boundaries — the forecast horizon shrinks."""
+        await super().async_added_to_hass()
+        self._async_register_quarter_hour_update()
+
+    def _compute(self) -> dict[str, Any] | None:
+        if self.coordinator.data is None:
+            return None
+        forecast = self.coordinator.data.forecast
+        if not forecast:
+            return None
+        now_local = dt_util.now()
+        end_of_today_local = now_local.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return find_cheapest_window(
+            forecast,
+            self._SLOT_COUNT,
+            earliest_start=dt_util.as_utc(now_local),
+            latest_end=dt_util.as_utc(end_of_today_local),
+        )
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the start of the cheapest 60-min window remaining today."""
+        window = self._compute()
+        if window is None:
+            return None
+        return datetime.fromisoformat(window["start"])
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose start/end/avg-price/duration on the sensor."""
+        window = self._compute()
+        if window is None:
+            return None
+        return {
+            "start": window["start"],
+            "end": window["end"],
+            "average_price": window["average_price"],
+            "duration_minutes": self._DURATION_MINUTES,
+            "slot_count": window["slot_count"],
+        }
 
 
 class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):

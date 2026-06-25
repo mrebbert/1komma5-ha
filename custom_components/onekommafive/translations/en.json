@@ -216,6 +216,9 @@
       "stable_electricity_price": {
         "name": "Last valid electricity price"
       },
+      "cheapest_charging_window_today": {
+        "name": "Cheapest charging window today"
+      },
       "electricity_cost": {
         "name": "Electricity cost"
       },
