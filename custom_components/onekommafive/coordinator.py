@@ -85,28 +85,24 @@ class OptimizationData:
 class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
     """Base coordinator handling executor dispatch and error wrapping.
 
-    Subclasses provide:
-    - the constructor's ``name`` and ``interval_seconds``
-    - ``_data_label`` (used in UpdateFailed messages)
-    - ``_fetch()`` returning the typed data container
+    Subclasses configure themselves declaratively via class vars:
+    - ``_coordinator_name`` — DataUpdateCoordinator's ``name``
+    - ``_interval_seconds`` — refresh interval in seconds
+    - ``_data_label`` — used in UpdateFailed messages
+    - ``_fetch()`` — sync fetch returning the typed data container
     """
 
     _data_label: str = "data"
+    _coordinator_name: str = "1KOMMA5°"
+    _interval_seconds: int = 60
 
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        system: Any,
-        *,
-        name: str,
-        interval_seconds: int,
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, system: Any) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
             _LOGGER,
-            name=name,
-            update_interval=datetime.timedelta(seconds=interval_seconds),
+            name=self._coordinator_name,
+            update_interval=datetime.timedelta(seconds=self._interval_seconds),
         )
         self._system = system
 
@@ -130,14 +126,8 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     """Coordinator for live energy data, EV charger state, and EMS settings."""
 
     _data_label = "live data"
-
-    def __init__(self, hass: HomeAssistant, system: Any) -> None:
-        super().__init__(
-            hass,
-            system,
-            name="1KOMMA5° Live",
-            interval_seconds=LIVE_UPDATE_INTERVAL_SECONDS,
-        )
+    _coordinator_name = "1KOMMA5° Live"
+    _interval_seconds = LIVE_UPDATE_INTERVAL_SECONDS
 
     def _fetch(self) -> LiveData:
         """Fetch all live data synchronously."""
@@ -159,14 +149,8 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     """Coordinator for electricity market price data."""
 
     _data_label = "price data"
-
-    def __init__(self, hass: HomeAssistant, system: Any) -> None:
-        super().__init__(
-            hass,
-            system,
-            name="1KOMMA5° Prices",
-            interval_seconds=PRICE_UPDATE_INTERVAL_SECONDS,
-        )
+    _coordinator_name = "1KOMMA5° Prices"
+    _interval_seconds = PRICE_UPDATE_INTERVAL_SECONDS
 
     def _fetch(self) -> PriceData:
         """Fetch price data synchronously.
@@ -241,18 +225,13 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
     """Coordinator for AI optimization event data."""
 
     _data_label = "optimization data"
+    _coordinator_name = "1KOMMA5° Optimizations"
+    _interval_seconds = OPTIMIZATION_UPDATE_INTERVAL_SECONDS
 
-    def __init__(self, hass: HomeAssistant, system: Any) -> None:
-        super().__init__(
-            hass,
-            system,
-            name="1KOMMA5° Optimizations",
-            interval_seconds=OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
-        )
-        # Highest from_time we have already fired an event for. None on first
-        # run — we initialise from the first fetch without firing to avoid
-        # spamming N events at startup.
-        self._last_fired_from_time: str | None = None
+    # Highest from_time we have already fired an event for. None on first
+    # run — we initialise from the first fetch without firing to avoid
+    # spamming N events at startup.
+    _last_fired_from_time: str | None = None
 
     def _fetch(self) -> OptimizationData:
         """Fetch today's optimization events synchronously."""
@@ -325,14 +304,8 @@ class OneKomma5WeatherCoordinator(OneKomma5BaseCoordinator[WeatherData]):
     """Coordinator for weather forecast data."""
 
     _data_label = "weather data"
-
-    def __init__(self, hass: HomeAssistant, system: Any) -> None:
-        super().__init__(
-            hass,
-            system,
-            name="1KOMMA5° Weather",
-            interval_seconds=WEATHER_UPDATE_INTERVAL_SECONDS,
-        )
+    _coordinator_name = "1KOMMA5° Weather"
+    _interval_seconds = WEATHER_UPDATE_INTERVAL_SECONDS
 
     def _fetch(self) -> WeatherData:
         """Fetch weather data synchronously."""
@@ -355,14 +328,11 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
     """
 
     _data_label = "system status data"
+    _coordinator_name = "1KOMMA5° System Status"
+    _interval_seconds = SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS
 
     def __init__(self, hass: HomeAssistant, system: Any, customer_id: str | None) -> None:
-        super().__init__(
-            hass,
-            system,
-            name="1KOMMA5° System Status",
-            interval_seconds=SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS,
-        )
+        super().__init__(hass, system)
         self._customer_id = customer_id
 
     def _fetch(self) -> SystemStatusData:
