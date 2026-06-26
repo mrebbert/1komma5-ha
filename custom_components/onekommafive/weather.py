@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.weather import (
@@ -17,6 +18,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from . import OneKomma5ConfigEntry
 from .coordinator import OneKomma5WeatherCoordinator
@@ -57,11 +59,29 @@ class OneKomma5Weather(CoordinatorEntity[OneKomma5WeatherCoordinator], WeatherEn
         self._attr_device_info = system_device_info(system_id, system_name)
 
     def _current_slot(self) -> Any | None:
-        """Return the first forecast slot (the active 3-hour bucket)."""
+        """Return the forecast slot whose 3-hour bucket contains now (UTC).
+
+        The API returns slots starting at midnight UTC of the current day, so
+        ``forecasts[0]`` is the night bucket regardless of the actual time of
+        day. Walk the chronologically-sorted slots and pick the latest one
+        whose ``period_start`` is in the past.
+        """
         if self.coordinator.data is None:
             return None
         forecasts = self.coordinator.data.weather.forecasts
-        return forecasts[0] if forecasts else None
+        if not forecasts:
+            return None
+        now_utc = dt_util.utcnow()
+        active = None
+        for slot in forecasts:
+            start = slot.period_start
+            if isinstance(start, str):
+                start = datetime.fromisoformat(start.replace("Z", "+00:00"))
+            if dt_util.as_utc(start) <= now_utc:
+                active = slot
+            else:
+                break
+        return active or forecasts[0]
 
     @property
     def condition(self) -> str | None:

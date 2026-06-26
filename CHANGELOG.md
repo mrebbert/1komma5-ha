@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.43] - 2026-06-26
+
+### Fixed
+- `weather.<system>` (and the `condition` shown by HA) reported the wrong sky state — typically stuck on `clear-night` during the day. The entity always returned the first forecast slot, which is the midnight UTC bucket because the API delivers slots ordered from the start of the current day. The active 3-hour bucket (`period_start ≤ now`) is now selected instead, so `condition`, `native_temperature` and `native_wind_speed` reflect the current slot.
+
 ## [0.1.42] - 2026-06-25
 
 ### Fixed
