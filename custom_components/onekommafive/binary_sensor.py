@@ -11,12 +11,16 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .entity import (
+    ASSET_TYPE_BY_DEVICE_KEY,
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
     OneKomma5SystemStatusEntity,
     QuarterHourUpdateMixin,
 )
 from .helpers import active_optimization_event
+
+# Inverse of ASSET_TYPE_BY_DEVICE_KEY for resolving an Asset.type back to a sub-device key.
+_DEVICE_KEY_BY_ASSET_TYPE = {v: k for k, v in ASSET_TYPE_BY_DEVICE_KEY.items()}
 
 
 async def async_setup_entry(
@@ -27,6 +31,11 @@ async def async_setup_entry(
     """Set up binary sensor entities from a config entry."""
     data = entry.runtime_data
     system_id = data.system.id()
+    assets_by_type = (
+        data.system_status_coordinator.data.assets_by_type
+        if data.system_status_coordinator.data is not None
+        else {}
+    )
     entities: list = [
         OneKomma5CheapElectricitySensor(
             data.price_coordinator,
@@ -42,11 +51,13 @@ async def async_setup_entry(
             data.optimization_coordinator,
             system_id,
             data.system_name,
+            asset=assets_by_type.get(ASSET_TYPE_BY_DEVICE_KEY["inverter"]),
         ),
         OneKomma5OptimizationHeatPumpRecommendedSensor(
             data.optimization_coordinator,
             system_id,
             data.system_name,
+            asset=assets_by_type.get(ASSET_TYPE_BY_DEVICE_KEY["heat_pump"]),
         ),
         OneKomma5SiteConnectivitySensor(
             data.system_status_coordinator,
@@ -64,6 +75,7 @@ async def async_setup_entry(
     )
     for asset_type, translation_key in ASSET_CONNECTIVITY_SENSORS:
         if asset_type in observed_types:
+            device_key = _DEVICE_KEY_BY_ASSET_TYPE.get(asset_type)
             entities.append(
                 OneKomma5AssetTypeConnectivitySensor(
                     data.system_status_coordinator,
@@ -71,6 +83,8 @@ async def async_setup_entry(
                     data.system_name,
                     asset_type,
                     translation_key,
+                    device_key=device_key,
+                    asset=assets_by_type.get(asset_type),
                 )
             )
 
@@ -186,10 +200,24 @@ class OneKomma5OptimizationBatteryGridChargeSensor(
     """
 
     _attr_translation_key = "optimization_battery_grid_charge"
+    _device_key = "inverter"
 
-    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        *,
+        asset: Any | None = None,
+    ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator, system_id, system_name, "optimization_battery_grid_charge")
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "optimization_battery_grid_charge",
+            asset=asset,
+        )
 
     async def async_added_to_hass(self) -> None:
         """Register quarter-hour update so the sensor flips off at slot ends."""
@@ -244,10 +272,24 @@ class OneKomma5OptimizationHeatPumpRecommendedSensor(
     """
 
     _attr_translation_key = "optimization_heat_pump_recommended"
+    _device_key = "heat_pump"
 
-    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        *,
+        asset: Any | None = None,
+    ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator, system_id, system_name, "optimization_heat_pump_recommended")
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "optimization_heat_pump_recommended",
+            asset=asset,
+        )
 
     async def async_added_to_hass(self) -> None:
         """Register quarter-hour update so the sensor flips at slot ends."""
@@ -344,8 +386,18 @@ class OneKomma5AssetTypeConnectivitySensor(OneKomma5SystemStatusEntity, BinarySe
         system_name: str,
         asset_type: str,
         translation_key: str,
+        *,
+        device_key: str | None = None,
+        asset: Any | None = None,
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, translation_key)
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            translation_key,
+            device_key=device_key,
+            asset=asset,
+        )
         self._asset_type = asset_type
         self._attr_translation_key = translation_key
 

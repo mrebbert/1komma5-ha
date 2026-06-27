@@ -68,6 +68,7 @@ class SystemStatusData:
     site_status: str | None  # "CONNECTED" / "DISCONNECTED" / None
     assets: list[Any]  # list[onekommafive.models.sites.Asset]
     active_features: list[str]  # [] when customer_id unknown or fetch failed
+    assets_by_type: dict[str, Any]  # {asset.type: Asset} — first wins on duplicates
 
 
 @dataclass
@@ -343,8 +344,22 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
                 features = list(self._system.get_active_features(self._customer_id))
             except Exception as err:
                 _LOGGER.debug("Active features fetch failed: %s", err)
+        assets = list(site.assets or [])
+        assets_by_type: dict[str, Any] = {}
+        for asset in assets:
+            asset_type = getattr(asset, "type", None)
+            if not asset_type:
+                continue
+            if asset_type in assets_by_type:
+                _LOGGER.warning(
+                    "Duplicate asset of type %s; keeping first, dropping subsequent",
+                    asset_type,
+                )
+                continue
+            assets_by_type[asset_type] = asset
         return SystemStatusData(
             site_status=site.status,
-            assets=list(site.assets or []),
+            assets=assets,
             active_features=features,
+            assets_by_type=assets_by_type,
         )

@@ -326,5 +326,19 @@
         "name": "Departure time"
       }
     }
+  },
+  "device": {
+    "inverter": {
+      "name": "Inverter"
+    },
+    "heat_pump": {
+      "name": "Heat pump"
+    },
+    "meter": {
+      "name": "Meter"
+    },
+    "wallbox": {
+      "name": "Wallbox"
+    }
   }
 }

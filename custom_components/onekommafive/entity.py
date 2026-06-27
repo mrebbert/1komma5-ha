@@ -37,14 +37,62 @@ def get_ev_label(ev: Any) -> str:
     return " ".join(parts) if parts else f"EV {ev.id()[:8]}"
 
 
+# Map from sub-device key (used in DeviceInfo identifier suffix and
+# translation_key) to the SDK ``Asset.type`` string. Single source of truth
+# for the entity → sub-device assignment.
+ASSET_TYPE_BY_DEVICE_KEY: dict[str, str] = {
+    "inverter": "HYBRID",
+    "heat_pump": "HEAT_PUMP",
+    "meter": "METER",
+    "wallbox": "EV_CHARGER",
+}
+
+
+def asset_device_info(
+    system_id: str,
+    device_key: str,
+    asset: Any | None,
+) -> DeviceInfo:
+    """Build a DeviceInfo for an asset sub-device.
+
+    ``device_key`` is the stable identifier suffix and translation key
+    (``inverter`` / ``heat_pump`` / ``meter`` / ``wallbox``). The translated
+    label comes from ``device.<device_key>.name`` in ``strings.json``.
+
+    ``asset`` is the matching :class:`onekommafive.models.sites.Asset` from
+    the SystemStatusCoordinator's ``assets_by_type`` map. When the asset is
+    ``None`` (asset not yet fetched / not present), manufacturer / model /
+    firmware fall back to ``None`` so HA shows only the translated label.
+
+    PII contract: only ``manufacturer``, ``model`` and ``firmware`` from the
+    asset payload are exposed — never ``id``, ``serial_number``,
+    ``network_address`` or asset ``name``.
+    """
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{system_id}_{device_key}")},
+        translation_key=device_key,
+        manufacturer=getattr(asset, "manufacturer", None) if asset else None,
+        model=getattr(asset, "model", None) if asset else None,
+        sw_version=getattr(asset, "firmware", None) if asset else None,
+        via_device=(DOMAIN, system_id),
+    )
+
+
 class _BaseSystemEntity[C](CoordinatorEntity[C]):
     """Generic base for all entities tied to a 1KOMMA5° system device.
 
     The five typed `OneKomma5*Entity` aliases below just bind the coordinator
     type parameter — same idiom as `OneKomma5BaseCoordinator[T]`.
+
+    Entities sit on the system parent device by default. To re-parent an
+    entity to an asset sub-device (inverter / heat_pump / meter / wallbox),
+    pass ``device_key=`` to ``__init__`` (or set ``_device_key`` as a
+    class-var) and pass the matching ``asset=`` resolved against the
+    SystemStatusCoordinator's ``assets_by_type`` map.
     """
 
     _attr_has_entity_name = True
+    _device_key: str | None = None  # subclasses may override
 
     def __init__(
         self,
@@ -52,12 +100,23 @@ class _BaseSystemEntity[C](CoordinatorEntity[C]):
         system_id: str,
         system_name: str,
         unique_id_suffix: str,
+        *,
+        device_key: str | None = None,
+        asset: Any | None = None,
     ) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        self._attr_device_info = system_device_info(system_id, system_name)
+        key = device_key if device_key is not None else self._device_key
+        # Only re-parent to a sub-device when the matching asset is actually
+        # present in the cloud's status_and_assets response. Otherwise fall
+        # back to the system parent so we don't litter the device list with
+        # empty placeholder sub-devices.
+        if key is not None and asset is not None:
+            self._attr_device_info = asset_device_info(system_id, key, asset)
+        else:
+            self._attr_device_info = system_device_info(system_id, system_name)
 
 
 class OneKomma5Entity(_BaseSystemEntity[OneKomma5LiveCoordinator]):

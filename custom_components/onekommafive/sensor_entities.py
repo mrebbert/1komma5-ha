@@ -57,9 +57,18 @@ class OneKomma5LiveSensor(OneKomma5Entity, SensorEntity):
         system_id: str,
         system_name: str,
         description: OneKomma5SensorDescription,
+        *,
+        asset: Any | None = None,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator, system_id, system_name, description.key)
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            description.key,
+            device_key=description.device_key,
+            asset=asset,
+        )
         self.entity_description = description
 
     @property
@@ -274,8 +283,18 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
         system_id: str,
         system_name: str,
         unique_id_suffix: str,
+        *,
+        device_key: str | None = None,
+        asset: Any | None = None,
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, unique_id_suffix)
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            unique_id_suffix,
+            device_key=device_key,
+            asset=asset,
+        )
         self._accumulated: float = 0.0
         self._last_power: float | None = None
         self._last_time: datetime | None = None
@@ -339,8 +358,17 @@ class OneKomma5EnergySensor(OneKomma5AccumulatingSensor):
         system_id: str,
         system_name: str,
         description: OneKomma5SensorDescription,
+        *,
+        asset: Any | None = None,
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, f"{description.key}_energy")
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            f"{description.key}_energy",
+            device_key=description.device_key,
+            asset=asset,
+        )
         self._power_fn = description.value_fn
         self._attr_translation_key = f"{description.key}_energy"
 
@@ -474,8 +502,18 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
         stable_price_sensor: OneKomma5StablePriceSensor,
         consumer_power_attr: str,
         translation_key: str,
+        *,
+        device_key: str | None = None,
+        asset: Any | None = None,
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, translation_key)
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            translation_key,
+            device_key=device_key,
+            asset=asset,
+        )
         self._attr_translation_key = translation_key
         self._stable_price_sensor = stable_price_sensor
         self._consumer_power_attr = consumer_power_attr
@@ -510,6 +548,7 @@ class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
     _attr_translation_key = "feed_in_revenue"
     _attr_icon = "mdi:transmission-tower-export"
     _accumulator_precision = 4
+    _device_key = "meter"
 
     def __init__(
         self,
@@ -517,8 +556,16 @@ class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
         system_id: str,
         system_name: str,
         feed_in_tariff: float,
+        *,
+        asset: Any | None = None,
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, "feed_in_revenue")
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "feed_in_revenue",
+            asset=asset,
+        )
         self._feed_in_tariff = feed_in_tariff
 
     def _get_power_w(self, data: LiveData) -> float | None:

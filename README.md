@@ -147,6 +147,26 @@ Four ready-to-import blueprints in [`blueprints/automation/onekommafive/`](bluep
 
 ---
 
+## Devices
+
+Entities are grouped under one system parent device plus per-asset sub-devices, so you can read off each hardware component's manufacturer, model and firmware version at a glance — and assign areas / disable sensors per device:
+
+```
+1k5° System (parent)
+├── Inverter      (Sungrow / SH6.0RT-V112 / …)
+├── Battery        — entities live on the inverter sub-device (hybrid inverter)
+├── Heat pump     (Stiebel Eltron / WPMsystem / …)
+├── Smart meter   (Chint / DTSU666 / …)
+├── Wallbox       (go-e / HOMEfix 11kW / …)
+└── EV vehicle    (Volkswagen / ID.5 / …)
+```
+
+Manufacturer, model and firmware are populated from the 1KOMMA5° cloud's `status_and_assets` payload. Devices the platform doesn't classify (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the parent — no empty placeholder devices.
+
+`entity_id`s and `unique_id`s are unchanged versus earlier versions, so long-term statistics, automations, Energy-Dashboard configuration and dashboard cards keep working without any migration.
+
+---
+
 ## Entities
 
 > **Note:** Entity names in Home Assistant depend on your language settings. The tables below show English names; German translations are provided via i18n.

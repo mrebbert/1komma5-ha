@@ -10,6 +10,8 @@ descriptions in ``sensor_descriptions.py``.
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -21,7 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
-from .entity import get_ev_label
+from .entity import ASSET_TYPE_BY_DEVICE_KEY, get_ev_label
 from .helpers import get_current_price
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -47,11 +49,11 @@ from .sensor_entities import (
     OneKomma5WeatherSensor,
 )
 
-CONSUMER_COST_SPECS: tuple[tuple[str, str], ...] = (
-    ("heat_pumps_power", "heat_pump_cost"),
-    ("ev_chargers_power", "ev_charger_cost"),
-    ("household_power", "household_cost"),
-    ("acs_power", "ac_cost"),
+CONSUMER_COST_SPECS: tuple[tuple[str, str, str | None], ...] = (
+    ("heat_pumps_power", "heat_pump_cost", "heat_pump"),
+    ("ev_chargers_power", "ev_charger_cost", "wallbox"),
+    ("household_power", "household_cost", None),  # stays on system parent
+    ("acs_power", "ac_cost", None),  # ACS mocked by API, stays on parent
 )
 
 # Power sensors for which an energy counterpart (kWh) is created.
@@ -80,6 +82,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.pv_power,
+        device_key="inverter",
     ),
     OneKomma5SensorDescription(
         key="battery_power",
@@ -89,6 +92,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.battery_power,
+        device_key="inverter",
     ),
     OneKomma5SensorDescription(
         key="battery_soc",
@@ -98,6 +102,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
         value_fn=lambda d: d.live_overview.battery_soc,
+        device_key="inverter",
     ),
     OneKomma5SensorDescription(
         key="grid_power",
@@ -107,6 +112,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.grid_power,
+        device_key="meter",
     ),
     OneKomma5SensorDescription(
         key="grid_consumption_power",
@@ -116,6 +122,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.grid_consumption_power,
+        device_key="meter",
     ),
     OneKomma5SensorDescription(
         key="grid_feed_in_power",
@@ -125,6 +132,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.grid_feed_in_power,
+        device_key="meter",
     ),
     OneKomma5SensorDescription(
         key="consumption_power",
@@ -134,6 +142,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.consumption_power,
+        device_key="meter",
     ),
     OneKomma5SensorDescription(
         key="household_power",
@@ -143,6 +152,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.household_power,
+        device_key="meter",
     ),
     OneKomma5SensorDescription(
         key="ev_chargers_power",
@@ -152,6 +162,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.ev_chargers_power,
+        device_key="wallbox",
     ),
     OneKomma5SensorDescription(
         key="heat_pumps_power",
@@ -161,6 +172,7 @@ LIVE_SENSORS: tuple[OneKomma5SensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
         value_fn=lambda d: d.live_overview.heat_pumps_power,
+        device_key="heat_pump",
     ),
     OneKomma5SensorDescription(
         key="acs_power",
@@ -272,6 +284,7 @@ BATTERY_SPLIT_DESCRIPTORS: tuple[OneKomma5SensorDescription, ...] = (
             if d.live_overview.battery_power is not None
             else None
         ),
+        device_key="inverter",
     ),
     OneKomma5SensorDescription(
         key="battery_discharge_power",
@@ -281,6 +294,7 @@ BATTERY_SPLIT_DESCRIPTORS: tuple[OneKomma5SensorDescription, ...] = (
             if d.live_overview.battery_power is not None
             else None
         ),
+        device_key="inverter",
     ),
 )
 
@@ -409,23 +423,58 @@ async def async_setup_entry(
     system_id = system.id()
     system_name = data.system_name
 
+    # Resolve assets-by-type once for sub-device DeviceInfo lookup.
+    # Empty dict when SystemStatusCoordinator has no data yet (first-refresh
+    # rate-limit) — entities fall back to the system parent until a later
+    # reload picks the sub-devices up.
+    assets_by_type = (
+        data.system_status_coordinator.data.assets_by_type
+        if data.system_status_coordinator.data is not None
+        else {}
+    )
+
+    def _resolve_asset(device_key: str | None) -> Any | None:
+        if device_key is None:
+            return None
+        asset_type = ASSET_TYPE_BY_DEVICE_KEY.get(device_key)
+        return assets_by_type.get(asset_type) if asset_type else None
+
     entities: list[SensorEntity] = []
 
     # Live overview sensors
     entities.extend(
-        OneKomma5LiveSensor(live_coordinator, system_id, system_name, desc) for desc in LIVE_SENSORS
+        OneKomma5LiveSensor(
+            live_coordinator,
+            system_id,
+            system_name,
+            desc,
+            asset=_resolve_asset(desc.device_key),
+        )
+        for desc in LIVE_SENSORS
     )
 
     # Energy sensors (trapezoidal integration of power sensors)
     entities.extend(
-        OneKomma5EnergySensor(live_coordinator, system_id, system_name, desc)
+        OneKomma5EnergySensor(
+            live_coordinator,
+            system_id,
+            system_name,
+            desc,
+            asset=_resolve_asset(desc.device_key),
+        )
         for desc in LIVE_SENSORS
         if desc.key in ENERGY_SENSOR_KEYS
     )
 
     # Battery split energy sensors (charge / discharge direction)
     entities.extend(
-        OneKomma5EnergySensor(live_coordinator, system_id, system_name, desc)
+        OneKomma5EnergySensor(
+            live_coordinator,
+            system_id,
+            system_name,
+            desc,
+            asset=_resolve_asset(desc.device_key),
+        )
         for desc in BATTERY_SPLIT_DESCRIPTORS
     )
 
@@ -459,14 +508,22 @@ async def async_setup_entry(
             stable_price_sensor,
             attr,
             key,
+            device_key=device_key,
+            asset=_resolve_asset(device_key),
         )
-        for attr, key in CONSUMER_COST_SPECS
+        for attr, key, device_key in CONSUMER_COST_SPECS
     )
 
-    # Feed-in revenue sensor
+    # Feed-in revenue sensor — parented to the meter sub-device.
     feed_in_tariff = entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
     entities.append(
-        OneKomma5FeedInRevenueSensor(live_coordinator, system_id, system_name, feed_in_tariff)
+        OneKomma5FeedInRevenueSensor(
+            live_coordinator,
+            system_id,
+            system_name,
+            feed_in_tariff,
+            asset=_resolve_asset("meter"),
+        )
     )
 
     # Optimization sensors

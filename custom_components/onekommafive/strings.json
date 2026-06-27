@@ -326,5 +326,19 @@
         "name": "Abfahrtzeit"
       }
     }
+  },
+  "device": {
+    "inverter": {
+      "name": "Wechselrichter"
+    },
+    "heat_pump": {
+      "name": "Wärmepumpe"
+    },
+    "meter": {
+      "name": "Stromzähler"
+    },
+    "wallbox": {
+      "name": "Wallbox"
+    }
   }
 }

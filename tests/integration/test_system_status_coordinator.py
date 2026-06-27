@@ -23,7 +23,17 @@ from custom_components.onekommafive.const import (
 
 
 def _asset(asset_type: str, *, connection_status: str = "CONNECTED") -> MagicMock:
-    return MagicMock(type=asset_type, connection_status=connection_status)
+    # manufacturer/model/firmware default to None so the asset_device_info
+    # helper (consumed by the sensor platform setup at the end of the test)
+    # doesn't end up putting MagicMock objects into DeviceInfo and breaking
+    # device-registry JSON serialisation during teardown.
+    return MagicMock(
+        type=asset_type,
+        connection_status=connection_status,
+        manufacturer=None,
+        model=None,
+        firmware=None,
+    )
 
 
 async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:

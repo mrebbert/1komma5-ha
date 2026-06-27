@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- The single `1k5` device now splits into one parent device plus per-asset sub-devices (inverter, heat pump, meter, wallbox). Each sub-device carries its real `manufacturer`, `model` and `firmware` from the 1KOMMA5° cloud (PII-safe fields only). Long-term statistics, automations, dashboards and Energy-Dashboard config all keep working: entity `unique_id`s are unchanged, so existing `entity_id`s stay too. New installs will see sub-device names in `entity_id` slugs.
+- New diagnostic sensors `letztes_wetter_update` / `letztes_konnektivitäts_update` cover the previously un-tracked weather and connectivity coordinators (5 update timestamps total).
+- The system device now exposes `configuration_url = https://app.1komma5grad.com`; HA shows a "Visit device" link to the 1KOMMA5° portal.
+
 ## [0.1.43] - 2026-06-26
 
 ### Fixed

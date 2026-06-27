@@ -21,6 +21,9 @@ class OneKomma5SensorDescription(SensorEntityDescription):
     """Sensor entity description with value accessor."""
 
     value_fn: Callable[[LiveData], Any]
+    device_key: str | None = (
+        None  # sub-device key (inverter / heat_pump / meter / wallbox); None = system parent
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -28,6 +31,7 @@ class OneKomma5PriceSensorDescription(SensorEntityDescription):
     """Price sensor entity description with value accessor."""
 
     value_fn: Callable[[PriceData], Any]
+    device_key: str | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -43,6 +47,7 @@ class OneKomma5OptimizationSensorDescription(SensorEntityDescription):
 
     value_fn: Callable[[OptimizationData], Any]
     attr_fn: Callable[[OptimizationData], dict[str, Any] | None] = lambda _: None
+    device_key: str | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -50,3 +55,4 @@ class OneKomma5WeatherSensorDescription(SensorEntityDescription):
     """Weather sensor entity description with value accessor."""
 
     value_fn: Callable[[WeatherData], Any]
+    device_key: str | None = None
