@@ -33,9 +33,21 @@ For example, I do not have an air conditioning unit — yet the API returns AC v
 
 ---
 
-## Installation
+## Supported devices
 
-### Via HACS (recommended)
+This integration surfaces the following components from the 1KOMMA5° Heartbeat platform in Home Assistant:
+
+- **PV / Solar** — production, energy totals
+- **Battery storage** (Batteriespeicher) — power, SoC, charge/discharge totals
+- **Heat pump** (Wärmepumpe) — power, energy, cost allocation
+- **EV wallbox** — charging mode, target SoC, departure time
+- **Smart meter** — grid import/export, household consumption
+- **Dynamic electricity tariff** (dynamischer Stromtarif) — 30 h price forecast, cheapest-charging-window sensor
+- **Weather forecast** — 48 h hourly forecast, sunshine duration
+
+---
+
+## Installation via HACS
 
 This integration is part of the **HACS default store** — no custom repository setup required.
 
@@ -86,7 +98,7 @@ After setup, additional options can be configured via **Settings → Devices & S
 
 ---
 
-## Energy Dashboard setup
+## Home Assistant Energy Dashboard setup
 
 All energy sensors use `state_class: total_increasing` and the cost/revenue sensors use `state_class: total` + `device_class: monetary`, so they drop straight into Home Assistant's **Energy Dashboard** with no helper sensors needed.
 
@@ -156,7 +168,7 @@ Four ready-to-import blueprints in [`blueprints/automation/onekommafive/`](bluep
 | AC Power | `acs_power` | Aggregated AC power | W | 30 s |
 | Self-Sufficiency | `self_sufficiency` | Self-sufficiency ratio | % | 30 s |
 
-### Price Sensors
+### Dynamic price sensors (dynamischer Stromtarif)
 
 | Entity | Key | Description | Unit | Update |
 |--------|-----|-------------|------|--------|
@@ -176,7 +188,7 @@ All price sensors use `state_class: measurement`, so Home Assistant automaticall
 
 > **Note:** Tomorrow's price sensors show "unknown" until the day-ahead prices are published (typically around 13:00 CET).
 
-#### Price Forecast & Cheapest Hour
+#### Price forecast & cheapest charging window
 
 The **Current Electricity Price** sensor carries several attributes updated every hour:
 
@@ -312,7 +324,7 @@ Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minut
 | Cheapest Hour Now | `cheapest_hour_now` | ON when the current 15-minute slot is the cheapest in the next ~30 hours of forecast. Useful for triggering loads exactly at the cheapest moment. Attributes: `current_price`, `cheapest_price`, `cheapest_slot_start`. | 15 min |
 | AI: Battery grid charging | `optimization_battery_grid_charge` | ON when the AI's currently active BATTERY decision is `BATTERY_CHARGE_FROM_GRID` — the HEMS has decided to pull from the grid right now to bridge upcoming high-price periods. AI-curated signal that considers full forecast and battery state. Attributes: `decision`, `from`, `to`, `market_price`, `state_of_charge`. | 15 min |
 
-### EV Charger
+### EV Charger / Wallbox
 
 One set of entities is created per connected EV charger.
 
