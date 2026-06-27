@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -27,9 +28,18 @@ async def async_setup_entry(
 
 
 class OneKomma5EMSSwitch(OneKomma5Entity, SwitchEntity):
-    """Switch to enable or disable EMS auto mode."""
+    """Switch to enable or disable EMS auto mode.
+
+    Demoted to ``EntityCategory.DIAGNOSTIC`` because empirically the cloud's
+    auto-override toggle appears to be cosmetic — the official 1KOMMA5° app
+    doesn't expose it, and there is no observable behavioural change on the
+    HEMS when the switch flips. Kept around in case the upstream cloud
+    re-activates the override on some setups; see Memory's API behaviour
+    notes for the full reasoning.
+    """
 
     _attr_translation_key = "ems_auto_mode"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,

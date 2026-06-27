@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- `switch.<system>_ems_automatikmodus` moved to `entity_category=DIAGNOSTIC` so it sits in the device card's collapsible diagnostic section instead of the main controls. The toggle appears to be cosmetic on the cloud side (the official 1KOMMA5° app doesn't expose it and the API write seems no-op), so it stops competing for attention with the controls that actually do something. `entity_id`, `unique_id` and existing automations referring to it stay untouched.
+
 ## [0.1.44] - 2026-06-27
 
 ### Changed
