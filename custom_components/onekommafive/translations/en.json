@@ -132,6 +132,15 @@
       },
       "wallbox_connected": {
         "name": "Wallbox connected"
+      },
+      "dynamic_tariff_active": {
+        "name": "Dynamic tariff active"
+      },
+      "time_of_use_active": {
+        "name": "Time-of-use optimisation active"
+      },
+      "smart_charging_active": {
+        "name": "Smart charging active"
       }
     },
     "sensor": {

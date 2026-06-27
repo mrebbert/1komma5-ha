@@ -88,6 +88,21 @@ async def async_setup_entry(
                 )
             )
 
+    # Per-feature binary sensors — one Boolean per known feature flag in the
+    # SystemStatusCoordinator's active_features list. Lets automations gate
+    # on `condition: state binary_sensor.<sys>_dynamic_tariff_active is on`
+    # without having to parse the active_features attribute list manually.
+    entities.extend(
+        OneKomma5ActiveFeatureBinarySensor(
+            data.system_status_coordinator,
+            system_id,
+            data.system_name,
+            feature_name,
+            translation_key,
+        )
+        for feature_name, translation_key in ACTIVE_FEATURE_BINARY_SENSORS
+    )
+
     async_add_entities(entities)
 
 
@@ -430,4 +445,40 @@ ASSET_CONNECTIVITY_SENSORS = (
     ("HEAT_PUMP", "heat_pump_connected"),
     ("METER", "meter_connected"),
     ("EV_CHARGER", "wallbox_connected"),
+)
+
+
+class OneKomma5ActiveFeatureBinarySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+    """Binary sensor reflecting whether a specific feature flag is active.
+
+    Splits the `aktive_funktionen` counter sensor (which exposes only a list
+    via attributes) into a Boolean entity per feature, so automations can
+    gate on `condition: state binary_sensor.X is on` without parsing
+    attribute lists.
+    """
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        feature_name: str,
+        translation_key: str,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, translation_key)
+        self._feature_name = feature_name
+        self._attr_translation_key = translation_key
+
+    @property
+    def is_on(self) -> bool | None:
+        if self.coordinator.data is None:
+            return None
+        return self._feature_name in self.coordinator.data.active_features
+
+
+# (feature flag in the SDK, translation key in strings.json / locales)
+ACTIVE_FEATURE_BINARY_SENSORS = (
+    ("DYNAMIC_TARIFF", "dynamic_tariff_active"),
+    ("TIME_OF_USE_OPTIMIZATION", "time_of_use_active"),
+    ("SMART_CHARGING", "smart_charging_active"),
 )

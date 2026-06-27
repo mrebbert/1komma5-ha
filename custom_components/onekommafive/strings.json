@@ -132,6 +132,15 @@
       },
       "wallbox_connected": {
         "name": "Wallbox verbunden"
+      },
+      "dynamic_tariff_active": {
+        "name": "Dynamischer Stromtarif aktiv"
+      },
+      "time_of_use_active": {
+        "name": "Lastoptimierung aktiv"
+      },
+      "smart_charging_active": {
+        "name": "Intelligentes Laden aktiv"
       }
     },
     "sensor": {
