@@ -136,7 +136,24 @@ def mock_system_factory():
             )
         system.get_details.return_value = details
 
-        site = MagicMock(status=site_status, assets=assets or [])
+        # Default to a fully-equipped install (all four asset types present)
+        # so entities aren't disabled-by-default. Tests that exercise the
+        # missing-asset path pass an explicit `assets=` (incl. empty list).
+        if assets is None:
+            assets = [
+                MagicMock(
+                    type=t,
+                    connection_status="CONNECTED",
+                    manufacturer=None,
+                    model=None,
+                    firmware=None,
+                    serial_number=None,
+                    network_address=None,
+                    heat_pump_meter_type=None,
+                )
+                for t in ("HYBRID", "HEAT_PUMP", "METER", "EV_CHARGER")
+            ]
+        site = MagicMock(status=site_status, assets=assets)
         system.get_status_and_assets.return_value = site
 
         system.get_active_features.return_value = list(active_features or [])

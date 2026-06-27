@@ -117,6 +117,13 @@ class _BaseSystemEntity[C](CoordinatorEntity[C]):
             self._attr_device_info = asset_device_info(system_id, key, asset)
         else:
             self._attr_device_info = system_device_info(system_id, system_name)
+            # Entity asked for a sub-device but no matching asset was found
+            # → install probably doesn't have that hardware. Hide by default
+            # so the device list isn't cluttered with permanently-zero
+            # sensors. User can re-enable manually from the entity registry
+            # (registry preserves the user's choice across reloads).
+            if key is not None:
+                self._attr_entity_registry_enabled_default = False
 
 
 class OneKomma5Entity(_BaseSystemEntity[OneKomma5LiveCoordinator]):

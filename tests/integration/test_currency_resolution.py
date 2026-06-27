@@ -70,8 +70,8 @@ async def test_danish_install_uses_dkk_units(hass: HomeAssistant, mock_system_fa
     assert price_state is not None
     assert price_state.attributes["unit_of_measurement"] == "DKK/kWh"
 
-    # No METER asset in the fixture → feed-in revenue falls back to system parent
-    feed_in_state = hass.states.get("sensor.test_home_feed_in_revenue")
+    # Default fixture has a METER asset → feed-in revenue lives on the meter sub-device
+    feed_in_state = hass.states.get("sensor.meter_feed_in_revenue")
     assert feed_in_state is not None
     assert feed_in_state.attributes["unit_of_measurement"] == "DKK"
 
