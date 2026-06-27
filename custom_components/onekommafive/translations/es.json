@@ -267,11 +267,11 @@
       "optimization_last_decision": {
         "name": "Última decisión de optimización",
         "state": {
-          "BATTERY_CHARGE_FROM_GRID": "Cargar batería desde la red",
-          "BATTERY_NO_CHARGE": "No cargar batería",
-          "BATTERY_NO_DISCHARGE": "No descargar batería",
-          "HEATPUMP_RECOMMEND_ON": "Bomba de calor recomendada",
-          "HEATPUMP_AUTO": "Bomba de calor automática"
+          "battery_charge_from_grid": "Cargar batería desde la red",
+          "battery_no_charge": "No cargar batería",
+          "battery_no_discharge": "No descargar batería",
+          "heatpump_recommend_on": "Bomba de calor recomendada",
+          "heatpump_auto": "Bomba de calor automática"
         }
       },
       "negative_price_slots_today": {

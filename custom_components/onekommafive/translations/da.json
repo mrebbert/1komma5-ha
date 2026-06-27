@@ -267,11 +267,11 @@
       "optimization_last_decision": {
         "name": "Seneste optimeringsbeslutning",
         "state": {
-          "BATTERY_CHARGE_FROM_GRID": "Oplad batteri fra nettet",
-          "BATTERY_NO_CHARGE": "Oplad ikke batteri",
-          "BATTERY_NO_DISCHARGE": "Aflad ikke batteri",
-          "HEATPUMP_RECOMMEND_ON": "Varmepumpe anbefalet",
-          "HEATPUMP_AUTO": "Varmepumpe automatisk"
+          "battery_charge_from_grid": "Oplad batteri fra nettet",
+          "battery_no_charge": "Oplad ikke batteri",
+          "battery_no_discharge": "Aflad ikke batteri",
+          "heatpump_recommend_on": "Varmepumpe anbefalet",
+          "heatpump_auto": "Varmepumpe automatisk"
         }
       },
       "negative_price_slots_today": {

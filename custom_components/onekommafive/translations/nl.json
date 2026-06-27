@@ -267,11 +267,11 @@
       "optimization_last_decision": {
         "name": "Laatste optimalisatiebeslissing",
         "state": {
-          "BATTERY_CHARGE_FROM_GRID": "Batterij vanuit net laden",
-          "BATTERY_NO_CHARGE": "Batterij niet laden",
-          "BATTERY_NO_DISCHARGE": "Batterij niet ontladen",
-          "HEATPUMP_RECOMMEND_ON": "Warmtepomp aanbevolen",
-          "HEATPUMP_AUTO": "Warmtepomp automatisch"
+          "battery_charge_from_grid": "Batterij vanuit net laden",
+          "battery_no_charge": "Batterij niet laden",
+          "battery_no_discharge": "Batterij niet ontladen",
+          "heatpump_recommend_on": "Warmtepomp aanbevolen",
+          "heatpump_auto": "Warmtepomp automatisch"
         }
       },
       "negative_price_slots_today": {

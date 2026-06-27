@@ -347,7 +347,7 @@ Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minut
 | Optimization Cost/Savings | `optimization_total_cost` | Aggregated total cost from today's optimization events (if reported by API). | EUR |
 | Optimization Energy Bought | `optimization_energy_bought` | Aggregated energy bought through optimizations (if reported by API). | kWh |
 | Optimization Energy Sold | `optimization_energy_sold` | Aggregated energy sold through optimizations (if reported by API). | kWh |
-| Last Optimization Decision | `optimization_last_decision` | Most recent AI decision. Displayed in your HA locale (e.g. "Batterie aus Netz laden" / "Charge battery from grid") — the underlying state value (`BATTERY_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`, …) is what automations match on. Attributes: `asset`, `from`, `to`, `market_price`, `state_of_charge`. | — |
+| Last Optimization Decision | `optimization_last_decision` | Most recent AI decision. Displayed in your HA locale (e.g. "Batterie aus Netz laden" / "Charge battery from grid") — the underlying state value (`battery_charge_from_grid`, `heatpump_recommend_on`, …) is what automations match on (lowercase, since the underlying enum is lowercased to satisfy HA's translation-key rules). Attributes: `asset`, `from`, `to`, `market_price`, `state_of_charge`. | — |
 
 > **Note:** The cost, energy bought and energy sold fields depend on the 1KOMMA5° API providing settlement data. Currently, these fields are not yet populated by the API and the sensors will show "unknown".
 

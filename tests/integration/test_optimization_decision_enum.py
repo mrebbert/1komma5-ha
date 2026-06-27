@@ -58,9 +58,9 @@ async def test_last_decision_sensor_is_enum_with_known_options(
     # ENUM device_class requires HA to surface the options list verbatim
     assert state.attributes["device_class"] == SensorDeviceClass.ENUM.value
     assert set(state.attributes["options"]) == {
-        "BATTERY_CHARGE_FROM_GRID",
-        "BATTERY_NO_CHARGE",
-        "BATTERY_NO_DISCHARGE",
-        "HEATPUMP_RECOMMEND_ON",
-        "HEATPUMP_AUTO",
+        "battery_charge_from_grid",
+        "battery_no_charge",
+        "battery_no_discharge",
+        "heatpump_recommend_on",
+        "heatpump_auto",
     }

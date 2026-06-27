@@ -373,14 +373,18 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         translation_key="optimization_last_decision",
         icon="mdi:brain",
         device_class=SensorDeviceClass.ENUM,
+        # HA's translation-key validation requires lowercase `[a-z0-9-_]+`;
+        # the SDK enum is uppercase (`BATTERY_CHARGE_FROM_GRID`, …), so we
+        # lowercase the value at the sensor layer. Automations that match
+        # on the state must use lowercase too.
         options=[
-            "BATTERY_CHARGE_FROM_GRID",
-            "BATTERY_NO_CHARGE",
-            "BATTERY_NO_DISCHARGE",
-            "HEATPUMP_RECOMMEND_ON",
-            "HEATPUMP_AUTO",
+            "battery_charge_from_grid",
+            "battery_no_charge",
+            "battery_no_discharge",
+            "heatpump_recommend_on",
+            "heatpump_auto",
         ],
-        value_fn=lambda d: d.last_event.decision if d.last_event else None,
+        value_fn=lambda d: d.last_event.decision.lower() if d.last_event else None,
         attr_fn=lambda d: (
             {
                 "asset": d.last_event.asset,

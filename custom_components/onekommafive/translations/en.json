@@ -267,11 +267,11 @@
       "optimization_last_decision": {
         "name": "Last optimization decision",
         "state": {
-          "BATTERY_CHARGE_FROM_GRID": "Charge battery from grid",
-          "BATTERY_NO_CHARGE": "Don't charge battery",
-          "BATTERY_NO_DISCHARGE": "Don't discharge battery",
-          "HEATPUMP_RECOMMEND_ON": "Heat pump recommended",
-          "HEATPUMP_AUTO": "Heat pump automatic"
+          "battery_charge_from_grid": "Charge battery from grid",
+          "battery_no_charge": "Don't charge battery",
+          "battery_no_discharge": "Don't discharge battery",
+          "heatpump_recommend_on": "Heat pump recommended",
+          "heatpump_auto": "Heat pump automatic"
         }
       },
       "negative_price_slots_today": {

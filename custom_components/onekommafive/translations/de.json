@@ -267,11 +267,11 @@
       "optimization_last_decision": {
         "name": "Letzte Optimierungsentscheidung",
         "state": {
-          "BATTERY_CHARGE_FROM_GRID": "Batterie aus Netz laden",
-          "BATTERY_NO_CHARGE": "Batterie nicht laden",
-          "BATTERY_NO_DISCHARGE": "Batterie nicht entladen",
-          "HEATPUMP_RECOMMEND_ON": "Wärmepumpe empfohlen",
-          "HEATPUMP_AUTO": "Wärmepumpe Automatik"
+          "battery_charge_from_grid": "Batterie aus Netz laden",
+          "battery_no_charge": "Batterie nicht laden",
+          "battery_no_discharge": "Batterie nicht entladen",
+          "heatpump_recommend_on": "Wärmepumpe empfohlen",
+          "heatpump_auto": "Wärmepumpe Automatik"
         }
       },
       "negative_price_slots_today": {

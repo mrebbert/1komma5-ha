@@ -267,11 +267,11 @@
       "optimization_last_decision": {
         "name": "Senaste optimeringsbeslut",
         "state": {
-          "BATTERY_CHARGE_FROM_GRID": "Ladda batteri från nätet",
-          "BATTERY_NO_CHARGE": "Ladda inte batteri",
-          "BATTERY_NO_DISCHARGE": "Urladda inte batteri",
-          "HEATPUMP_RECOMMEND_ON": "Värmepump rekommenderad",
-          "HEATPUMP_AUTO": "Värmepump automatisk"
+          "battery_charge_from_grid": "Ladda batteri från nätet",
+          "battery_no_charge": "Ladda inte batteri",
+          "battery_no_discharge": "Urladda inte batteri",
+          "heatpump_recommend_on": "Värmepump rekommenderad",
+          "heatpump_auto": "Värmepump automatisk"
         }
       },
       "negative_price_slots_today": {

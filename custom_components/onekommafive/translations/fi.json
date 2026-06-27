@@ -267,11 +267,11 @@
       "optimization_last_decision": {
         "name": "Viimeisin optimointipäätös",
         "state": {
-          "BATTERY_CHARGE_FROM_GRID": "Lataa akku verkosta",
-          "BATTERY_NO_CHARGE": "Älä lataa akkua",
-          "BATTERY_NO_DISCHARGE": "Älä pura akkua",
-          "HEATPUMP_RECOMMEND_ON": "Lämpöpumppu suositeltu",
-          "HEATPUMP_AUTO": "Lämpöpumppu automaattinen"
+          "battery_charge_from_grid": "Lataa akku verkosta",
+          "battery_no_charge": "Älä lataa akkua",
+          "battery_no_discharge": "Älä pura akkua",
+          "heatpump_recommend_on": "Lämpöpumppu suositeltu",
+          "heatpump_auto": "Lämpöpumppu automaattinen"
         }
       },
       "negative_price_slots_today": {
