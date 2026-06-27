@@ -282,6 +282,12 @@
       "diag_optimization_update": {
         "name": "Letztes Optimierungs-Update"
       },
+      "diag_weather_update": {
+        "name": "Letztes Wetter-Update"
+      },
+      "diag_system_status_update": {
+        "name": "Letztes Konnektivitäts-Update"
+      },
       "active_features": {
         "name": "Aktive Funktionen"
       },

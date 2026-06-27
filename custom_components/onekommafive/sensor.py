@@ -498,6 +498,8 @@ async def async_setup_entry(
             (live_coordinator, "diag_live_update"),
             (price_coordinator, "diag_price_update"),
             (optimization_coordinator, "diag_optimization_update"),
+            (weather_coordinator, "diag_weather_update"),
+            (data.system_status_coordinator, "diag_system_status_update"),
         )
     )
 
