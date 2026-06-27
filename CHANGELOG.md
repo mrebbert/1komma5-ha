@@ -5,8 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.45] - 2026-06-27
+
+### Added
+- **Multi-currency support** — every monetary sensor (cost / per-consumer cost / feed-in revenue / electricity price) now picks its `unit_of_measurement` from the site's country code. Correct unit out of the box in DK (DKK), SE (SEK) and AU (AUD); EUR continues to be the default for the four eurozone markets and unknown countries. Existing installs see no change to their unit.
+- **Per-feature binary sensors** — three new Booleans (`dynamic_tariff_active`, `time_of_use_active`, `smart_charging_active`) reflect the cloud's customer-feature flags. Lets automations gate on `condition: state binary_sensor.X is on` instead of parsing the `aktive_funktionen` attribute list. The counter sensor stays for backward compatibility.
+- **EMS-unavailable Repair Issue** — when `get_ems_settings()` fails for several refreshes in a row (most commonly: install has no DeviceGateway / no HEMS box), HA registers a Repair Issue in Settings → Repairs explaining the cause. Auto-resolves the moment EMS data returns.
+- **System Health page** — Settings → System → Repairs → System Information now surfaces per-coordinator status, API reachability, SDK version, resolved currency and country code. Useful as the "paste this into bug reports" panel; strictly PII-safe (no customer_id, no addresses, no system_id).
+- **Five new translation locales** — `nl`, `es`, `da`, `sv`, `fi`. Together with the existing German + English files, every 1KOMMA5° market is now covered (English doubles for Australia). Community native-speaker PRs welcome.
+
 ### Changed
 - `switch.<system>_ems_automatikmodus` moved to `entity_category=DIAGNOSTIC` so it sits in the device card's collapsible diagnostic section instead of the main controls. The toggle appears to be cosmetic on the cloud side (the official 1KOMMA5° app doesn't expose it and the API write seems no-op), so it stops competing for attention with the controls that actually do something. `entity_id`, `unique_id` and existing automations referring to it stay untouched.
+- `sensor.<system>_letzte_optimierungsentscheidung` is now an enum sensor with locale-aware state labels — e.g. "Batterie aus Netz laden" (DE) / "Charge battery from grid" (EN) instead of the raw SDK enum string. State values automations match on are lowercase (e.g. `battery_charge_from_grid`); update your automations if you previously matched on the uppercase form.
+- Entities for asset types that the cloud doesn't report on a given install (e.g. heat-pump entities on a setup without a heat pump) are now registered with `entity_registry_enabled_default=False`. They still exist in the registry so adding hardware later preserves history; re-enable them manually under Settings → Devices & Services → 1KOMMA5° → Entities if you want them visible without an asset.
 
 ## [0.1.44] - 2026-06-27
 
