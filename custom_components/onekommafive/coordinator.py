@@ -130,6 +130,17 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     _coordinator_name = "1KOMMA5° Live"
     _interval_seconds = LIVE_UPDATE_INTERVAL_SECONDS
 
+    # Number of consecutive None ems_settings results before the repair issue
+    # fires. 5 × 30 s = 2.5 min — fast enough to be useful, slow enough to
+    # avoid noise from transient API blips.
+    _EMS_FAILURE_THRESHOLD = 5
+    _EMS_ISSUE_ID = "ems_settings_unavailable"
+
+    def __init__(self, hass: HomeAssistant, system: Any) -> None:
+        super().__init__(hass, system)
+        self._ems_failure_count = 0
+        self._ems_issue_active = False
+
     def _fetch(self) -> LiveData:
         """Fetch all live data synchronously."""
         live_overview = self._system.get_live_overview()
@@ -144,6 +155,36 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             ev_chargers=ev_chargers,
             ems_settings=ems_settings,
         )
+
+    async def _async_update_data(self) -> LiveData:
+        """Wrap the base fetch with EMS-availability tracking for the repair issue."""
+        data = await super()._async_update_data()
+        self._update_ems_repair_issue(data.ems_settings is not None)
+        return data
+
+    def _update_ems_repair_issue(self, ems_available: bool) -> None:
+        """Track consecutive EMS failures and create / delete the repair issue."""
+        from homeassistant.helpers import issue_registry as ir
+
+        from .const import DOMAIN
+
+        if ems_available:
+            self._ems_failure_count = 0
+            if self._ems_issue_active:
+                ir.async_delete_issue(self.hass, DOMAIN, self._EMS_ISSUE_ID)
+                self._ems_issue_active = False
+            return
+        self._ems_failure_count += 1
+        if self._ems_failure_count >= self._EMS_FAILURE_THRESHOLD and not self._ems_issue_active:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._EMS_ISSUE_ID,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=self._EMS_ISSUE_ID,
+            )
+            self._ems_issue_active = True
 
 
 class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):

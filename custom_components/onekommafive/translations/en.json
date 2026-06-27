@@ -356,5 +356,11 @@
     "wallbox": {
       "name": "Wallbox"
     }
+  },
+  "issues": {
+    "ems_settings_unavailable": {
+      "title": "EMS settings unavailable",
+      "description": "The 1KOMMA5° backend hasn't returned EMS settings for several refreshes. The EMS auto-mode switch and related diagnostic fields will stay `unavailable`. Most likely cause: your installation has no DeviceGateway — i.e. no HEMS box exposing EMS settings. If that's correct, you can ignore this notice — the rest of the integration runs normally. If a HEMS is in fact installed, check the system status in the 1KOMMA5° app."
+    }
   }
 }

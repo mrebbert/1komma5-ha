@@ -356,5 +356,11 @@
     "wallbox": {
       "name": "Wallbox"
     }
+  },
+  "issues": {
+    "ems_settings_unavailable": {
+      "title": "EMS-Einstellungen nicht verfügbar",
+      "description": "Das 1KOMMA5°-Backend liefert seit mehreren Aktualisierungen keine EMS-Einstellungen mehr. Damit bleiben der EMS-Automatik-Schalter und die zugehörigen Diagnose-Felder als `unavailable` markiert. Häufigste Ursache: Deine Anlage hat keinen DeviceGateway, also keine HEMS-Box, die EMS-Settings exponiert. Wenn dem so ist, kannst du diesen Hinweis ignorieren – die übrigen Entitäten arbeiten normal weiter. Sollte das HEMS doch installiert sein, prüfe den Status der Anlage in der 1KOMMA5°-App."
+    }
   }
 }
