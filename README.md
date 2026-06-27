@@ -45,6 +45,19 @@ This integration surfaces the following components from the 1KOMMA5° Heartbeat 
 - **Dynamic electricity tariff** (dynamischer Stromtarif) — 30 h price forecast, cheapest-charging-window sensor
 - **Weather forecast** — 48 h hourly forecast, sunshine duration
 
+### Supported markets
+
+1KOMMA5° currently operates in **seven markets** worldwide. The integration runs against the single global API (`heartbeat.1komma5grad.com`), so it works in all of them — and the displayed currency is auto-detected from the site's country code:
+
+| Market | Currency |
+|--------|----------|
+| Germany, Netherlands, Finland, Spain | EUR |
+| Denmark | DKK |
+| Sweden | SEK |
+| Australia | AUD |
+
+Cost, revenue and price sensors render in the local currency without any manual configuration.
+
 ---
 
 ## Installation via HACS
@@ -164,6 +177,8 @@ Entities are grouped under one system parent device plus per-asset sub-devices, 
 Manufacturer, model and firmware are populated from the 1KOMMA5° cloud's `status_and_assets` payload. Devices the platform doesn't classify (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the parent — no empty placeholder devices.
 
 `entity_id`s and `unique_id`s are unchanged versus earlier versions, so long-term statistics, automations, Energy-Dashboard configuration and dashboard cards keep working without any migration.
+
+Installations missing one of the four asset types (e.g. no heat pump, or a grid-only install without PV) have the corresponding sensors **disabled by default**. The entities still exist in the registry so history stays continuous if hardware is added later, but they don't clutter the device list. Re-enable them manually in **Settings → Devices & Services → 1KOMMA5° → Entities** if you want them visible without an asset.
 
 ---
 
@@ -332,7 +347,7 @@ Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minut
 | Optimization Cost/Savings | `optimization_total_cost` | Aggregated total cost from today's optimization events (if reported by API). | EUR |
 | Optimization Energy Bought | `optimization_energy_bought` | Aggregated energy bought through optimizations (if reported by API). | kWh |
 | Optimization Energy Sold | `optimization_energy_sold` | Aggregated energy sold through optimizations (if reported by API). | kWh |
-| Last Optimization Decision | `optimization_last_decision` | Most recent AI decision (e.g. `BATTERY_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`). Attributes: `asset`, `from`, `to`, `market_price`, `state_of_charge`. | — |
+| Last Optimization Decision | `optimization_last_decision` | Most recent AI decision. Displayed in your HA locale (e.g. "Batterie aus Netz laden" / "Charge battery from grid") — the underlying state value (`BATTERY_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`, …) is what automations match on. Attributes: `asset`, `from`, `to`, `market_price`, `state_of_charge`. | — |
 
 > **Note:** The cost, energy bought and energy sold fields depend on the 1KOMMA5° API providing settlement data. Currently, these fields are not yet populated by the API and the sensors will show "unknown".
 
@@ -342,7 +357,11 @@ Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minut
 |--------|-----|-------------|--------|
 | Cheap Electricity | `cheap_electricity` | ON when the current electricity price is below today's average — useful as an automation condition for flexible loads (dishwasher, washing machine, heat pump). Attributes: `current_price`, `average_price`, `difference`. | 15 min |
 | Cheapest Hour Now | `cheapest_hour_now` | ON when the current 15-minute slot is the cheapest in the next ~30 hours of forecast. Useful for triggering loads exactly at the cheapest moment. Attributes: `current_price`, `cheapest_price`, `cheapest_slot_start`. | 15 min |
-| AI: Battery grid charging | `optimization_battery_grid_charge` | ON when the AI's currently active BATTERY decision is `BATTERY_CHARGE_FROM_GRID` — the HEMS has decided to pull from the grid right now to bridge upcoming high-price periods. AI-curated signal that considers full forecast and battery state. Attributes: `decision`, `from`, `to`, `market_price`, `state_of_charge`. | 15 min |
+| AI: Battery grid charging | `optimization_battery_grid_charge` | ON when the AI's currently active BATTERY decision is `BATTERY_CHARGE_FROM_GRID` — the HEMS has decided to pull from the grid right now to bridge upcoming high-price periods. Attributes: `decision`, `from`, `to`, `market_price`, `state_of_charge`. | 15 min |
+| AI: Heat pump recommended | `optimization_heat_pump_recommended` | ON when the AI's currently active HEAT_PUMP decision is `HEATPUMP_RECOMMEND_ON` — the HEMS suggests running the heat pump in this slot. Attributes: `decision`, `from`, `to`, `market_price`. | 15 min |
+| Site connectivity | `site_connected` | ON when the 1KOMMA5° cloud reports the site as `CONNECTED`. Aggregate signal. Attributes: `site_status`, `asset_count`. | 5 min |
+| Inverter / Heat pump / Meter / Wallbox connectivity | `inverter_connected`, `heat_pump_connected`, `meter_connected`, `wallbox_connected` | One ON/OFF per asset type — only registered when the cloud actually reports an asset of that type. AND-logic: ON only when every asset of the type is `CONNECTED`. Attributes: `count`, `connected_count`, `assets` (manufacturer / model / firmware, PII-safe). | 5 min |
+| Active features | `dynamic_tariff_active`, `time_of_use_active`, `smart_charging_active` | One Boolean per feature flag returned by the 1KOMMA5° customer-features API. Lets you gate automations on `condition: state binary_sensor.<…>_active is on` without parsing the `aktive_funktionen` attribute list. | 5 min |
 
 ### EV Charger / Wallbox
 
@@ -397,7 +416,7 @@ Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor entity ID and `CA
 
 | Entity | Key | Type | Description |
 |--------|-----|------|-------------|
-| EMS Auto Mode | `ems_auto_mode` | Switch | Toggle EMS auto / manual mode |
+| EMS Auto Mode | `ems_auto_mode` | Switch | Toggle EMS auto / manual mode. **Lives in the device card's diagnostic section** — the official 1KOMMA5° app doesn't expose this override, so the toggle is likely cosmetic on the cloud side. Kept in place in case it activates on some setups. |
 
 ### Diagnostic Sensors
 
@@ -408,6 +427,12 @@ These sensors are hidden by default (`entity_category: diagnostic`) and useful f
 | Last Live Update | `diag_live_update` | Timestamp of the last successful live data fetch |
 | Last Price Update | `diag_price_update` | Timestamp of the last successful price data fetch |
 | Last Optimization Update | `diag_optimization_update` | Timestamp of the last successful optimization data fetch |
+| Last Weather Update | `diag_weather_update` | Timestamp of the last successful weather data fetch |
+| Last Connectivity Update | `diag_system_status_update` | Timestamp of the last successful site-status / asset-inventory fetch |
+
+The integration also reports a structured summary in **Settings → System → Repairs → System Information**: per-coordinator update status, API reachability, SDK version, resolved currency + country code. Use this for bug reports instead of running the full diagnostics download — it's PII-safe (no customer/system identifiers, no addresses).
+
+If your installation has no DeviceGateway (no HEMS box), the EMS auto-mode switch and related EMS fields stay `unavailable`. After several consecutive failures, the integration registers a **Repair Issue** in Settings → Repairs explaining the cause, so you don't need to dig through the logs. The notice auto-resolves the moment EMS data returns.
 
 ---
 
