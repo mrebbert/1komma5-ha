@@ -265,7 +265,14 @@
         "name": "Optimization energy sold"
       },
       "optimization_last_decision": {
-        "name": "Last optimization decision"
+        "name": "Last optimization decision",
+        "state": {
+          "BATTERY_CHARGE_FROM_GRID": "Charge battery from grid",
+          "BATTERY_NO_CHARGE": "Don't charge battery",
+          "BATTERY_NO_DISCHARGE": "Don't discharge battery",
+          "HEATPUMP_RECOMMEND_ON": "Heat pump recommended",
+          "HEATPUMP_AUTO": "Heat pump automatic"
+        }
       },
       "negative_price_slots_today": {
         "name": "Negative price slots today"

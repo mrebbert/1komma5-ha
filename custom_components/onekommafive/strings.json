@@ -265,7 +265,14 @@
         "name": "Optimierung Energieverkauf"
       },
       "optimization_last_decision": {
-        "name": "Letzte Optimierungsentscheidung"
+        "name": "Letzte Optimierungsentscheidung",
+        "state": {
+          "BATTERY_CHARGE_FROM_GRID": "Batterie aus Netz laden",
+          "BATTERY_NO_CHARGE": "Batterie nicht laden",
+          "BATTERY_NO_DISCHARGE": "Batterie nicht entladen",
+          "HEATPUMP_RECOMMEND_ON": "Wärmepumpe empfohlen",
+          "HEATPUMP_AUTO": "Wärmepumpe Automatik"
+        }
       },
       "negative_price_slots_today": {
         "name": "Negative Preisslots heute"

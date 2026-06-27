@@ -372,6 +372,14 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         key="optimization_last_decision",
         translation_key="optimization_last_decision",
         icon="mdi:brain",
+        device_class=SensorDeviceClass.ENUM,
+        options=[
+            "BATTERY_CHARGE_FROM_GRID",
+            "BATTERY_NO_CHARGE",
+            "BATTERY_NO_DISCHARGE",
+            "HEATPUMP_RECOMMEND_ON",
+            "HEATPUMP_AUTO",
+        ],
         value_fn=lambda d: d.last_event.decision if d.last_event else None,
         attr_fn=lambda d: (
             {
