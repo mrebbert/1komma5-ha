@@ -10,6 +10,33 @@ import datetime
 from collections.abc import Callable
 from typing import Any
 
+# ISO 4217 currency mapping for the seven markets 1KOMMA5° currently
+# operates in (DE, NL, FI, ES → EUR; DK → DKK; SE → SEK; AU → AUD).
+# Other country codes default to EUR — most likely correct, and the
+# safest fallback for installs we haven't seen yet.
+_CURRENCY_BY_COUNTRY: dict[str, str] = {
+    "DE": "EUR",
+    "NL": "EUR",
+    "FI": "EUR",
+    "ES": "EUR",
+    "AT": "EUR",
+    "IT": "EUR",
+    "DK": "DKK",
+    "SE": "SEK",
+    "AU": "AUD",
+}
+
+
+def resolve_currency(country_code: str | None) -> str:
+    """Map an ISO 3166-1 alpha-2 country code to the local currency.
+
+    Defaults to ``"EUR"`` for unknown / missing country codes — covers all
+    four 1KOMMA5° EUR markets plus the rest of the eurozone.
+    """
+    if not country_code:
+        return "EUR"
+    return _CURRENCY_BY_COUNTRY.get(country_code.upper(), "EUR")
+
 
 def get_current_price(prices: dict[str, float]) -> float | None:
     """Return the price for the active 15-minute slot.

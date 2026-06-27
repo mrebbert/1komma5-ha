@@ -422,6 +422,7 @@ async def async_setup_entry(
     system = data.system
     system_id = system.id()
     system_name = data.system_name
+    currency = data.currency
 
     # Resolve assets-by-type once for sub-device DeviceInfo lookup.
     # Empty dict when SystemStatusCoordinator has no data yet (first-refresh
@@ -480,12 +481,14 @@ async def async_setup_entry(
 
     # Price sensors
     entities.extend(
-        OneKomma5PriceSensor(price_coordinator, system_id, system_name, desc)
+        OneKomma5PriceSensor(price_coordinator, system_id, system_name, desc, currency=currency)
         for desc in PRICE_SENSORS
     )
 
     # Stable price sensor (hold-last-valid)
-    stable_price_sensor = OneKomma5StablePriceSensor(price_coordinator, system_id, system_name)
+    stable_price_sensor = OneKomma5StablePriceSensor(
+        price_coordinator, system_id, system_name, currency=currency
+    )
     entities.append(stable_price_sensor)
 
     # Cheapest charging window today (timestamp sensor + window attributes)
@@ -495,7 +498,9 @@ async def async_setup_entry(
 
     # Accumulated electricity cost sensor
     entities.append(
-        OneKomma5CostSensor(live_coordinator, system_id, system_name, stable_price_sensor)
+        OneKomma5CostSensor(
+            live_coordinator, system_id, system_name, stable_price_sensor, currency=currency
+        )
     )
 
     # Per-consumer cost sensors — proportional share of the grid-import cost.
@@ -510,6 +515,7 @@ async def async_setup_entry(
             key,
             device_key=device_key,
             asset=_resolve_asset(device_key),
+            currency=currency,
         )
         for attr, key, device_key in CONSUMER_COST_SPECS
     )
@@ -523,12 +529,15 @@ async def async_setup_entry(
             system_name,
             feed_in_tariff,
             asset=_resolve_asset("meter"),
+            currency=currency,
         )
     )
 
     # Optimization sensors
     entities.extend(
-        OneKomma5OptimizationSensor(optimization_coordinator, system_id, system_name, desc)
+        OneKomma5OptimizationSensor(
+            optimization_coordinator, system_id, system_name, desc, currency=currency
+        )
         for desc in OPTIMIZATION_SENSORS
     )
 

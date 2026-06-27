@@ -14,6 +14,7 @@ from helpers import (  # type: ignore[import-not-found]
     find_cheapest_window,
     find_most_expensive_window,
     get_current_price,
+    resolve_currency,
     split_prices_by_date,
     trapezoidal_delta_kwh,
     weather_symbol_to_ha_condition,
@@ -519,3 +520,36 @@ class TestWeatherSymbolToHaCondition:
         # 999 is not in our mapping; the WeatherEntity should fall back rather
         # than crash, so the helper returns None.
         assert weather_symbol_to_ha_condition(999) is None
+
+
+class TestResolveCurrency:
+    """Country code → ISO 4217 currency mapping for the seven 1KOMMA5° markets."""
+
+    @pytest.mark.parametrize(
+        ("country", "expected"),
+        [
+            ("DE", "EUR"),
+            ("NL", "EUR"),
+            ("FI", "EUR"),
+            ("ES", "EUR"),
+            ("DK", "DKK"),
+            ("SE", "SEK"),
+            ("AU", "AUD"),
+            ("de", "EUR"),  # lowercase
+            ("dk", "DKK"),
+        ],
+    )
+    def test_known_countries_resolve(self, country: str, expected: str) -> None:
+        assert resolve_currency(country) == expected
+
+    def test_none_country_defaults_to_eur(self) -> None:
+        assert resolve_currency(None) == "EUR"
+
+    def test_empty_country_defaults_to_eur(self) -> None:
+        assert resolve_currency("") == "EUR"
+
+    def test_unknown_country_defaults_to_eur(self) -> None:
+        # An install in a market we haven't mapped (e.g. CH) safely falls
+        # back to EUR; eurozone neighbours are correct, others can be fixed
+        # in the country map without an emergency release.
+        assert resolve_currency("ZZ") == "EUR"

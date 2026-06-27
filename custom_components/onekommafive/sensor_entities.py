@@ -43,7 +43,15 @@ from .sensor_descriptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Default currency-per-kWh string for installs whose country / currency
+# is unknown. Live overrides come from `OneKomma5Data.currency`, resolved
+# from `SystemDetails.address_country` at setup time.
 CURRENCY_EUR_PER_KWH = "EUR/kWh"
+
+
+def currency_per_kwh(currency: str) -> str:
+    """Build the native_unit_of_measurement string for per-kWh prices."""
+    return f"{currency}/kWh"
 
 
 class OneKomma5LiveSensor(OneKomma5Entity, SensorEntity):
@@ -90,10 +98,17 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
         system_id: str,
         system_name: str,
         description: OneKomma5PriceSensorDescription,
+        *,
+        currency: str = "EUR",
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, system_id, system_name, description.key)
         self.entity_description = description
+        # Override the description's static EUR/kWh with the resolved currency.
+        # Only set when the description carried a unit — keeps counters
+        # (negative_price_slots_today/tomorrow) without an erroneous unit.
+        if description.native_unit_of_measurement is not None:
+            self._attr_native_unit_of_measurement = currency_per_kwh(currency)
 
     async def async_added_to_hass(self) -> None:
         """Register quarter-hour update for the dynamic current-price sensor."""
@@ -386,12 +401,19 @@ class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, R
     _attr_translation_key = "stable_electricity_price"
     _attr_icon = "mdi:currency-eur"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = CURRENCY_EUR_PER_KWH
     _attr_suggested_display_precision = 4
 
-    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        *,
+        currency: str = "EUR",
+    ) -> None:
         """Initialize the stable price sensor."""
         super().__init__(coordinator, system_id, system_name, "stable_electricity_price")
+        self._attr_native_unit_of_measurement = currency_per_kwh(currency)
         self._stable_price: float | None = None
         if coordinator.data is not None:
             price = self._dynamic_current_price()
@@ -456,7 +478,6 @@ class OneKomma5CostSensor(OneKomma5AccumulatingSensor):
 
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = SensorStateClass.TOTAL
-    _attr_native_unit_of_measurement = "EUR"
     _attr_suggested_display_precision = 2
     _attr_translation_key = "electricity_cost"
     _attr_icon = "mdi:currency-eur"
@@ -468,8 +489,11 @@ class OneKomma5CostSensor(OneKomma5AccumulatingSensor):
         system_id: str,
         system_name: str,
         stable_price_sensor: OneKomma5StablePriceSensor,
+        *,
+        currency: str = "EUR",
     ) -> None:
         super().__init__(coordinator, system_id, system_name, "electricity_cost")
+        self._attr_native_unit_of_measurement = currency
         self._stable_price_sensor = stable_price_sensor
 
     def _get_power_w(self, data: LiveData) -> float | None:
@@ -489,7 +513,6 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
 
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = SensorStateClass.TOTAL
-    _attr_native_unit_of_measurement = "EUR"
     _attr_suggested_display_precision = 2
     _attr_icon = "mdi:currency-eur"
     _accumulator_precision = 4
@@ -505,6 +528,7 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
         *,
         device_key: str | None = None,
         asset: Any | None = None,
+        currency: str = "EUR",
     ) -> None:
         super().__init__(
             coordinator,
@@ -514,6 +538,7 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
             device_key=device_key,
             asset=asset,
         )
+        self._attr_native_unit_of_measurement = currency
         self._attr_translation_key = translation_key
         self._stable_price_sensor = stable_price_sensor
         self._consumer_power_attr = consumer_power_attr
@@ -543,7 +568,6 @@ class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
 
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = SensorStateClass.TOTAL
-    _attr_native_unit_of_measurement = "EUR"
     _attr_suggested_display_precision = 2
     _attr_translation_key = "feed_in_revenue"
     _attr_icon = "mdi:transmission-tower-export"
@@ -558,6 +582,7 @@ class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
         feed_in_tariff: float,
         *,
         asset: Any | None = None,
+        currency: str = "EUR",
     ) -> None:
         super().__init__(
             coordinator,
@@ -566,6 +591,7 @@ class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
             "feed_in_revenue",
             asset=asset,
         )
+        self._attr_native_unit_of_measurement = currency
         self._feed_in_tariff = feed_in_tariff
 
     def _get_power_w(self, data: LiveData) -> float | None:
@@ -586,10 +612,14 @@ class OneKomma5OptimizationSensor(OneKomma5OptimizationEntity, SensorEntity):
         system_id: str,
         system_name: str,
         description: OneKomma5OptimizationSensorDescription,
+        *,
+        currency: str = "EUR",
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, system_id, system_name, description.key)
         self.entity_description = description
+        if description.device_class == SensorDeviceClass.MONETARY:
+            self._attr_native_unit_of_measurement = currency
 
     @property
     def native_value(self) -> Any:

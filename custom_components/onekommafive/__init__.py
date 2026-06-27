@@ -48,6 +48,7 @@ class OneKomma5Data:
     # never surfaced as entities. None if the call failed at setup.
     details: object | None
     customer_id: str | None  # sliced off details for the system-status coordinator
+    currency: str  # ISO 4217 code derived from details.address_country (default EUR)
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -99,6 +100,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         raise ConfigEntryNotReady(f"Cannot connect to 1KOMMA5° API: {err}") from err
 
     customer_id = getattr(details, "customer_id", None) if details else None
+    from .helpers import resolve_currency
+
+    currency = resolve_currency(getattr(details, "address_country", None) if details else None)
 
     live_coordinator = OneKomma5LiveCoordinator(hass, system)
     price_coordinator = OneKomma5PriceCoordinator(hass, system)
@@ -141,6 +145,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         system_name=system_name,
         details=details,
         customer_id=customer_id,
+        currency=currency,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
