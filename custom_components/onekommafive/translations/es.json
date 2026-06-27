@@ -1,0 +1,366 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Iniciar sesión en 1KOMMA5°",
+        "description": "Introduce las credenciales de tu cuenta 1KOMMA5°.",
+        "data": {
+          "username": "Correo electrónico",
+          "password": "Contraseña"
+        }
+      },
+      "system": {
+        "title": "Seleccionar sistema",
+        "description": "Elige el sistema 1KOMMA5° que quieras integrar.",
+        "data": {
+          "system_id": "Sistema"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reautenticación de 1KOMMA5°",
+        "description": "Tus credenciales de 1KOMMA5° ya no son válidas. Introduce las actuales.",
+        "data": {
+          "username": "Correo electrónico",
+          "password": "Contraseña"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar 1KOMMA5°",
+        "description": "Actualiza tus credenciales de 1KOMMA5°.",
+        "data": {
+          "username": "Correo electrónico",
+          "password": "Contraseña"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se ha podido conectar con la API de 1KOMMA5°.",
+      "invalid_auth": "Credenciales no válidas.",
+      "system_not_found": "El sistema configurado ya no es accesible con estas credenciales.",
+      "unknown": "Error desconocido."
+    },
+    "abort": {
+      "already_configured": "Este sistema ya está configurado.",
+      "reauth_successful": "Reautenticación correcta.",
+      "reconfigure_successful": "Reconfiguración correcta."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ajustes de 1KOMMA5°",
+        "data": {
+          "feed_in_tariff": "Tarifa de inyección a red"
+        },
+        "data_description": {
+          "feed_in_tariff": "Ingreso por cada kWh exportado (incl. bonus), p. ej. 0,0803 para 8,03 ct/kWh."
+        }
+      }
+    }
+  },
+  "services": {
+    "get_cheapest_window": {
+      "name": "Buscar ventana más barata",
+      "description": "Busca la ventana de tiempo continua más barata en la previsión del precio de la electricidad.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Duración (minutos)",
+          "description": "Longitud de la ventana deseada en minutos (múltiplo de 15)."
+        },
+        "earliest_start": {
+          "name": "Hora más temprana de inicio",
+          "description": "Opcional: la ventana no debe comenzar antes de esta hora."
+        },
+        "latest_end": {
+          "name": "Hora más tardía de fin",
+          "description": "Opcional: la ventana no debe terminar después de esta hora."
+        },
+        "config_entry_id": {
+          "name": "Integración",
+          "description": "Cuando hay varios sistemas 1KOMMA5° configurados: elige el sistema objetivo."
+        }
+      }
+    },
+    "get_most_expensive_window": {
+      "name": "Buscar ventana más cara",
+      "description": "Busca la ventana de tiempo continua más cara en la previsión del precio de la electricidad — útil para deslastrado de cargas.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Duración (minutos)",
+          "description": "Longitud de la ventana deseada en minutos (múltiplo de 15)."
+        },
+        "earliest_start": {
+          "name": "Hora más temprana de inicio",
+          "description": "Opcional: la ventana no debe comenzar antes de esta hora."
+        },
+        "latest_end": {
+          "name": "Hora más tardía de fin",
+          "description": "Opcional: la ventana no debe terminar después de esta hora."
+        },
+        "config_entry_id": {
+          "name": "Integración",
+          "description": "Cuando hay varios sistemas 1KOMMA5° configurados: elige el sistema objetivo."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "name": "Electricidad barata"
+      },
+      "cheapest_hour_now": {
+        "name": "Hora más barata ahora"
+      },
+      "optimization_battery_grid_charge": {
+        "name": "IA: Cargar batería desde la red"
+      },
+      "optimization_heat_pump_recommended": {
+        "name": "IA: Bomba de calor recomendada"
+      },
+      "site_connected": {
+        "name": "Instalación conectada"
+      },
+      "inverter_connected": {
+        "name": "Inversor conectado"
+      },
+      "heat_pump_connected": {
+        "name": "Bomba de calor conectada"
+      },
+      "meter_connected": {
+        "name": "Contador conectado"
+      },
+      "wallbox_connected": {
+        "name": "Wallbox conectada"
+      },
+      "dynamic_tariff_active": {
+        "name": "Tarifa dinámica activa"
+      },
+      "time_of_use_active": {
+        "name": "Optimización por franjas horarias activa"
+      },
+      "smart_charging_active": {
+        "name": "Carga inteligente activa"
+      }
+    },
+    "sensor": {
+      "pv_power": {
+        "name": "Potencia FV"
+      },
+      "battery_power": {
+        "name": "Potencia de la batería"
+      },
+      "battery_soc": {
+        "name": "Nivel de batería"
+      },
+      "grid_power": {
+        "name": "Potencia de red"
+      },
+      "grid_consumption_power": {
+        "name": "Importación de red"
+      },
+      "grid_feed_in_power": {
+        "name": "Exportación a red"
+      },
+      "consumption_power": {
+        "name": "Consumo total"
+      },
+      "household_power": {
+        "name": "Consumo del hogar"
+      },
+      "ev_chargers_power": {
+        "name": "Potencia de carga VE"
+      },
+      "heat_pumps_power": {
+        "name": "Potencia de bomba de calor"
+      },
+      "acs_power": {
+        "name": "Potencia de aire acondicionado"
+      },
+      "self_sufficiency": {
+        "name": "Autosuficiencia"
+      },
+      "pv_power_energy": {
+        "name": "Energía FV"
+      },
+      "grid_consumption_power_energy": {
+        "name": "Energía importada de red"
+      },
+      "grid_feed_in_power_energy": {
+        "name": "Energía exportada a red"
+      },
+      "consumption_power_energy": {
+        "name": "Energía total consumida"
+      },
+      "household_power_energy": {
+        "name": "Energía del hogar"
+      },
+      "ev_chargers_power_energy": {
+        "name": "Energía de carga VE"
+      },
+      "heat_pumps_power_energy": {
+        "name": "Energía de bomba de calor"
+      },
+      "acs_power_energy": {
+        "name": "Energía de aire acondicionado"
+      },
+      "current_electricity_price": {
+        "name": "Precio actual de la electricidad"
+      },
+      "average_electricity_price": {
+        "name": "Precio medio de la electricidad"
+      },
+      "lowest_electricity_price": {
+        "name": "Precio más bajo de la electricidad"
+      },
+      "highest_electricity_price": {
+        "name": "Precio más alto de la electricidad"
+      },
+      "ev_target_soc": {
+        "name": "Nivel objetivo de batería"
+      },
+      "ev_charging_mode": {
+        "name": "Modo de carga"
+      },
+      "stable_electricity_price": {
+        "name": "Último precio válido de la electricidad"
+      },
+      "cheapest_charging_window_today": {
+        "name": "Ventana de carga más barata hoy"
+      },
+      "electricity_cost": {
+        "name": "Coste de la electricidad"
+      },
+      "heat_pump_cost": {
+        "name": "Coste de la bomba de calor"
+      },
+      "ev_charger_cost": {
+        "name": "Coste del cargador VE"
+      },
+      "household_cost": {
+        "name": "Coste del hogar"
+      },
+      "ac_cost": {
+        "name": "Coste del aire acondicionado"
+      },
+      "feed_in_revenue": {
+        "name": "Ingresos por inyección a red"
+      },
+      "battery_charge_power_energy": {
+        "name": "Energía de carga de batería"
+      },
+      "battery_discharge_power_energy": {
+        "name": "Energía de descarga de batería"
+      },
+      "optimization_event_count": {
+        "name": "Decisiones de optimización hoy"
+      },
+      "optimization_total_cost": {
+        "name": "Coste/ahorro por optimización"
+      },
+      "optimization_energy_bought": {
+        "name": "Energía comprada por optimización"
+      },
+      "optimization_energy_sold": {
+        "name": "Energía vendida por optimización"
+      },
+      "optimization_last_decision": {
+        "name": "Última decisión de optimización",
+        "state": {
+          "BATTERY_CHARGE_FROM_GRID": "Cargar batería desde la red",
+          "BATTERY_NO_CHARGE": "No cargar batería",
+          "BATTERY_NO_DISCHARGE": "No descargar batería",
+          "HEATPUMP_RECOMMEND_ON": "Bomba de calor recomendada",
+          "HEATPUMP_AUTO": "Bomba de calor automática"
+        }
+      },
+      "negative_price_slots_today": {
+        "name": "Tramos de precio negativo hoy"
+      },
+      "negative_price_slots_tomorrow": {
+        "name": "Tramos de precio negativo mañana"
+      },
+      "tomorrow_average_price": {
+        "name": "Precio medio de la electricidad mañana"
+      },
+      "tomorrow_lowest_price": {
+        "name": "Precio más bajo de la electricidad mañana"
+      },
+      "tomorrow_highest_price": {
+        "name": "Precio más alto de la electricidad mañana"
+      },
+      "diag_live_update": {
+        "name": "Última actualización en vivo"
+      },
+      "diag_price_update": {
+        "name": "Última actualización de precios"
+      },
+      "diag_optimization_update": {
+        "name": "Última actualización de optimización"
+      },
+      "diag_weather_update": {
+        "name": "Última actualización meteorológica"
+      },
+      "diag_system_status_update": {
+        "name": "Última actualización de conectividad"
+      },
+      "active_features": {
+        "name": "Funciones activas"
+      },
+      "weather_sunshine_today": {
+        "name": "Insolación hoy"
+      },
+      "weather_sunshine_tomorrow": {
+        "name": "Insolación mañana"
+      }
+    },
+    "switch": {
+      "ems_auto_mode": {
+        "name": "Modo automático del EMS"
+      }
+    },
+    "select": {
+      "ev_charging_mode": {
+        "name": "Modo de carga",
+        "state": {
+          "smart_charge": "Carga inteligente",
+          "quick_charge": "Carga rápida",
+          "solar_charge": "Carga solar"
+        }
+      }
+    },
+    "number": {
+      "ev_current_soc": {
+        "name": "Nivel de batería del vehículo (manual)"
+      },
+      "ev_target_soc_number": {
+        "name": "Nivel objetivo de batería"
+      }
+    },
+    "time": {
+      "ev_departure_time": {
+        "name": "Hora de salida"
+      }
+    }
+  },
+  "device": {
+    "inverter": {
+      "name": "Inversor"
+    },
+    "heat_pump": {
+      "name": "Bomba de calor"
+    },
+    "meter": {
+      "name": "Contador"
+    },
+    "wallbox": {
+      "name": "Wallbox"
+    }
+  },
+  "issues": {
+    "ems_settings_unavailable": {
+      "title": "Ajustes del EMS no disponibles",
+      "description": "El backend de 1KOMMA5° lleva varias actualizaciones sin devolver los ajustes del EMS. El interruptor de modo automático del EMS y los campos de diagnóstico relacionados permanecerán como `unavailable`. Causa más probable: tu instalación no tiene DeviceGateway — es decir, no hay caja HEMS exponiendo los ajustes del EMS. Si es así, puedes ignorar este aviso — el resto de la integración funciona con normalidad. Si sí hay un HEMS instalado, consulta el estado del sistema en la app 1KOMMA5°."
+    }
+  }
+}

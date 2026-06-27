@@ -1,0 +1,366 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "1KOMMA5° Login",
+        "description": "Indtast dine 1KOMMA5°-kontoaftaler.",
+        "data": {
+          "username": "E-mailadresse",
+          "password": "Adgangskode"
+        }
+      },
+      "system": {
+        "title": "Vælg system",
+        "description": "Vælg det 1KOMMA5°-system, du vil integrere.",
+        "data": {
+          "system_id": "System"
+        }
+      },
+      "reauth_confirm": {
+        "title": "1KOMMA5° gen-autentificering",
+        "description": "Dine 1KOMMA5°-loginoplysninger er ikke længere gyldige. Indtast venligst dine nuværende oplysninger.",
+        "data": {
+          "username": "E-mailadresse",
+          "password": "Adgangskode"
+        }
+      },
+      "reconfigure": {
+        "title": "Rekonfigurer 1KOMMA5°",
+        "description": "Opdater dine 1KOMMA5°-loginoplysninger.",
+        "data": {
+          "username": "E-mailadresse",
+          "password": "Adgangskode"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kunne ikke oprette forbindelse til 1KOMMA5°-API'en.",
+      "invalid_auth": "Ugyldige loginoplysninger.",
+      "system_not_found": "Det konfigurerede system er ikke længere tilgængeligt med disse loginoplysninger.",
+      "unknown": "Ukendt fejl."
+    },
+    "abort": {
+      "already_configured": "Dette system er allerede konfigureret.",
+      "reauth_successful": "Gen-autentificering lykkedes.",
+      "reconfigure_successful": "Rekonfigurering lykkedes."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "1KOMMA5° indstillinger",
+        "data": {
+          "feed_in_tariff": "Salgstarif"
+        },
+        "data_description": {
+          "feed_in_tariff": "Indtægt pr. eksporteret kWh (inkl. alle bonusser), f.eks. 0,0803 for 8,03 øre/kWh."
+        }
+      }
+    }
+  },
+  "services": {
+    "get_cheapest_window": {
+      "name": "Find billigste tidsvindue",
+      "description": "Finder det billigste sammenhængende tidsvindue i elprisprognosen.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Varighed (minutter)",
+          "description": "Længden af det ønskede vindue i minutter (multiplum af 15)."
+        },
+        "earliest_start": {
+          "name": "Tidligste start",
+          "description": "Valgfri: vinduet må ikke starte før dette tidspunkt."
+        },
+        "latest_end": {
+          "name": "Seneste afslutning",
+          "description": "Valgfri: vinduet må ikke slutte efter dette tidspunkt."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Hvis flere 1KOMMA5°-systemer er konfigureret: vælg målsystemet."
+        }
+      }
+    },
+    "get_most_expensive_window": {
+      "name": "Find dyreste tidsvindue",
+      "description": "Finder det dyreste sammenhængende tidsvindue i elprisprognosen — nyttigt til lastafkastning.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Varighed (minutter)",
+          "description": "Længden af det ønskede vindue i minutter (multiplum af 15)."
+        },
+        "earliest_start": {
+          "name": "Tidligste start",
+          "description": "Valgfri: vinduet må ikke starte før dette tidspunkt."
+        },
+        "latest_end": {
+          "name": "Seneste afslutning",
+          "description": "Valgfri: vinduet må ikke slutte efter dette tidspunkt."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Hvis flere 1KOMMA5°-systemer er konfigureret: vælg målsystemet."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "name": "Billig strøm"
+      },
+      "cheapest_hour_now": {
+        "name": "Billigste time nu"
+      },
+      "optimization_battery_grid_charge": {
+        "name": "AI: Oplad batteri fra nettet"
+      },
+      "optimization_heat_pump_recommended": {
+        "name": "AI: Varmepumpe anbefalet"
+      },
+      "site_connected": {
+        "name": "Anlæg forbundet"
+      },
+      "inverter_connected": {
+        "name": "Inverter forbundet"
+      },
+      "heat_pump_connected": {
+        "name": "Varmepumpe forbundet"
+      },
+      "meter_connected": {
+        "name": "Måler forbundet"
+      },
+      "wallbox_connected": {
+        "name": "Wallbox forbundet"
+      },
+      "dynamic_tariff_active": {
+        "name": "Dynamisk tarif aktiv"
+      },
+      "time_of_use_active": {
+        "name": "Tidsbaseret optimering aktiv"
+      },
+      "smart_charging_active": {
+        "name": "Smart opladning aktiv"
+      }
+    },
+    "sensor": {
+      "pv_power": {
+        "name": "Solcelle-effekt"
+      },
+      "battery_power": {
+        "name": "Batterieffekt"
+      },
+      "battery_soc": {
+        "name": "Batteriniveau"
+      },
+      "grid_power": {
+        "name": "Neteffekt"
+      },
+      "grid_consumption_power": {
+        "name": "Køb fra net"
+      },
+      "grid_feed_in_power": {
+        "name": "Salg til net"
+      },
+      "consumption_power": {
+        "name": "Samlet forbrug"
+      },
+      "household_power": {
+        "name": "Husstandsforbrug"
+      },
+      "ev_chargers_power": {
+        "name": "Elbil-ladeeffekt"
+      },
+      "heat_pumps_power": {
+        "name": "Varmepumpeeffekt"
+      },
+      "acs_power": {
+        "name": "Aircondition-effekt"
+      },
+      "self_sufficiency": {
+        "name": "Selvforsyning"
+      },
+      "pv_power_energy": {
+        "name": "Solcelle-energi"
+      },
+      "grid_consumption_power_energy": {
+        "name": "Energi købt fra net"
+      },
+      "grid_feed_in_power_energy": {
+        "name": "Energi solgt til net"
+      },
+      "consumption_power_energy": {
+        "name": "Samlet forbrugt energi"
+      },
+      "household_power_energy": {
+        "name": "Husstandsenergi"
+      },
+      "ev_chargers_power_energy": {
+        "name": "Elbil-ladeenergi"
+      },
+      "heat_pumps_power_energy": {
+        "name": "Varmepumpeenergi"
+      },
+      "acs_power_energy": {
+        "name": "Aircondition-energi"
+      },
+      "current_electricity_price": {
+        "name": "Aktuel elpris"
+      },
+      "average_electricity_price": {
+        "name": "Gennemsnitlig elpris"
+      },
+      "lowest_electricity_price": {
+        "name": "Laveste elpris"
+      },
+      "highest_electricity_price": {
+        "name": "Højeste elpris"
+      },
+      "ev_target_soc": {
+        "name": "Mål-batteriniveau"
+      },
+      "ev_charging_mode": {
+        "name": "Ladetilstand"
+      },
+      "stable_electricity_price": {
+        "name": "Seneste gyldige elpris"
+      },
+      "cheapest_charging_window_today": {
+        "name": "Billigste ladevindue i dag"
+      },
+      "electricity_cost": {
+        "name": "Strømomkostninger"
+      },
+      "heat_pump_cost": {
+        "name": "Varmepumpeomkostninger"
+      },
+      "ev_charger_cost": {
+        "name": "Elbil-ladeomkostninger"
+      },
+      "household_cost": {
+        "name": "Husstandsomkostninger"
+      },
+      "ac_cost": {
+        "name": "Aircondition-omkostninger"
+      },
+      "feed_in_revenue": {
+        "name": "Indtægt ved salg til net"
+      },
+      "battery_charge_power_energy": {
+        "name": "Batteri-opladningsenergi"
+      },
+      "battery_discharge_power_energy": {
+        "name": "Batteri-afladningsenergi"
+      },
+      "optimization_event_count": {
+        "name": "Optimeringsbeslutninger i dag"
+      },
+      "optimization_total_cost": {
+        "name": "Optimeringsomkostninger/-besparelse"
+      },
+      "optimization_energy_bought": {
+        "name": "Energi købt via optimering"
+      },
+      "optimization_energy_sold": {
+        "name": "Energi solgt via optimering"
+      },
+      "optimization_last_decision": {
+        "name": "Seneste optimeringsbeslutning",
+        "state": {
+          "BATTERY_CHARGE_FROM_GRID": "Oplad batteri fra nettet",
+          "BATTERY_NO_CHARGE": "Oplad ikke batteri",
+          "BATTERY_NO_DISCHARGE": "Aflad ikke batteri",
+          "HEATPUMP_RECOMMEND_ON": "Varmepumpe anbefalet",
+          "HEATPUMP_AUTO": "Varmepumpe automatisk"
+        }
+      },
+      "negative_price_slots_today": {
+        "name": "Negative prisintervaller i dag"
+      },
+      "negative_price_slots_tomorrow": {
+        "name": "Negative prisintervaller i morgen"
+      },
+      "tomorrow_average_price": {
+        "name": "Gennemsnitlig elpris i morgen"
+      },
+      "tomorrow_lowest_price": {
+        "name": "Laveste elpris i morgen"
+      },
+      "tomorrow_highest_price": {
+        "name": "Højeste elpris i morgen"
+      },
+      "diag_live_update": {
+        "name": "Seneste live-opdatering"
+      },
+      "diag_price_update": {
+        "name": "Seneste prisopdatering"
+      },
+      "diag_optimization_update": {
+        "name": "Seneste optimeringsopdatering"
+      },
+      "diag_weather_update": {
+        "name": "Seneste vejropdatering"
+      },
+      "diag_system_status_update": {
+        "name": "Seneste forbindelsesopdatering"
+      },
+      "active_features": {
+        "name": "Aktive funktioner"
+      },
+      "weather_sunshine_today": {
+        "name": "Solskin i dag"
+      },
+      "weather_sunshine_tomorrow": {
+        "name": "Solskin i morgen"
+      }
+    },
+    "switch": {
+      "ems_auto_mode": {
+        "name": "EMS automatisk tilstand"
+      }
+    },
+    "select": {
+      "ev_charging_mode": {
+        "name": "Ladetilstand",
+        "state": {
+          "smart_charge": "Smart opladning",
+          "quick_charge": "Hurtig opladning",
+          "solar_charge": "Solcelle-opladning"
+        }
+      }
+    },
+    "number": {
+      "ev_current_soc": {
+        "name": "Bilens batteriniveau (manuelt)"
+      },
+      "ev_target_soc_number": {
+        "name": "Mål-batteriniveau"
+      }
+    },
+    "time": {
+      "ev_departure_time": {
+        "name": "Afgangstid"
+      }
+    }
+  },
+  "device": {
+    "inverter": {
+      "name": "Inverter"
+    },
+    "heat_pump": {
+      "name": "Varmepumpe"
+    },
+    "meter": {
+      "name": "Måler"
+    },
+    "wallbox": {
+      "name": "Wallbox"
+    }
+  },
+  "issues": {
+    "ems_settings_unavailable": {
+      "title": "EMS-indstillinger ikke tilgængelige",
+      "description": "1KOMMA5°-backend'en har ikke returneret EMS-indstillinger i flere opdateringer. EMS automatisk tilstand-knappen og tilhørende diagnose-felter forbliver `unavailable`. Mest sandsynlige årsag: din installation har ingen DeviceGateway — dvs. ingen HEMS-boks der eksponerer EMS-indstillinger. Hvis det er korrekt, kan du ignorere denne notits — resten af integrationen kører normalt. Hvis der faktisk er installeret et HEMS, så tjek systemets status i 1KOMMA5°-appen."
+    }
+  }
+}

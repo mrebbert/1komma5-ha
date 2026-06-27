@@ -1,0 +1,366 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "1KOMMA5° Inloggning",
+        "description": "Ange dina inloggningsuppgifter för 1KOMMA5°-kontot.",
+        "data": {
+          "username": "E-postadress",
+          "password": "Lösenord"
+        }
+      },
+      "system": {
+        "title": "Välj system",
+        "description": "Välj det 1KOMMA5°-system du vill integrera.",
+        "data": {
+          "system_id": "System"
+        }
+      },
+      "reauth_confirm": {
+        "title": "1KOMMA5° återautentisering",
+        "description": "Dina inloggningsuppgifter för 1KOMMA5° är inte längre giltiga. Ange dina aktuella uppgifter.",
+        "data": {
+          "username": "E-postadress",
+          "password": "Lösenord"
+        }
+      },
+      "reconfigure": {
+        "title": "Konfigurera om 1KOMMA5°",
+        "description": "Uppdatera dina inloggningsuppgifter för 1KOMMA5°.",
+        "data": {
+          "username": "E-postadress",
+          "password": "Lösenord"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kunde inte ansluta till 1KOMMA5°-API:n.",
+      "invalid_auth": "Ogiltiga inloggningsuppgifter.",
+      "system_not_found": "Det konfigurerade systemet är inte längre tillgängligt med dessa inloggningsuppgifter.",
+      "unknown": "Okänt fel."
+    },
+    "abort": {
+      "already_configured": "Detta system är redan konfigurerat.",
+      "reauth_successful": "Återautentisering lyckades.",
+      "reconfigure_successful": "Omkonfigurering lyckades."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "1KOMMA5° inställningar",
+        "data": {
+          "feed_in_tariff": "Inmatningstariff"
+        },
+        "data_description": {
+          "feed_in_tariff": "Intäkt per exporterad kWh (inkl. alla bonusar), t.ex. 0,0803 för 8,03 öre/kWh."
+        }
+      }
+    }
+  },
+  "services": {
+    "get_cheapest_window": {
+      "name": "Hitta billigaste tidsfönster",
+      "description": "Hittar det billigaste sammanhängande tidsfönstret i elprisprognosen.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Varaktighet (minuter)",
+          "description": "Längden på önskat fönster i minuter (multipel av 15)."
+        },
+        "earliest_start": {
+          "name": "Tidigaste start",
+          "description": "Valfritt: fönstret får inte börja före denna tidpunkt."
+        },
+        "latest_end": {
+          "name": "Senaste slut",
+          "description": "Valfritt: fönstret får inte sluta efter denna tidpunkt."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Vid flera konfigurerade 1KOMMA5°-system: välj målsystemet."
+        }
+      }
+    },
+    "get_most_expensive_window": {
+      "name": "Hitta dyraste tidsfönster",
+      "description": "Hittar det dyraste sammanhängande tidsfönstret i elprisprognosen — användbart för lastfrånkoppling.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Varaktighet (minuter)",
+          "description": "Längden på önskat fönster i minuter (multipel av 15)."
+        },
+        "earliest_start": {
+          "name": "Tidigaste start",
+          "description": "Valfritt: fönstret får inte börja före denna tidpunkt."
+        },
+        "latest_end": {
+          "name": "Senaste slut",
+          "description": "Valfritt: fönstret får inte sluta efter denna tidpunkt."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Vid flera konfigurerade 1KOMMA5°-system: välj målsystemet."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "name": "Billig el"
+      },
+      "cheapest_hour_now": {
+        "name": "Billigaste timmen nu"
+      },
+      "optimization_battery_grid_charge": {
+        "name": "AI: Ladda batteri från nätet"
+      },
+      "optimization_heat_pump_recommended": {
+        "name": "AI: Värmepump rekommenderad"
+      },
+      "site_connected": {
+        "name": "Anläggning ansluten"
+      },
+      "inverter_connected": {
+        "name": "Växelriktare ansluten"
+      },
+      "heat_pump_connected": {
+        "name": "Värmepump ansluten"
+      },
+      "meter_connected": {
+        "name": "Mätare ansluten"
+      },
+      "wallbox_connected": {
+        "name": "Wallbox ansluten"
+      },
+      "dynamic_tariff_active": {
+        "name": "Dynamiskt elavtal aktivt"
+      },
+      "time_of_use_active": {
+        "name": "Tidstariff-optimering aktiv"
+      },
+      "smart_charging_active": {
+        "name": "Smart laddning aktiv"
+      }
+    },
+    "sensor": {
+      "pv_power": {
+        "name": "Solcellseffekt"
+      },
+      "battery_power": {
+        "name": "Batterieffekt"
+      },
+      "battery_soc": {
+        "name": "Batterinivå"
+      },
+      "grid_power": {
+        "name": "Näteffekt"
+      },
+      "grid_consumption_power": {
+        "name": "Köp från nät"
+      },
+      "grid_feed_in_power": {
+        "name": "Försäljning till nät"
+      },
+      "consumption_power": {
+        "name": "Total förbrukning"
+      },
+      "household_power": {
+        "name": "Hushållsförbrukning"
+      },
+      "ev_chargers_power": {
+        "name": "Elbilsladdningseffekt"
+      },
+      "heat_pumps_power": {
+        "name": "Värmepumpseffekt"
+      },
+      "acs_power": {
+        "name": "Luftkonditioneringseffekt"
+      },
+      "self_sufficiency": {
+        "name": "Självförsörjning"
+      },
+      "pv_power_energy": {
+        "name": "Solcellsenergi"
+      },
+      "grid_consumption_power_energy": {
+        "name": "Energi köpt från nät"
+      },
+      "grid_feed_in_power_energy": {
+        "name": "Energi såld till nät"
+      },
+      "consumption_power_energy": {
+        "name": "Total förbrukad energi"
+      },
+      "household_power_energy": {
+        "name": "Hushållsenergi"
+      },
+      "ev_chargers_power_energy": {
+        "name": "Elbilsladdningsenergi"
+      },
+      "heat_pumps_power_energy": {
+        "name": "Värmepumpsenergi"
+      },
+      "acs_power_energy": {
+        "name": "Luftkonditioneringsenergi"
+      },
+      "current_electricity_price": {
+        "name": "Aktuellt elpris"
+      },
+      "average_electricity_price": {
+        "name": "Genomsnittligt elpris"
+      },
+      "lowest_electricity_price": {
+        "name": "Lägsta elpris"
+      },
+      "highest_electricity_price": {
+        "name": "Högsta elpris"
+      },
+      "ev_target_soc": {
+        "name": "Mål-batterinivå"
+      },
+      "ev_charging_mode": {
+        "name": "Laddningsläge"
+      },
+      "stable_electricity_price": {
+        "name": "Senaste giltiga elpris"
+      },
+      "cheapest_charging_window_today": {
+        "name": "Billigaste laddningsfönster i dag"
+      },
+      "electricity_cost": {
+        "name": "Elkostnad"
+      },
+      "heat_pump_cost": {
+        "name": "Värmepumpskostnad"
+      },
+      "ev_charger_cost": {
+        "name": "Elbilsladdningskostnad"
+      },
+      "household_cost": {
+        "name": "Hushållskostnad"
+      },
+      "ac_cost": {
+        "name": "Luftkonditioneringskostnad"
+      },
+      "feed_in_revenue": {
+        "name": "Intäkt från elförsäljning"
+      },
+      "battery_charge_power_energy": {
+        "name": "Batteri-laddningsenergi"
+      },
+      "battery_discharge_power_energy": {
+        "name": "Batteri-urladdningsenergi"
+      },
+      "optimization_event_count": {
+        "name": "Optimeringsbeslut i dag"
+      },
+      "optimization_total_cost": {
+        "name": "Optimeringskostnad/-besparing"
+      },
+      "optimization_energy_bought": {
+        "name": "Energi köpt via optimering"
+      },
+      "optimization_energy_sold": {
+        "name": "Energi såld via optimering"
+      },
+      "optimization_last_decision": {
+        "name": "Senaste optimeringsbeslut",
+        "state": {
+          "BATTERY_CHARGE_FROM_GRID": "Ladda batteri från nätet",
+          "BATTERY_NO_CHARGE": "Ladda inte batteri",
+          "BATTERY_NO_DISCHARGE": "Urladda inte batteri",
+          "HEATPUMP_RECOMMEND_ON": "Värmepump rekommenderad",
+          "HEATPUMP_AUTO": "Värmepump automatisk"
+        }
+      },
+      "negative_price_slots_today": {
+        "name": "Negativa prisintervaller i dag"
+      },
+      "negative_price_slots_tomorrow": {
+        "name": "Negativa prisintervaller i morgon"
+      },
+      "tomorrow_average_price": {
+        "name": "Genomsnittligt elpris i morgon"
+      },
+      "tomorrow_lowest_price": {
+        "name": "Lägsta elpris i morgon"
+      },
+      "tomorrow_highest_price": {
+        "name": "Högsta elpris i morgon"
+      },
+      "diag_live_update": {
+        "name": "Senaste live-uppdatering"
+      },
+      "diag_price_update": {
+        "name": "Senaste prisuppdatering"
+      },
+      "diag_optimization_update": {
+        "name": "Senaste optimeringsuppdatering"
+      },
+      "diag_weather_update": {
+        "name": "Senaste väderuppdatering"
+      },
+      "diag_system_status_update": {
+        "name": "Senaste anslutningsuppdatering"
+      },
+      "active_features": {
+        "name": "Aktiva funktioner"
+      },
+      "weather_sunshine_today": {
+        "name": "Solsken i dag"
+      },
+      "weather_sunshine_tomorrow": {
+        "name": "Solsken i morgon"
+      }
+    },
+    "switch": {
+      "ems_auto_mode": {
+        "name": "EMS automatiskt läge"
+      }
+    },
+    "select": {
+      "ev_charging_mode": {
+        "name": "Laddningsläge",
+        "state": {
+          "smart_charge": "Smart laddning",
+          "quick_charge": "Snabbladdning",
+          "solar_charge": "Sol-laddning"
+        }
+      }
+    },
+    "number": {
+      "ev_current_soc": {
+        "name": "Fordonets batterinivå (manuell)"
+      },
+      "ev_target_soc_number": {
+        "name": "Mål-batterinivå"
+      }
+    },
+    "time": {
+      "ev_departure_time": {
+        "name": "Avresetid"
+      }
+    }
+  },
+  "device": {
+    "inverter": {
+      "name": "Växelriktare"
+    },
+    "heat_pump": {
+      "name": "Värmepump"
+    },
+    "meter": {
+      "name": "Mätare"
+    },
+    "wallbox": {
+      "name": "Wallbox"
+    }
+  },
+  "issues": {
+    "ems_settings_unavailable": {
+      "title": "EMS-inställningar inte tillgängliga",
+      "description": "1KOMMA5°-backend har inte returnerat EMS-inställningar på flera uppdateringar. EMS-knappen för automatiskt läge och relaterade diagnostiska fält förblir `unavailable`. Mest sannolika orsak: din installation har ingen DeviceGateway — d.v.s. ingen HEMS-box som exponerar EMS-inställningar. Om så är fallet kan du ignorera denna avisering — resten av integrationen fungerar normalt. Om en HEMS faktiskt är installerad, kontrollera systemets status i 1KOMMA5°-appen."
+    }
+  }
+}

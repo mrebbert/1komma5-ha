@@ -1,0 +1,366 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "1KOMMA5° Kirjautuminen",
+        "description": "Anna 1KOMMA5°-tilisi tunnistetiedot.",
+        "data": {
+          "username": "Sähköpostiosoite",
+          "password": "Salasana"
+        }
+      },
+      "system": {
+        "title": "Valitse järjestelmä",
+        "description": "Valitse integroitava 1KOMMA5°-järjestelmä.",
+        "data": {
+          "system_id": "Järjestelmä"
+        }
+      },
+      "reauth_confirm": {
+        "title": "1KOMMA5° uudelleentodennus",
+        "description": "1KOMMA5°-tunnistetietosi eivät ole enää voimassa. Anna nykyiset tunnistetietosi.",
+        "data": {
+          "username": "Sähköpostiosoite",
+          "password": "Salasana"
+        }
+      },
+      "reconfigure": {
+        "title": "Konfiguroi 1KOMMA5° uudelleen",
+        "description": "Päivitä 1KOMMA5°-tunnistetietosi.",
+        "data": {
+          "username": "Sähköpostiosoite",
+          "password": "Salasana"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Yhteyttä 1KOMMA5°-rajapintaan ei voitu muodostaa.",
+      "invalid_auth": "Virheelliset tunnistetiedot.",
+      "system_not_found": "Konfiguroitu järjestelmä ei ole enää käytettävissä näillä tunnistetiedoilla.",
+      "unknown": "Tuntematon virhe."
+    },
+    "abort": {
+      "already_configured": "Tämä järjestelmä on jo konfiguroitu.",
+      "reauth_successful": "Uudelleentodennus onnistui.",
+      "reconfigure_successful": "Uudelleenkonfigurointi onnistui."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "1KOMMA5° asetukset",
+        "data": {
+          "feed_in_tariff": "Syöttötariffi"
+        },
+        "data_description": {
+          "feed_in_tariff": "Tulo verkkoon viedyltä kWh:lta (sis. kaikki bonukset), esim. 0,0803 = 8,03 snt/kWh."
+        }
+      }
+    }
+  },
+  "services": {
+    "get_cheapest_window": {
+      "name": "Etsi halvin aikaikkuna",
+      "description": "Etsii halvimman yhtenäisen aikaikkunan sähkön hintaennusteesta.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Kesto (minuuttia)",
+          "description": "Halutun ikkunan pituus minuutteina (15:n kerrannainen)."
+        },
+        "earliest_start": {
+          "name": "Aikaisin aloitus",
+          "description": "Valinnainen: ikkuna ei saa alkaa ennen tätä ajankohtaa."
+        },
+        "latest_end": {
+          "name": "Viimeisin lopetus",
+          "description": "Valinnainen: ikkuna ei saa päättyä tämän ajankohdan jälkeen."
+        },
+        "config_entry_id": {
+          "name": "Integraatio",
+          "description": "Kun käytössä on useita 1KOMMA5°-järjestelmiä: valitse kohdejärjestelmä."
+        }
+      }
+    },
+    "get_most_expensive_window": {
+      "name": "Etsi kallein aikaikkuna",
+      "description": "Etsii kalleimman yhtenäisen aikaikkunan sähkön hintaennusteesta — hyödyllinen kuormien rajoituksessa.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Kesto (minuuttia)",
+          "description": "Halutun ikkunan pituus minuutteina (15:n kerrannainen)."
+        },
+        "earliest_start": {
+          "name": "Aikaisin aloitus",
+          "description": "Valinnainen: ikkuna ei saa alkaa ennen tätä ajankohtaa."
+        },
+        "latest_end": {
+          "name": "Viimeisin lopetus",
+          "description": "Valinnainen: ikkuna ei saa päättyä tämän ajankohdan jälkeen."
+        },
+        "config_entry_id": {
+          "name": "Integraatio",
+          "description": "Kun käytössä on useita 1KOMMA5°-järjestelmiä: valitse kohdejärjestelmä."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "name": "Halpa sähkö"
+      },
+      "cheapest_hour_now": {
+        "name": "Halvin tunti nyt"
+      },
+      "optimization_battery_grid_charge": {
+        "name": "AI: Lataa akku verkosta"
+      },
+      "optimization_heat_pump_recommended": {
+        "name": "AI: Lämpöpumppu suositeltu"
+      },
+      "site_connected": {
+        "name": "Laitos yhdistetty"
+      },
+      "inverter_connected": {
+        "name": "Invertteri yhdistetty"
+      },
+      "heat_pump_connected": {
+        "name": "Lämpöpumppu yhdistetty"
+      },
+      "meter_connected": {
+        "name": "Mittari yhdistetty"
+      },
+      "wallbox_connected": {
+        "name": "Latauspiste yhdistetty"
+      },
+      "dynamic_tariff_active": {
+        "name": "Dynaaminen tariffi aktiivinen"
+      },
+      "time_of_use_active": {
+        "name": "Aikatariffin optimointi aktiivinen"
+      },
+      "smart_charging_active": {
+        "name": "Älylataus aktiivinen"
+      }
+    },
+    "sensor": {
+      "pv_power": {
+        "name": "Aurinkopaneelin teho"
+      },
+      "battery_power": {
+        "name": "Akun teho"
+      },
+      "battery_soc": {
+        "name": "Akun varaustaso"
+      },
+      "grid_power": {
+        "name": "Verkon teho"
+      },
+      "grid_consumption_power": {
+        "name": "Verkosta otto"
+      },
+      "grid_feed_in_power": {
+        "name": "Verkkoon syöttö"
+      },
+      "consumption_power": {
+        "name": "Kokonaiskulutus"
+      },
+      "household_power": {
+        "name": "Kotitalouden kulutus"
+      },
+      "ev_chargers_power": {
+        "name": "Sähköauton latausteho"
+      },
+      "heat_pumps_power": {
+        "name": "Lämpöpumpun teho"
+      },
+      "acs_power": {
+        "name": "Ilmastoinnin teho"
+      },
+      "self_sufficiency": {
+        "name": "Omavaraisuusaste"
+      },
+      "pv_power_energy": {
+        "name": "Aurinkoenergia"
+      },
+      "grid_consumption_power_energy": {
+        "name": "Verkosta ostettu energia"
+      },
+      "grid_feed_in_power_energy": {
+        "name": "Verkkoon myyty energia"
+      },
+      "consumption_power_energy": {
+        "name": "Kokonaiskulutus, energia"
+      },
+      "household_power_energy": {
+        "name": "Kotitalouden energia"
+      },
+      "ev_chargers_power_energy": {
+        "name": "Sähköauton latausenergia"
+      },
+      "heat_pumps_power_energy": {
+        "name": "Lämpöpumpun energia"
+      },
+      "acs_power_energy": {
+        "name": "Ilmastoinnin energia"
+      },
+      "current_electricity_price": {
+        "name": "Nykyinen sähkön hinta"
+      },
+      "average_electricity_price": {
+        "name": "Sähkön keskihinta"
+      },
+      "lowest_electricity_price": {
+        "name": "Sähkön alin hinta"
+      },
+      "highest_electricity_price": {
+        "name": "Sähkön korkein hinta"
+      },
+      "ev_target_soc": {
+        "name": "Akun tavoitevaraus"
+      },
+      "ev_charging_mode": {
+        "name": "Lataustila"
+      },
+      "stable_electricity_price": {
+        "name": "Viimeisin pätevä sähkön hinta"
+      },
+      "cheapest_charging_window_today": {
+        "name": "Tämän päivän halvin latausikkuna"
+      },
+      "electricity_cost": {
+        "name": "Sähkökustannukset"
+      },
+      "heat_pump_cost": {
+        "name": "Lämpöpumpun kustannukset"
+      },
+      "ev_charger_cost": {
+        "name": "Sähköauton latauskustannukset"
+      },
+      "household_cost": {
+        "name": "Kotitalouden kustannukset"
+      },
+      "ac_cost": {
+        "name": "Ilmastoinnin kustannukset"
+      },
+      "feed_in_revenue": {
+        "name": "Verkkoon myynnin tulot"
+      },
+      "battery_charge_power_energy": {
+        "name": "Akun latausenergia"
+      },
+      "battery_discharge_power_energy": {
+        "name": "Akun purkausenergia"
+      },
+      "optimization_event_count": {
+        "name": "Optimointipäätökset tänään"
+      },
+      "optimization_total_cost": {
+        "name": "Optimointikustannukset/-säästöt"
+      },
+      "optimization_energy_bought": {
+        "name": "Optimoinnin kautta ostettu energia"
+      },
+      "optimization_energy_sold": {
+        "name": "Optimoinnin kautta myyty energia"
+      },
+      "optimization_last_decision": {
+        "name": "Viimeisin optimointipäätös",
+        "state": {
+          "BATTERY_CHARGE_FROM_GRID": "Lataa akku verkosta",
+          "BATTERY_NO_CHARGE": "Älä lataa akkua",
+          "BATTERY_NO_DISCHARGE": "Älä pura akkua",
+          "HEATPUMP_RECOMMEND_ON": "Lämpöpumppu suositeltu",
+          "HEATPUMP_AUTO": "Lämpöpumppu automaattinen"
+        }
+      },
+      "negative_price_slots_today": {
+        "name": "Negatiivisen hinnan jaksot tänään"
+      },
+      "negative_price_slots_tomorrow": {
+        "name": "Negatiivisen hinnan jaksot huomenna"
+      },
+      "tomorrow_average_price": {
+        "name": "Sähkön keskihinta huomenna"
+      },
+      "tomorrow_lowest_price": {
+        "name": "Sähkön alin hinta huomenna"
+      },
+      "tomorrow_highest_price": {
+        "name": "Sähkön korkein hinta huomenna"
+      },
+      "diag_live_update": {
+        "name": "Viimeisin live-päivitys"
+      },
+      "diag_price_update": {
+        "name": "Viimeisin hintapäivitys"
+      },
+      "diag_optimization_update": {
+        "name": "Viimeisin optimointipäivitys"
+      },
+      "diag_weather_update": {
+        "name": "Viimeisin säätilan päivitys"
+      },
+      "diag_system_status_update": {
+        "name": "Viimeisin yhteyden päivitys"
+      },
+      "active_features": {
+        "name": "Aktiiviset toiminnot"
+      },
+      "weather_sunshine_today": {
+        "name": "Auringonpaisteen kesto tänään"
+      },
+      "weather_sunshine_tomorrow": {
+        "name": "Auringonpaisteen kesto huomenna"
+      }
+    },
+    "switch": {
+      "ems_auto_mode": {
+        "name": "EMS-automaattitila"
+      }
+    },
+    "select": {
+      "ev_charging_mode": {
+        "name": "Lataustila",
+        "state": {
+          "smart_charge": "Älylataus",
+          "quick_charge": "Pikalataus",
+          "solar_charge": "Aurinkolataus"
+        }
+      }
+    },
+    "number": {
+      "ev_current_soc": {
+        "name": "Ajoneuvon akun taso (manuaalinen)"
+      },
+      "ev_target_soc_number": {
+        "name": "Akun tavoitevaraus"
+      }
+    },
+    "time": {
+      "ev_departure_time": {
+        "name": "Lähtöaika"
+      }
+    }
+  },
+  "device": {
+    "inverter": {
+      "name": "Invertteri"
+    },
+    "heat_pump": {
+      "name": "Lämpöpumppu"
+    },
+    "meter": {
+      "name": "Mittari"
+    },
+    "wallbox": {
+      "name": "Latauspiste"
+    }
+  },
+  "issues": {
+    "ems_settings_unavailable": {
+      "title": "EMS-asetukset eivät käytettävissä",
+      "description": "1KOMMA5°-taustajärjestelmä ei ole palauttanut EMS-asetuksia useaan päivitykseen. EMS:n automaattitilan kytkin ja siihen liittyvät diagnostiikkakentät pysyvät tilassa `unavailable`. Todennäköisin syy: asennuksessasi ei ole DeviceGatewayta — eli HEMS-laatikkoa, joka tarjoaa EMS-asetukset. Jos näin on, voit jättää tämän huomautuksen huomiotta — muu integraatio toimii normaalisti. Jos HEMS kuitenkin on asennettu, tarkista järjestelmän tila 1KOMMA5°-sovelluksesta."
+    }
+  }
+}

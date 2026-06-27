@@ -1,0 +1,366 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "1KOMMA5° Inloggen",
+        "description": "Vul je 1KOMMA5°-accountgegevens in.",
+        "data": {
+          "username": "E-mailadres",
+          "password": "Wachtwoord"
+        }
+      },
+      "system": {
+        "title": "Systeem selecteren",
+        "description": "Kies het 1KOMMA5°-systeem dat je wilt integreren.",
+        "data": {
+          "system_id": "Systeem"
+        }
+      },
+      "reauth_confirm": {
+        "title": "1KOMMA5° opnieuw verifiëren",
+        "description": "Je 1KOMMA5°-aanmeldgegevens zijn niet meer geldig. Vul je huidige gegevens in.",
+        "data": {
+          "username": "E-mailadres",
+          "password": "Wachtwoord"
+        }
+      },
+      "reconfigure": {
+        "title": "1KOMMA5° herconfigureren",
+        "description": "Update je 1KOMMA5°-aanmeldgegevens.",
+        "data": {
+          "username": "E-mailadres",
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbinding met de 1KOMMA5°-API is mislukt.",
+      "invalid_auth": "Ongeldige aanmeldgegevens.",
+      "system_not_found": "Het geconfigureerde systeem is niet meer toegankelijk met deze aanmeldgegevens.",
+      "unknown": "Onbekende fout."
+    },
+    "abort": {
+      "already_configured": "Dit systeem is al geconfigureerd.",
+      "reauth_successful": "Hernieuwde verificatie geslaagd.",
+      "reconfigure_successful": "Herconfiguratie geslaagd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "1KOMMA5° Instellingen",
+        "data": {
+          "feed_in_tariff": "Terugleververgoeding"
+        },
+        "data_description": {
+          "feed_in_tariff": "Opbrengst per teruggeleverde kWh (incl. alle bonussen), bijv. 0,0803 voor 8,03 ct/kWh."
+        }
+      }
+    }
+  },
+  "services": {
+    "get_cheapest_window": {
+      "name": "Zoek goedkoopste tijdvenster",
+      "description": "Zoekt het goedkoopste aaneengesloten tijdvenster in de elektriciteitsprijsprognose.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Duur (minuten)",
+          "description": "Lengte van het gewenste venster in minuten (veelvoud van 15)."
+        },
+        "earliest_start": {
+          "name": "Vroegste starttijd",
+          "description": "Optioneel: het venster mag niet eerder dan dit tijdstip beginnen."
+        },
+        "latest_end": {
+          "name": "Laatste eindtijd",
+          "description": "Optioneel: het venster mag niet na dit tijdstip eindigen."
+        },
+        "config_entry_id": {
+          "name": "Integratie",
+          "description": "Bij meerdere 1KOMMA5°-systemen: kies het doelsysteem."
+        }
+      }
+    },
+    "get_most_expensive_window": {
+      "name": "Zoek duurste tijdvenster",
+      "description": "Zoekt het duurste aaneengesloten tijdvenster in de elektriciteitsprijsprognose — handig voor load shedding.",
+      "fields": {
+        "duration_minutes": {
+          "name": "Duur (minuten)",
+          "description": "Lengte van het gewenste venster in minuten (veelvoud van 15)."
+        },
+        "earliest_start": {
+          "name": "Vroegste starttijd",
+          "description": "Optioneel: het venster mag niet eerder dan dit tijdstip beginnen."
+        },
+        "latest_end": {
+          "name": "Laatste eindtijd",
+          "description": "Optioneel: het venster mag niet na dit tijdstip eindigen."
+        },
+        "config_entry_id": {
+          "name": "Integratie",
+          "description": "Bij meerdere 1KOMMA5°-systemen: kies het doelsysteem."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "name": "Goedkope stroom"
+      },
+      "cheapest_hour_now": {
+        "name": "Goedkoopste uur nu"
+      },
+      "optimization_battery_grid_charge": {
+        "name": "AI: Batterij vanuit net laden"
+      },
+      "optimization_heat_pump_recommended": {
+        "name": "AI: Warmtepomp aanbevolen"
+      },
+      "site_connected": {
+        "name": "Installatie verbonden"
+      },
+      "inverter_connected": {
+        "name": "Omvormer verbonden"
+      },
+      "heat_pump_connected": {
+        "name": "Warmtepomp verbonden"
+      },
+      "meter_connected": {
+        "name": "Meter verbonden"
+      },
+      "wallbox_connected": {
+        "name": "Wallbox verbonden"
+      },
+      "dynamic_tariff_active": {
+        "name": "Dynamisch tarief actief"
+      },
+      "time_of_use_active": {
+        "name": "Tijdgebonden optimalisatie actief"
+      },
+      "smart_charging_active": {
+        "name": "Slim laden actief"
+      }
+    },
+    "sensor": {
+      "pv_power": {
+        "name": "PV-vermogen"
+      },
+      "battery_power": {
+        "name": "Batterijvermogen"
+      },
+      "battery_soc": {
+        "name": "Batterijniveau"
+      },
+      "grid_power": {
+        "name": "Netvermogen"
+      },
+      "grid_consumption_power": {
+        "name": "Netafname"
+      },
+      "grid_feed_in_power": {
+        "name": "Netterugleveren"
+      },
+      "consumption_power": {
+        "name": "Totaal verbruik"
+      },
+      "household_power": {
+        "name": "Huishoudverbruik"
+      },
+      "ev_chargers_power": {
+        "name": "EV-laadvermogen"
+      },
+      "heat_pumps_power": {
+        "name": "Warmtepompvermogen"
+      },
+      "acs_power": {
+        "name": "Airco-vermogen"
+      },
+      "self_sufficiency": {
+        "name": "Zelfvoorzienendheid"
+      },
+      "pv_power_energy": {
+        "name": "PV-energie"
+      },
+      "grid_consumption_power_energy": {
+        "name": "Netafname energie"
+      },
+      "grid_feed_in_power_energy": {
+        "name": "Netterugleveren energie"
+      },
+      "consumption_power_energy": {
+        "name": "Totaal verbruik energie"
+      },
+      "household_power_energy": {
+        "name": "Huishoudenergie"
+      },
+      "ev_chargers_power_energy": {
+        "name": "EV-laadenergie"
+      },
+      "heat_pumps_power_energy": {
+        "name": "Warmtepompenergie"
+      },
+      "acs_power_energy": {
+        "name": "Airco-energie"
+      },
+      "current_electricity_price": {
+        "name": "Huidige stroomprijs"
+      },
+      "average_electricity_price": {
+        "name": "Gemiddelde stroomprijs"
+      },
+      "lowest_electricity_price": {
+        "name": "Laagste stroomprijs"
+      },
+      "highest_electricity_price": {
+        "name": "Hoogste stroomprijs"
+      },
+      "ev_target_soc": {
+        "name": "Streefniveau batterij"
+      },
+      "ev_charging_mode": {
+        "name": "Laadmodus"
+      },
+      "stable_electricity_price": {
+        "name": "Laatste geldige stroomprijs"
+      },
+      "cheapest_charging_window_today": {
+        "name": "Goedkoopste laadvenster vandaag"
+      },
+      "electricity_cost": {
+        "name": "Stroomkosten"
+      },
+      "heat_pump_cost": {
+        "name": "Warmtepompkosten"
+      },
+      "ev_charger_cost": {
+        "name": "EV-laderkosten"
+      },
+      "household_cost": {
+        "name": "Huishoudkosten"
+      },
+      "ac_cost": {
+        "name": "Airco-kosten"
+      },
+      "feed_in_revenue": {
+        "name": "Terugleveropbrengst"
+      },
+      "battery_charge_power_energy": {
+        "name": "Batterij laadenergie"
+      },
+      "battery_discharge_power_energy": {
+        "name": "Batterij ontlaadenergie"
+      },
+      "optimization_event_count": {
+        "name": "Optimalisatiebeslissingen vandaag"
+      },
+      "optimization_total_cost": {
+        "name": "Optimalisatiekosten/-besparing"
+      },
+      "optimization_energy_bought": {
+        "name": "Optimalisatie ingekochte energie"
+      },
+      "optimization_energy_sold": {
+        "name": "Optimalisatie verkochte energie"
+      },
+      "optimization_last_decision": {
+        "name": "Laatste optimalisatiebeslissing",
+        "state": {
+          "BATTERY_CHARGE_FROM_GRID": "Batterij vanuit net laden",
+          "BATTERY_NO_CHARGE": "Batterij niet laden",
+          "BATTERY_NO_DISCHARGE": "Batterij niet ontladen",
+          "HEATPUMP_RECOMMEND_ON": "Warmtepomp aanbevolen",
+          "HEATPUMP_AUTO": "Warmtepomp automatisch"
+        }
+      },
+      "negative_price_slots_today": {
+        "name": "Negatieve prijsblokken vandaag"
+      },
+      "negative_price_slots_tomorrow": {
+        "name": "Negatieve prijsblokken morgen"
+      },
+      "tomorrow_average_price": {
+        "name": "Gemiddelde stroomprijs morgen"
+      },
+      "tomorrow_lowest_price": {
+        "name": "Laagste stroomprijs morgen"
+      },
+      "tomorrow_highest_price": {
+        "name": "Hoogste stroomprijs morgen"
+      },
+      "diag_live_update": {
+        "name": "Laatste live-update"
+      },
+      "diag_price_update": {
+        "name": "Laatste prijsupdate"
+      },
+      "diag_optimization_update": {
+        "name": "Laatste optimalisatie-update"
+      },
+      "diag_weather_update": {
+        "name": "Laatste weerupdate"
+      },
+      "diag_system_status_update": {
+        "name": "Laatste connectiviteitsupdate"
+      },
+      "active_features": {
+        "name": "Actieve functies"
+      },
+      "weather_sunshine_today": {
+        "name": "Zonneschijn vandaag"
+      },
+      "weather_sunshine_tomorrow": {
+        "name": "Zonneschijn morgen"
+      }
+    },
+    "switch": {
+      "ems_auto_mode": {
+        "name": "EMS-automatische modus"
+      }
+    },
+    "select": {
+      "ev_charging_mode": {
+        "name": "Laadmodus",
+        "state": {
+          "smart_charge": "Slim laden",
+          "quick_charge": "Snel laden",
+          "solar_charge": "Zonne-laden"
+        }
+      }
+    },
+    "number": {
+      "ev_current_soc": {
+        "name": "Voertuig-batterijniveau (handmatig)"
+      },
+      "ev_target_soc_number": {
+        "name": "Streefniveau batterij"
+      }
+    },
+    "time": {
+      "ev_departure_time": {
+        "name": "Vertrektijd"
+      }
+    }
+  },
+  "device": {
+    "inverter": {
+      "name": "Omvormer"
+    },
+    "heat_pump": {
+      "name": "Warmtepomp"
+    },
+    "meter": {
+      "name": "Meter"
+    },
+    "wallbox": {
+      "name": "Wallbox"
+    }
+  },
+  "issues": {
+    "ems_settings_unavailable": {
+      "title": "EMS-instellingen niet beschikbaar",
+      "description": "De 1KOMMA5°-backend heeft al meerdere updates lang geen EMS-instellingen meer geleverd. De EMS-automatische schakelaar en bijbehorende diagnose-velden blijven daarom `unavailable`. Meest waarschijnlijke oorzaak: je installatie heeft geen DeviceGateway — d.w.z. geen HEMS-box die EMS-instellingen blootstelt. Als dat klopt, kun je deze melding negeren — de rest van de integratie werkt normaal. Als er wel een HEMS is geïnstalleerd, controleer de status van de installatie in de 1KOMMA5°-app."
+    }
+  }
+}
