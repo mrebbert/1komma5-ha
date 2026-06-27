@@ -27,6 +27,7 @@ def system_device_info(system_id: str, system_name: str) -> DeviceInfo:
         name=system_name,
         manufacturer="1KOMMA5°",
         model="Heartbeat",
+        configuration_url="https://app.1komma5grad.com",
     )
 
 
