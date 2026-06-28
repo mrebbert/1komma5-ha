@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.46] - 2026-06-28
+
+### Changed
+- The EV (vehicle) sub-device now follows the same naming convention as the asset sub-devices shipped in v0.1.44: a translated label ("Elektrofahrzeug" / "Vehicle") as the device name, with `manufacturer` and `model` carrying the actual vehicle make ("Volkswagen") and model ("Id.5") from the EV profile. Before this version the device was named after the specific car with `manufacturer="1KOMMA5°"` and `model="EV Charger"` — semantically wrong (the wallbox is the charger; 1KOMMA5° is the integration vendor, not the car maker) and inconsistent with the other sub-devices. `entity_id`s and `unique_id`s stay; long-term statistics, automations and Energy-Dashboard config are unaffected. **Existing installs** may need to disable + re-enable the integration once for the new naming to be picked up — a plain HA restart does not always re-merge the device registry.
+- New `device.vehicle.name` translation key in all seven shipped locales (de/en/nl/es/da/sv/fi).
+
 ## [0.1.45] - 2026-06-27
 
 ### Added
