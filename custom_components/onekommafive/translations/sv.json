@@ -122,16 +122,16 @@
         "name": "Anläggning ansluten"
       },
       "inverter_connected": {
-        "name": "Växelriktare ansluten"
+        "name": "Ansluten"
       },
       "heat_pump_connected": {
-        "name": "Värmepump ansluten"
+        "name": "Ansluten"
       },
       "meter_connected": {
-        "name": "Mätare ansluten"
+        "name": "Ansluten"
       },
       "wallbox_connected": {
-        "name": "Wallbox ansluten"
+        "name": "Ansluten"
       },
       "dynamic_tariff_active": {
         "name": "Dynamiskt elavtal aktivt"

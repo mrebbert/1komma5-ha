@@ -122,16 +122,16 @@
         "name": "Anlage verbunden"
       },
       "inverter_connected": {
-        "name": "Wechselrichter verbunden"
+        "name": "Verbunden"
       },
       "heat_pump_connected": {
-        "name": "Wärmepumpe verbunden"
+        "name": "Verbunden"
       },
       "meter_connected": {
-        "name": "Zähler verbunden"
+        "name": "Verbunden"
       },
       "wallbox_connected": {
-        "name": "Wallbox verbunden"
+        "name": "Verbunden"
       },
       "dynamic_tariff_active": {
         "name": "Dynamischer Stromtarif aktiv"

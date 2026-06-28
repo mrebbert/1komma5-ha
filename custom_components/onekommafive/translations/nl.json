@@ -122,16 +122,16 @@
         "name": "Installatie verbonden"
       },
       "inverter_connected": {
-        "name": "Omvormer verbonden"
+        "name": "Verbonden"
       },
       "heat_pump_connected": {
-        "name": "Warmtepomp verbonden"
+        "name": "Verbonden"
       },
       "meter_connected": {
-        "name": "Meter verbonden"
+        "name": "Verbonden"
       },
       "wallbox_connected": {
-        "name": "Wallbox verbonden"
+        "name": "Verbonden"
       },
       "dynamic_tariff_active": {
         "name": "Dynamisch tarief actief"

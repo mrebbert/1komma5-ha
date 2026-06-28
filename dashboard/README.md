@@ -77,7 +77,17 @@ An overview of dynamic electricity prices and accumulated costs, split into four
 
 ## The Showcase view
 
-The Showcase variant (`dashboard-showcase.yaml`) adds three views on top of the original three:
+The Showcase variant (`dashboard-showcase.yaml`) adds three views on top of the original three. All six tabs:
+
+| Netz | Fahrzeug | Preise und Kosten |
+|------|----------|-------------------|
+| ![Netz view](showcase-netz.png) | ![Fahrzeug view](showcase-fahrzeug.png) | ![Preise und Kosten view](showcase-preise-kosten.png) |
+
+| Optimierung | Wetter | System |
+|-------------|--------|--------|
+| ![Optimierung view](showcase-optimierung.png) | ![Wetter view](showcase-wetter.png) | ![System view](showcase-system.png) |
+
+The three new views beyond the original `dashboard.yaml`:
 
 | Section | Cards |
 |---------|-------|

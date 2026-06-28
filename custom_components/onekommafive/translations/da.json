@@ -122,16 +122,16 @@
         "name": "Anlæg forbundet"
       },
       "inverter_connected": {
-        "name": "Inverter forbundet"
+        "name": "Forbundet"
       },
       "heat_pump_connected": {
-        "name": "Varmepumpe forbundet"
+        "name": "Forbundet"
       },
       "meter_connected": {
-        "name": "Måler forbundet"
+        "name": "Forbundet"
       },
       "wallbox_connected": {
-        "name": "Wallbox forbundet"
+        "name": "Forbundet"
       },
       "dynamic_tariff_active": {
         "name": "Dynamisk tarif aktiv"

@@ -122,16 +122,16 @@
         "name": "Laitos yhdistetty"
       },
       "inverter_connected": {
-        "name": "Invertteri yhdistetty"
+        "name": "Yhdistetty"
       },
       "heat_pump_connected": {
-        "name": "Lämpöpumppu yhdistetty"
+        "name": "Yhdistetty"
       },
       "meter_connected": {
-        "name": "Mittari yhdistetty"
+        "name": "Yhdistetty"
       },
       "wallbox_connected": {
-        "name": "Latauspiste yhdistetty"
+        "name": "Yhdistetty"
       },
       "dynamic_tariff_active": {
         "name": "Dynaaminen tariffi aktiivinen"

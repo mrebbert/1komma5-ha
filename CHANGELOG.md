@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Per-asset connectivity binary sensors no longer duplicate the asset type in their display name. Since the v0.1.44 sub-device split, HA composed `<device-name> + <entity-name>` — so a sensor on the "Wechselrichter" sub-device whose translation said "Wechselrichter verbunden" rendered as "Wechselrichter Wechselrichter verbunden". The four asset-type translations (`inverter_connected` / `heat_pump_connected` / `meter_connected` / `wallbox_connected`) are now just the past-participle word ("Verbunden" / "Connected" / "Verbonden" / "Conectado" / "Forbundet" / "Ansluten" / "Yhdistetty") across all seven locales — the device name carries the noun. `site_connected` stays unchanged (lives on the parent device, not duplicated). `entity_id`s and `unique_id`s are unchanged; existing automations and dashboards keep working.
+
 ## [0.1.46] - 2026-06-28
 
 ### Changed

@@ -122,16 +122,16 @@
         "name": "Site connected"
       },
       "inverter_connected": {
-        "name": "Inverter connected"
+        "name": "Connected"
       },
       "heat_pump_connected": {
-        "name": "Heat pump connected"
+        "name": "Connected"
       },
       "meter_connected": {
-        "name": "Meter connected"
+        "name": "Connected"
       },
       "wallbox_connected": {
-        "name": "Wallbox connected"
+        "name": "Connected"
       },
       "dynamic_tariff_active": {
         "name": "Dynamic tariff active"

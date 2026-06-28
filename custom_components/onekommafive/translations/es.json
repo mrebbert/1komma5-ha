@@ -122,16 +122,16 @@
         "name": "Instalación conectada"
       },
       "inverter_connected": {
-        "name": "Inversor conectado"
+        "name": "Conectado"
       },
       "heat_pump_connected": {
-        "name": "Bomba de calor conectada"
+        "name": "Conectado"
       },
       "meter_connected": {
-        "name": "Contador conectado"
+        "name": "Conectado"
       },
       "wallbox_connected": {
-        "name": "Wallbox conectada"
+        "name": "Conectado"
       },
       "dynamic_tariff_active": {
         "name": "Tarifa dinámica activa"
