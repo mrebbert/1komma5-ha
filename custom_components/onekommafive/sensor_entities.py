@@ -254,7 +254,7 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
 
 
 class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
-    """Sensor for EV charger data."""
+    """Sensor for EV vehicle data."""
 
     entity_description: OneKomma5EVSensorDescription
 
@@ -264,11 +264,20 @@ class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
         system_id: str,
         system_name: str,
         ev_id: str,
-        ev_label: str,
+        ev_manufacturer: str | None,
+        ev_model: str | None,
         description: OneKomma5EVSensorDescription,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator, system_id, system_name, ev_id, ev_label, description.key)
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            ev_id,
+            ev_manufacturer,
+            ev_model,
+            description.key,
+        )
         self.entity_description = description
 
     @property

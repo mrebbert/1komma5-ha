@@ -31,12 +31,6 @@ def system_device_info(system_id: str, system_name: str) -> DeviceInfo:
     )
 
 
-def get_ev_label(ev: Any) -> str:
-    """Build a human-readable label for an EV charger device."""
-    parts = [p for p in (ev.manufacturer(), ev.model()) if p]
-    return " ".join(parts) if parts else f"EV {ev.id()[:8]}"
-
-
 # Map from sub-device key (used in DeviceInfo identifier suffix and
 # translation_key) to the SDK ``Asset.type`` string. Single source of truth
 # for the entity → sub-device assignment.
@@ -157,7 +151,12 @@ class OneKomma5WeatherEntity(_BaseSystemEntity[OneKomma5WeatherCoordinator]):
 
 
 class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
-    """Base entity for EV charger entities."""
+    """Base entity for EV (vehicle) entities.
+
+    The vehicle is a sub-device under the system parent, named consistently
+    with the asset sub-devices: a translated label ("Elektrofahrzeug" /
+    "Vehicle") plus the real manufacturer and model from the EV profile.
+    """
 
     _attr_has_entity_name = True
 
@@ -167,7 +166,8 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         system_id: str,
         system_name: str,
         ev_id: str,
-        ev_label: str,
+        ev_manufacturer: str | None,
+        ev_model: str | None,
         unique_id_suffix: str,
     ) -> None:
         """Initialize the entity."""
@@ -177,9 +177,9 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         self._attr_unique_id = f"{system_id}_{ev_id}_{unique_id_suffix}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{system_id}_{ev_id}")},
-            name=ev_label,
-            manufacturer="1KOMMA5°",
-            model="EV Charger",
+            translation_key="vehicle",
+            manufacturer=ev_manufacturer,
+            model=ev_model,
             via_device=(DOMAIN, system_id),
         )
 

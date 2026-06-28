@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5EVEntity, get_ev_label
+from .entity import OneKomma5EVEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +41,8 @@ async def async_setup_entry(
                     system_id,
                     system_name,
                     ev.id(),
-                    get_ev_label(ev),
+                    ev.manufacturer(),
+                    ev.model(),
                 )
             )
 
@@ -61,11 +62,18 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         system_id: str,
         system_name: str,
         ev_id: str,
-        ev_label: str,
+        ev_manufacturer: str | None,
+        ev_model: str | None,
     ) -> None:
         """Initialize the select entity."""
         super().__init__(
-            coordinator, system_id, system_name, ev_id, ev_label, "charging_mode_select"
+            coordinator,
+            system_id,
+            system_name,
+            ev_id,
+            ev_manufacturer,
+            ev_model,
+            "charging_mode_select",
         )
         self._ev_charger = ev_charger
 

@@ -23,7 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
-from .entity import ASSET_TYPE_BY_DEVICE_KEY, get_ev_label
+from .entity import ASSET_TYPE_BY_DEVICE_KEY
 from .helpers import get_current_price
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -559,13 +559,22 @@ async def async_setup_entry(
         for desc in WEATHER_SENSORS
     )
 
-    # EV charger sensors (one set per charger)
+    # EV (vehicle) sensors — one set per vehicle, hung under the system parent.
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
             ev_id = ev.id()
-            ev_label = get_ev_label(ev)
+            ev_manufacturer = ev.manufacturer()
+            ev_model = ev.model()
             entities.extend(
-                OneKomma5EVSensor(live_coordinator, system_id, system_name, ev_id, ev_label, desc)
+                OneKomma5EVSensor(
+                    live_coordinator,
+                    system_id,
+                    system_name,
+                    ev_id,
+                    ev_manufacturer,
+                    ev_model,
+                    desc,
+                )
                 for desc in EV_SENSORS
             )
 

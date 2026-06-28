@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5EVEntity, get_ev_label
+from .entity import OneKomma5EVEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,7 +38,8 @@ async def async_setup_entry(
                     system_id,
                     system_name,
                     ev.id(),
-                    get_ev_label(ev),
+                    ev.manufacturer(),
+                    ev.model(),
                 )
             )
 
@@ -46,7 +47,7 @@ async def async_setup_entry(
 
 
 class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
-    """Time entity to set the daily primary departure time for the EV charger."""
+    """Time entity to set the daily primary departure time for the vehicle."""
 
     _attr_translation_key = "ev_departure_time"
 
@@ -57,10 +58,19 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
         system_id: str,
         system_name: str,
         ev_id: str,
-        ev_label: str,
+        ev_manufacturer: str | None,
+        ev_model: str | None,
     ) -> None:
         """Initialize the time entity."""
-        super().__init__(coordinator, system_id, system_name, ev_id, ev_label, "departure_time")
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            ev_id,
+            ev_manufacturer,
+            ev_model,
+            "departure_time",
+        )
         self._ev_charger = ev_charger
 
     @property

@@ -355,6 +355,9 @@
     },
     "wallbox": {
       "name": "Wallbox"
+    },
+    "vehicle": {
+      "name": "Fordon"
     }
   },
   "issues": {

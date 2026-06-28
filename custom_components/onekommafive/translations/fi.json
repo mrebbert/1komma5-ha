@@ -355,6 +355,9 @@
     },
     "wallbox": {
       "name": "Latauspiste"
+    },
+    "vehicle": {
+      "name": "Ajoneuvo"
     }
   },
   "issues": {
