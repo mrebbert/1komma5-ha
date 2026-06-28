@@ -29,8 +29,6 @@ I do not have the means to test this integration broadly across different hardwa
 | Heat pump | Stiebel Eltron WPL-A 10 HK 400 Premium |
 | Smart meter | DTSU666 |
 
-For example, I do not have an air conditioning unit — yet the API returns AC values for my system. This appears to be a mock provided by the 1KOMMA5° backend for devices that are not physically present.
-
 ---
 
 ## Supported devices
