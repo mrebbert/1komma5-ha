@@ -43,18 +43,23 @@ This integration surfaces the following components from the 1KOMMA5° Heartbeat 
 - **Dynamic electricity tariff** (dynamischer Stromtarif) — 30 h price forecast, cheapest-charging-window sensor
 - **Weather forecast** — 48 h hourly forecast, sunshine duration
 
-### Supported markets
+### Localisation
 
-1KOMMA5° currently operates in **seven markets** worldwide. The integration runs against the single global API (`heartbeat.1komma5grad.com`), so it works in all of them — and the displayed currency is auto-detected from the site's country code:
+1KOMMA5° currently operates in seven markets (DE, NL, FI, ES, DK, SE, AU). The integration ships UI translations and per-locale currency mappings for all of them, auto-detected from the site's country code:
 
-| Market | Currency |
-|--------|----------|
-| Germany, Netherlands, Finland, Spain | EUR |
-| Denmark | DKK |
-| Sweden | SEK |
-| Australia | AUD |
+| Locale | Translations | Currency |
+|--------|--------------|----------|
+| Germany, Austria | German | EUR |
+| Netherlands | Dutch | EUR |
+| Finland | Finnish | EUR |
+| Spain | Spanish | EUR |
+| Denmark | Danish | DKK |
+| Sweden | Swedish | SEK |
+| Australia | English | AUD |
 
 Cost, revenue and price sensors render in the local currency without any manual configuration.
+
+> **Caveat:** end-to-end functional verification only exists for **Germany** (the developer's own setup). The SDK targets a single global API endpoint, so the integration *should* work in the other markets — but auth flows, data shapes and feature availability may vary regionally. If you're in a non-DE market and something doesn't work, please open a [GitHub issue](https://github.com/mrebbert/1komma5-ha/issues) with the diagnostics dump.
 
 ---
 
