@@ -166,15 +166,15 @@ Entities are grouped under one system parent device plus per-asset sub-devices, 
 
 ```
 1k5° System (parent)
-├── Inverter      (Sungrow / SH6.0RT-V112 / …)
-├── Battery        — entities live on the inverter sub-device (hybrid inverter)
-├── Heat pump     (Stiebel Eltron / WPMsystem / …)
-├── Smart meter   (Chint / DTSU666 / …)
-├── Wallbox       (go-e / HOMEfix 11kW / …)
-└── EV vehicle    (Volkswagen / ID.5 / …)
+├── Inverter        (Sungrow / SH6.0RT-V112 / …)
+├── Battery         — entities live on the inverter sub-device (hybrid inverter)
+├── Heat pump       (Stiebel Eltron / WPMsystem / …)
+├── Smart meter     (Chint / DTSU666 / …)
+├── Wallbox         (go-e / HOMEfix 11kW / …)
+└── Vehicle         (Volkswagen / ID.5 / …)
 ```
 
-Manufacturer, model and firmware are populated from the 1KOMMA5° cloud's `status_and_assets` payload. Devices the platform doesn't classify (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the parent — no empty placeholder devices.
+Every sub-device follows the same naming convention: a translated category label as the device name (Inverter / Heat pump / Smart meter / Wallbox / Vehicle), with `manufacturer` and `model` carrying the real hardware values. The asset sub-devices pull from the 1KOMMA5° cloud's `status_and_assets` payload (PII-safe — manufacturer, model, firmware only); the Vehicle sub-device pulls from the EV profile (manufacturer, model). Devices the platform doesn't classify (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the parent — no empty placeholder devices.
 
 `entity_id`s and `unique_id`s are unchanged versus earlier versions, so long-term statistics, automations, Energy-Dashboard configuration and dashboard cards keep working without any migration.
 
