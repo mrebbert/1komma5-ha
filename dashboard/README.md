@@ -1,6 +1,13 @@
-# Example Dashboard
+# Example Dashboards
 
-This directory contains an example Home Assistant dashboard for the 1KOMMA5° integration. The dashboard YAML itself is intentionally kept in German (the integration's primary audience), but this README is fully in English.
+This directory contains two example Home Assistant dashboards for the 1KOMMA5° integration. Both YAMLs are intentionally kept in German (the integration's primary audience), but this README is fully in English.
+
+| File | When to pick it |
+|------|-----------------|
+| [`dashboard.yaml`](dashboard.yaml) | **Compact original** — three views (Netz / EV / Preise & Kosten). Battle-tested layout used in production on the developer's own setup. |
+| [`dashboard-showcase.yaml`](dashboard-showcase.yaml) | **Showcase** — six views that exercise the full integration surface (Netz / Fahrzeug / Preise und Kosten / Optimierung / Wetter / System). Use this if you want to see what's possible. |
+
+Both files use the same placeholder convention (`SYSTEM_NAME` / `CAR_IDENTIFIER`), the same custom-card requirements, and the same `input_select` helper. Pick one, follow the steps below.
 
 ## Frontend dependencies
 
@@ -68,11 +75,23 @@ An overview of dynamic electricity prices and accumulated costs, split into four
 | Cost & feed-in (switcher) | `button-card` row to switch between day / week / month / year; below it a `statistics-graph` that follows the selected range |
 | Per-consumer costs | Same switcher drives a second `statistics-graph` showing the four per-consumer cost sensors (heat pump / wallbox / household / AC) for the same range |
 
+## The Showcase view
+
+The Showcase variant (`dashboard-showcase.yaml`) adds three views on top of the original three:
+
+| Section | Cards |
+|---------|-------|
+| Optimierung | Last AI decision (locale-aware enum since v0.1.45), today's decision count, AI battery / heat-pump recommendation binaries. Settlement-dependent sensors (cost savings / energy bought / energy sold) are stubbed as a commented-out block because the 1KOMMA5° backend never populates them today. |
+| Wetter | The `weather.SYSTEM_NAME` entity rendered as a full forecast card, plus the sunshine duration sensors for today and tomorrow. |
+| System | Site + per-asset connectivity binaries, the three "active feature" binaries (dynamic tariff / time-of-use / smart charging), all five diagnostic update-timestamp sensors, and the EMS auto-mode switch (diagnostic-categorised since v0.1.46). |
+
+In every existing view the Showcase adds badges (e.g. AI status, cheap-now indicator) and expanded sections (tomorrow's price extremes, negative-price slot counters, battery charge/discharge split). It also replaces the helper template sensors `cheapest_future_hour` / `cheapest_future_price` with `sensor.SYSTEM_NAME_gunstigstes_ladefenster_heute` (lock-in via `RestoreSensor` since v0.1.42 — no flickering on flat-price days).
+
 ## Usage
 
 1. In Home Assistant go to **Settings → Dashboards → Add Dashboard** (or open an existing one in edit mode).
 2. Click the ⋮ menu → **Edit Dashboard** → **Raw configuration editor**.
-3. Paste the contents of [`dashboard.yaml`](dashboard.yaml).
+3. Paste the contents of [`dashboard.yaml`](dashboard.yaml) or [`dashboard-showcase.yaml`](dashboard-showcase.yaml).
 4. Replace the two placeholders throughout the YAML:
 
    | Placeholder | Replace with | Where to find it |
@@ -80,7 +99,10 @@ An overview of dynamic electricity prices and accumulated costs, split into four
    | `SYSTEM_NAME` | Your system name prefix | **Settings → Devices & Services → 1KOMMA5°**, visible on any entity ID |
    | `CAR_IDENTIFIER` | Your EV entity prefix | Same location, visible on EV charger entities (e.g. `volkswagen_id_4`) |
 
+   If your 1KOMMA5° device is assigned to a Home Assistant *area*, HA may prefix new entity_ids with the area slug (e.g. `garage_SYSTEM_NAME_…`). Use whatever your install actually generates — Settings → Devices & Services → 1KOMMA5° → click an entity to see its ID.
+
 5. Make sure the two custom cards (`apexcharts-card`, `button-card`) and the `input_select.stromkosten_zeitspanne` helper described above exist.
+6. (Showcase only) The gauge `min` / `max` values default to a typical 6 kW PV / 7 kWh battery / 11 kW wallbox setup — tune them to your hardware. See the comment block at the top of `dashboard-showcase.yaml` for the full list.
 
 ### Template sensors for the cheapest hour and price
 

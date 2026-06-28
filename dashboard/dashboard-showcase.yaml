@@ -1,0 +1,1128 @@
+# 1KOMMA5° Showcase Dashboard
+#
+# Demonstrates the full integration surface across six tabs:
+#   1. Netz        — live power flow + autarky + cheap-now badge
+#   2. Fahrzeug    — vehicle controls + status
+#   3. Preise      — today + tomorrow forecast, cheapest window, cost time-range chart
+#   4. Optimierung — AI decisions, active features, optimization metrics
+#   5. Wetter      — weather entity + sunshine forecast
+#   6. System      — site/asset connectivity + diagnostic timestamps
+#
+# Placeholders to replace before importing:
+#   - SYSTEM_NAME      → your system's entity prefix
+#                         (Settings → Devices → 1KOMMA5° → device name slug;
+#                          default is the slugified system title, e.g. "1k5")
+#   - CAR_IDENTIFIER   → your vehicle entity prefix
+#                         (HA generates this from manufacturer + model on
+#                          first install, e.g. "volkswagen_id_4")
+#
+# If your 1KOMMA5° device is assigned to an HA area, HA may prefix new
+# entity_ids with the area slug (e.g. "garage_SYSTEM_NAME_…"). Adjust the
+# placeholder to whatever your install actually generates — Settings →
+# Devices & Services → 1KOMMA5° → click an entity to see its ID.
+#
+# Hardware-specific values that may need tuning to match your install
+# (defaults are for a typical 6 kW PV / 7 kWh battery / 11 kW wallbox setup):
+#   - sensor.SYSTEM_NAME_pv_leistung.max         = 6880      (W, peak PV)
+#   - sensor.SYSTEM_NAME_batterieleistung.min/max = -7200/7200 (W, battery)
+#   - sensor.SYSTEM_NAME_ladeleistung_fahrzeuge.max = 11000 (W, wallbox)
+#   - sensor.SYSTEM_NAME_netzleistung.min/max     = -7000/13000 (W, grid)
+#   - sensor.SYSTEM_NAME_gesamtverbrauch.max      = 15000   (W, total load)
+#   - sensor.SYSTEM_NAME_haushaltsverbrauch.max   = 3600    (W, household)
+#   - sensor.SYSTEM_NAME_warmepumpenleistung.max  = 3500    (W, heat pump)
+#
+# Required HACS custom cards:
+#   - apexcharts-card — for 30 h price forecast
+#   - button-card     — for cost time-range switcher
+#
+# Required helper (Settings → Devices & Services → Helpers):
+#   - input_select.stromkosten_zeitspanne with options:
+#       Täglich / Wöchentlich / Monatlich / Jährlich
+
+title: 1KOMMA5°
+views:
+  # ─────────────────────────────────────────────────────────────────
+  # Tab 1 — Netz (live overview)
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Netz
+    path: netz
+    icon: mdi:transmission-tower
+    max_columns: 2
+    dense_section_placement: true
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_autarkiegrad
+        name: Autarkie
+        icon: mdi:sun-clock
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_gunstiger_strom
+        name: Günstig
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_gunstigste_stunde_jetzt
+        name: Beste Stunde
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_aktueller_strompreis
+        name: Strompreis
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_gunstigstes_ladefenster_heute
+        name: Ladefenster
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_ai_batterie_aus_netz_laden
+        name: AI Batterie
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_ai_warmepumpen_empfehlung
+        name: AI Wärmepumpe
+    sections:
+      # ── Netz- und PV-Leistung ──────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Netz- und PV-Leistung
+            heading_style: title
+            icon: mdi:transmission-tower
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_netzleistung
+            min: -7000
+            max: 13000
+            needle: true
+            severity:
+              green: -7000
+              yellow: 0
+              red: 2500
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_pv_leistung
+            max: 6880
+            needle: true
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_batterieleistung
+            min: -7200
+            max: 7200
+            needle: true
+            severity:
+              green: 3500
+              yellow: 0
+              red: -7200
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_batterieladung
+            needle: true
+            severity:
+              green: 75
+              yellow: 25
+              red: 0
+            grid_options:
+              columns: 6
+              rows: auto
+
+      # ── Verbrauch ─────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Verbrauch
+            heading_style: title
+            icon: mdi:home-lightning-bolt-outline
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_gesamtverbrauch
+            max: 15000
+            needle: true
+            severity:
+              green: 0
+              yellow: 1000
+              red: 5000
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_haushaltsverbrauch
+            name: Haushalt
+            max: 3600
+            grid_options:
+              columns: 4
+              rows: auto
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_warmepumpenleistung
+            name: Wärmepumpe
+            max: 3500
+            grid_options:
+              columns: 4
+              rows: auto
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_ladeleistung_fahrzeuge
+            name: Wallbox
+            max: 11000
+            grid_options:
+              columns: 4
+              rows: auto
+
+      # ── 24h Verlauf ────────────────────────────────────────────
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Leistungs- und Einspeisungsverlauf (24 h)
+            heading_style: title
+            icon: mdi:chart-areaspline
+          - type: statistics-graph
+            chart_type: line
+            period: 5minute
+            days_to_show: 1
+            stat_types:
+              - mean
+            entities:
+              - sensor.SYSTEM_NAME_netzleistung
+              - sensor.SYSTEM_NAME_batterieleistung
+              - sensor.SYSTEM_NAME_pv_leistung
+              - sensor.SYSTEM_NAME_gesamtverbrauch
+            logarithmic_scale: false
+            expand_legend: true
+            grid_options:
+              columns: 24
+              rows: auto
+
+      # ── Energiebezug & Einspeisung — Heute ─────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Energiebezug und -einspeisung
+            heading_style: title
+            icon: mdi:chart-box-outline
+          - type: statistics-graph
+            chart_type: bar
+            period: day
+            days_to_show: 7
+            stat_types:
+              - change
+            entities:
+              - entity: sensor.SYSTEM_NAME_pv_energie
+                name: PV
+              - entity: sensor.SYSTEM_NAME_netzbezug_energie
+                name: Netzbezug
+              - entity: sensor.SYSTEM_NAME_eingespeiste_energie
+                name: Einspeisung
+            grid_options:
+              columns: 12
+              rows: 5
+          - type: heading
+            heading: Heute
+            heading_style: subtitle
+            icon: mdi:calendar-today
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_pv_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: PV
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_netzbezug_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Netzbezug
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_eingespeiste_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Einspeisung
+          - type: heading
+            heading: Monat
+            heading_style: subtitle
+            icon: mdi:calendar-month
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_pv_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: PV
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_netzbezug_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Netzbezug
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_eingespeiste_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Einspeisung
+
+      # ── Energieverbrauch ─────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Energieverbrauch
+            heading_style: title
+            icon: mdi:chart-box-outline
+          - type: statistics-graph
+            chart_type: bar
+            period: day
+            days_to_show: 7
+            stat_types:
+              - change
+            entities:
+              - entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+                name: Gesamt
+              - entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+                name: Haushalt
+              - entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+                name: Wallbox
+              - entity: sensor.SYSTEM_NAME_warmepumpenenergie
+                name: Wärmepumpe
+            hide_legend: false
+            grid_options:
+              columns: 12
+              rows: 5
+          - type: heading
+            heading: Heute
+            heading_style: subtitle
+            icon: mdi:calendar-today
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Gesamt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Haushalt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Wallbox
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_warmepumpenenergie
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Wärmepumpe
+          - type: heading
+            heading: Monat
+            heading_style: subtitle
+            icon: mdi:calendar-month
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Gesamt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Haushalt
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Wallbox
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_warmepumpenenergie
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Wärmepumpe
+
+      # ── Batterie-Zyklus ───────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Batterie — Lade/Entlade-Energie
+            heading_style: title
+            icon: mdi:battery-sync
+          - type: statistics-graph
+            chart_type: bar
+            period: day
+            days_to_show: 14
+            stat_types:
+              - change
+            entities:
+              - entity: sensor.SYSTEM_NAME_batterie_ladeenergie
+                name: Geladen
+              - entity: sensor.SYSTEM_NAME_batterie_entladeenergie
+                name: Entladen
+            grid_options:
+              columns: 12
+              rows: 5
+
+  # ─────────────────────────────────────────────────────────────────
+  # Tab 2 — EV (controls & status)
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Fahrzeug
+    path: ev
+    icon: mdi:car-electric
+    max_columns: 2
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_wallbox_verbunden
+        name: Wallbox
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_intelligentes_laden_aktiv
+        name: Smart Charging
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Lademodus
+            heading_style: title
+            icon: mdi:ev-station
+          - type: entities
+            entities:
+              - entity: select.CAR_IDENTIFIER_lademodus
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: sensor.CAR_IDENTIFIER_lademodus
+                state: smart_charge
+            card:
+              type: entities
+              title: Smart-Charge Einstellungen
+              entities:
+                - entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
+                  name: Akkustand aktuell
+                - entity: number.CAR_IDENTIFIER_ziel_akkustand
+                  name: Zielakkustand
+                - entity: time.CAR_IDENTIFIER_abfahrtzeit
+                  name: Tägliche Abfahrtzeit
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Ladestatistik
+            heading_style: title
+            icon: mdi:chart-line
+          - type: gauge
+            entity: sensor.SYSTEM_NAME_ladeleistung_fahrzeuge
+            name: Aktuelle Ladeleistung
+            max: 11000
+            needle: true
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Geladene Energie heute
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Geladene Energie Monat
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Wallbox-Kosten heute
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Wallbox-Kosten Monat
+
+  # ─────────────────────────────────────────────────────────────────
+  # Tab 3 — Preise & Kosten
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Preise und Kosten
+    path: preise-und-kosten
+    icon: mdi:currency-eur
+    max_columns: 2
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_aktueller_strompreis
+        name: Strompreis
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_gunstigstes_ladefenster_heute
+        name: Ladefenster
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_negative_preisslots_heute
+        name: Neg. Slots heute
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_negative_preisslots_morgen
+        name: Neg. Slots morgen
+    sections:
+      # ── Aktuelle Preise heute ─────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Strompreise — Heute
+            heading_style: title
+            icon: mdi:cash-multiple
+          - type: entity
+            entity: sensor.SYSTEM_NAME_aktueller_strompreis
+            name: Aktuell
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: entity
+            entity: sensor.SYSTEM_NAME_letzter_gultiger_strompreis
+            name: Letzter gültiger
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: entity
+            entity: sensor.SYSTEM_NAME_durchschnittlicher_strompreis
+            name: Durchschnitt
+            grid_options:
+              columns: 4
+              rows: auto
+          - type: entity
+            entity: sensor.SYSTEM_NAME_niedrigster_strompreis
+            name: Niedrigster
+            grid_options:
+              columns: 4
+              rows: auto
+          - type: entity
+            entity: sensor.SYSTEM_NAME_hochster_strompreis
+            name: Höchster
+            grid_options:
+              columns: 4
+              rows: auto
+
+      # ── Preise morgen (NEU im Showcase) ────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Strompreise — Morgen
+            heading_style: title
+            icon: mdi:weather-sunset-up
+          - type: entity
+            entity: sensor.SYSTEM_NAME_durchschnittlicher_strompreis_morgen
+            name: Durchschnitt
+            grid_options:
+              columns: 4
+              rows: auto
+          - type: entity
+            entity: sensor.SYSTEM_NAME_niedrigster_strompreis_morgen
+            name: Niedrigster
+            grid_options:
+              columns: 4
+              rows: auto
+          - type: entity
+            entity: sensor.SYSTEM_NAME_hochster_strompreis_morgen
+            name: Höchster
+            grid_options:
+              columns: 4
+              rows: auto
+
+      # ── 30h Forecast Chart (apexcharts) ───────────────────────
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Strompreisentwicklung (30 h)
+            heading_style: title
+            icon: mdi:chart-bar
+            grid_options:
+              columns: 24
+              rows: auto
+          - type: custom:apexcharts-card
+            graph_span: 30h
+            grid_options:
+              columns: 24
+              rows: auto
+            span:
+              start: hour
+            now:
+              show: true
+              label: Jetzt
+            header:
+              show: true
+              show_states: true
+              colorize_states: true
+            yaxis:
+              - min: auto
+                decimals: 4
+            series:
+              - entity: sensor.SYSTEM_NAME_aktueller_strompreis
+                name: Strompreis
+                unit: EUR/kWh
+                float_precision: 4
+                type: column
+                data_generator: |
+                  return entity.attributes.forecast.map(e => [
+                    new Date(e.start).getTime(),
+                    e.price
+                  ]);
+                color_threshold:
+                  - value: 0
+                    color: "#4caf50"
+                  - value: 0.22
+                    color: "#ff9800"
+                  - value: 0.33
+                    color: "#f44336"
+                show:
+                  in_header: false
+                  legend_value: false
+                  name_in_header: false
+              - entity: sensor.SYSTEM_NAME_aktueller_strompreis
+                name: Aktuell
+                unit: EUR/kWh
+                float_precision: 4
+                type: line
+                stroke_width: 0
+                show:
+                  in_header: true
+                  legend_value: true
+                  name_in_header: true
+
+      # ── Kosten- und Einspeisungs-Zusammenfassung ──────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Stromkosten
+            heading_style: title
+            icon: mdi:account-arrow-right-outline
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: heading
+            heading: Einspeisung
+            heading_style: title
+            icon: mdi:account-arrow-left-outline
+            grid_options:
+              columns: 6
+              rows: 1
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Heute
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            period:
+              calendar:
+                period: day
+            stat_type: change
+            name: Heute
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Dieser Monat
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            period:
+              calendar:
+                period: month
+            stat_type: change
+            name: Dieser Monat
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_stromkosten
+            period:
+              calendar:
+                period: year
+            stat_type: change
+            name: Dieses Jahr
+          - type: statistic
+            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            period:
+              calendar:
+                period: year
+            stat_type: change
+            name: Dieses Jahr
+
+      # ── Cost time-range switcher (preserved from existing) ────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Stromkosten & Einspeisevergütung
+            heading_style: title
+            icon: mdi:chart-bar-stacked
+          - type: vertical-stack
+            cards:
+              - type: horizontal-stack
+                cards:
+                  - type: custom:button-card
+                    name: Tag
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Täglich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Täglich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+                  - type: custom:button-card
+                    name: Woche
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Wöchentlich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Wöchentlich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+                  - type: custom:button-card
+                    name: Monat
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Monatlich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Monatlich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+                  - type: custom:button-card
+                    name: Jahr
+                    entity: input_select.stromkosten_zeitspanne
+                    tap_action:
+                      action: call-service
+                      service: input_select.select_option
+                      service_data:
+                        entity_id: input_select.stromkosten_zeitspanne
+                        option: Jährlich
+                    styles:
+                      card:
+                        - background-color: |
+                            [[[
+                              return states['input_select.stromkosten_zeitspanne'].state === 'Jährlich'
+                                ? 'var(--primary-color)' : 'var(--card-background-color)';
+                            ]]]
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Täglich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung — Täglich
+                  chart_type: bar
+                  period: day
+                  days_to_show: 30
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Wöchentlich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung — Wöchentlich
+                  chart_type: bar
+                  period: week
+                  days_to_show: 28
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Monatlich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung — Monatlich
+                  chart_type: bar
+                  period: month
+                  days_to_show: 180
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Jährlich
+                card:
+                  type: statistics-graph
+                  title: Stromkosten & Einspeisevergütung — 3-Jahres-Übersicht
+                  chart_type: bar
+                  period: year
+                  days_to_show: 1095
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten
+                      name: Stromkosten
+                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                      name: Einspeisevergütung
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Täglich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten — Täglich
+                  chart_type: bar
+                  period: day
+                  days_to_show: 30
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Wöchentlich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten — Wöchentlich
+                  chart_type: bar
+                  period: week
+                  days_to_show: 28
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Monatlich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten — Monatlich
+                  chart_type: bar
+                  period: month
+                  days_to_show: 180
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+              - type: conditional
+                conditions:
+                  - entity: input_select.stromkosten_zeitspanne
+                    state: Jährlich
+                card:
+                  type: statistics-graph
+                  title: Verbraucher-Kosten — 3-Jahres-Übersicht
+                  chart_type: bar
+                  period: year
+                  days_to_show: 1095
+                  stat_types: [change]
+                  entities:
+                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                      name: Wärmepumpe
+                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                      name: Wallbox
+                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                      name: Haushalt
+
+  # ─────────────────────────────────────────────────────────────────
+  # Tab 4 — Optimierung (HEMS AI)
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Optimierung
+    path: optimierung
+    icon: mdi:brain
+    max_columns: 2
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_ai_batterie_aus_netz_laden
+        name: AI Batterie
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_ai_warmepumpen_empfehlung
+        name: AI Wärmepumpe
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.SYSTEM_NAME_optimierungsentscheidungen_heute
+        name: Entscheidungen
+    sections:
+      # ── Letzte AI-Entscheidung (mit translated enum, NEU v0.1.45) ──
+      - type: grid
+        cards:
+          - type: heading
+            heading: Letzte AI-Entscheidung
+            heading_style: title
+            icon: mdi:brain
+          - type: entity
+            entity: sensor.SYSTEM_NAME_letzte_optimierungsentscheidung
+            name: Entscheidung
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: entities
+            entities:
+              - entity: binary_sensor.SYSTEM_NAME_ai_batterie_aus_netz_laden
+                name: AI lädt Batterie aus Netz
+              - entity: binary_sensor.SYSTEM_NAME_ai_warmepumpen_empfehlung
+                name: AI empfiehlt Wärmepumpe
+
+      # ── Tages-Aggregat ────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Heute
+            heading_style: title
+            icon: mdi:counter
+          - type: entity
+            entity: sensor.SYSTEM_NAME_optimierungsentscheidungen_heute
+            name: Entscheidungen
+            grid_options:
+              columns: 12
+              rows: auto
+
+      # ── Settlement-Felder (API liefert sie derzeit NICHT) ──────
+      # Die folgenden drei Sensoren werden vom 1KOMMA5°-Backend
+      # nicht zurückgespielt — Felder sind im SDK-Modell vorhanden,
+      # bleiben aber dauerhaft `None`. Wenn / sobald 1KOMMA5° die
+      # Settlement-Daten in die optimizations-API einspeist, einfach
+      # auskommentieren und sichtbar machen.
+      #
+      # - type: grid
+      #   cards:
+      #     - type: heading
+      #       heading: Settlement (sobald API liefert)
+      #       heading_style: title
+      #       icon: mdi:cash-clock
+      #     - type: entity
+      #       entity: sensor.SYSTEM_NAME_optimierungskosten_ersparnis
+      #       name: Kosten/Ersparnis
+      #     - type: entity
+      #       entity: sensor.SYSTEM_NAME_optimierung_energiebezug
+      #       name: Energiebezug
+      #     - type: entity
+      #       entity: sensor.SYSTEM_NAME_optimierung_energieverkauf
+      #       name: Energieverkauf
+
+  # ─────────────────────────────────────────────────────────────────
+  # Tab 5 — Wetter & Sonne
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Wetter
+    path: wetter
+    icon: mdi:weather-partly-cloudy
+    max_columns: 2
+    sections:
+      # ── HA Weather Card ───────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Wettervorhersage
+            heading_style: title
+            icon: mdi:weather-partly-cloudy
+          - type: weather-forecast
+            entity: weather.SYSTEM_NAME
+            forecast_type: hourly
+            show_current: true
+            show_forecast: true
+            grid_options:
+              columns: 12
+              rows: auto
+
+      # ── Sonnenschein ──────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Sonnenscheindauer
+            heading_style: title
+            icon: mdi:weather-sunny
+          - type: entity
+            entity: sensor.SYSTEM_NAME_sonnenscheindauer_heute
+            name: Heute
+            grid_options:
+              columns: 6
+              rows: auto
+          - type: entity
+            entity: sensor.SYSTEM_NAME_sonnenscheindauer_morgen
+            name: Morgen
+            grid_options:
+              columns: 6
+              rows: auto
+
+  # ─────────────────────────────────────────────────────────────────
+  # Tab 6 — System (status + diagnostics, hidden from main nav)
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: System
+    path: system
+    icon: mdi:cog-outline
+    max_columns: 2
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: binary_sensor.SYSTEM_NAME_anlage_verbunden
+        name: Anlage
+    sections:
+      # ── Konnektivität pro Asset ────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Konnektivität
+            heading_style: title
+            icon: mdi:lan-connect
+          - type: entities
+            entities:
+              - entity: binary_sensor.SYSTEM_NAME_anlage_verbunden
+              - entity: binary_sensor.SYSTEM_NAME_wechselrichter_verbunden
+              - entity: binary_sensor.SYSTEM_NAME_warmepumpe_verbunden
+              - entity: binary_sensor.SYSTEM_NAME_zahler_verbunden
+              - entity: binary_sensor.SYSTEM_NAME_wallbox_verbunden
+
+      # ── Aktive Funktionen (NEU v0.1.45) ────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Aktive Funktionen
+            heading_style: title
+            icon: mdi:feature-search-outline
+          - type: entities
+            entities:
+              - entity: sensor.SYSTEM_NAME_aktive_funktionen
+              - entity: binary_sensor.SYSTEM_NAME_dynamischer_stromtarif_aktiv
+                name: Dynamischer Stromtarif
+              - entity: binary_sensor.SYSTEM_NAME_lastoptimierung_aktiv
+                name: Lastoptimierung
+              - entity: binary_sensor.SYSTEM_NAME_intelligentes_laden_aktiv
+                name: Intelligentes Laden
+
+      # ── Letzte Updates pro Coordinator ────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Letzte Updates
+            heading_style: title
+            icon: mdi:clock-outline
+          - type: entities
+            entities:
+              - entity: sensor.SYSTEM_NAME_letztes_live_update
+                name: Live
+              - entity: sensor.SYSTEM_NAME_letztes_preis_update
+                name: Preise
+              - entity: sensor.SYSTEM_NAME_letztes_optimierungs_update
+                name: Optimierung
+              - entity: sensor.SYSTEM_NAME_letztes_wetter_update
+                name: Wetter
+              - entity: sensor.SYSTEM_NAME_letztes_konnektivitats_update
+                name: Konnektivität
+
+      # ── EMS (jetzt diagnostic, da Cloud-Override vermutlich no-op) ──
+      - type: grid
+        cards:
+          - type: heading
+            heading: EMS
+            heading_style: title
+            icon: mdi:toggle-switch
+          - type: entities
+            entities:
+              - entity: switch.SYSTEM_NAME_ems_automatikmodus
+                name: EMS Automatikmodus
