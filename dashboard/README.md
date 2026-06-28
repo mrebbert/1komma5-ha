@@ -4,8 +4,8 @@ This directory contains two example Home Assistant dashboards for the 1KOMMA5° 
 
 | File | When to pick it |
 |------|-----------------|
-| [`dashboard.yaml`](dashboard.yaml) | **Compact original** — three views (Netz / EV / Preise & Kosten). Battle-tested layout used in production on the developer's own setup. |
-| [`dashboard-showcase.yaml`](dashboard-showcase.yaml) | **Showcase** — six views that exercise the full integration surface (Netz / Fahrzeug / Preise und Kosten / Optimierung / Wetter / System). Use this if you want to see what's possible. |
+| [`dashboard.yaml`](dashboard.yaml) | **Compact original** — three views (Grid / EV / Prices & costs). Battle-tested layout used in production on the developer's own setup. |
+| [`dashboard-showcase.yaml`](dashboard-showcase.yaml) | **Showcase** — six views that exercise the full integration surface (Grid / Vehicle / Prices & costs / Optimization / Weather / System). Use this if you want to see what's possible. |
 
 Both files use the same placeholder convention (`SYSTEM_NAME` / `CAR_IDENTIFIER`), the same custom-card requirements, and the same `input_select` helper. Pick one, follow the steps below.
 
@@ -77,22 +77,22 @@ An overview of dynamic electricity prices and accumulated costs, split into four
 
 ## The Showcase view
 
-The Showcase variant (`dashboard-showcase.yaml`) adds three views on top of the original three. All six tabs:
+The Showcase variant (`dashboard-showcase.yaml`) adds three views on top of the original three. All six tabs (YAML tab titles in German — these are the labels you see in the dashboard):
 
-| Netz | Fahrzeug | Preise und Kosten |
-|------|----------|-------------------|
-| ![Netz view](showcase-netz.png) | ![Fahrzeug view](showcase-fahrzeug.png) | ![Preise und Kosten view](showcase-preise-kosten.png) |
+| Grid (Netz) | Vehicle (Fahrzeug) | Prices & costs (Preise und Kosten) |
+|-------------|--------------------|------------------------------------|
+| ![Grid view](showcase-netz.png) | ![Vehicle view](showcase-fahrzeug.png) | ![Prices & costs view](showcase-preise-kosten.png) |
 
-| Optimierung | Wetter | System |
-|-------------|--------|--------|
-| ![Optimierung view](showcase-optimierung.png) | ![Wetter view](showcase-wetter.png) | ![System view](showcase-system.png) |
+| Optimization (Optimierung) | Weather (Wetter) | System |
+|----------------------------|------------------|--------|
+| ![Optimization view](showcase-optimierung.png) | ![Weather view](showcase-wetter.png) | ![System view](showcase-system.png) |
 
 The three new views beyond the original `dashboard.yaml`:
 
 | Section | Cards |
 |---------|-------|
-| Optimierung | Last AI decision (locale-aware enum since v0.1.45), today's decision count, AI battery / heat-pump recommendation binaries. Settlement-dependent sensors (cost savings / energy bought / energy sold) are stubbed as a commented-out block because the 1KOMMA5° backend never populates them today. |
-| Wetter | The `weather.SYSTEM_NAME` entity rendered as a full forecast card, plus the sunshine duration sensors for today and tomorrow. |
+| Optimization | Last AI decision (locale-aware enum since v0.1.45), today's decision count, AI battery / heat-pump recommendation binaries. Settlement-dependent sensors (cost savings / energy bought / energy sold) are stubbed as a commented-out block because the 1KOMMA5° backend never populates them today. |
+| Weather | The `weather.SYSTEM_NAME` entity rendered as a full forecast card, plus the sunshine duration sensors for today and tomorrow. |
 | System | Site + per-asset connectivity binaries, the three "active feature" binaries (dynamic tariff / time-of-use / smart charging), all five diagnostic update-timestamp sensors, and the EMS auto-mode switch (diagnostic-categorised since v0.1.46). |
 
 In every existing view the Showcase adds badges (e.g. AI status, cheap-now indicator) and expanded sections (tomorrow's price extremes, negative-price slot counters, battery charge/discharge split). It also replaces the helper template sensors `cheapest_future_hour` / `cheapest_future_price` with `sensor.SYSTEM_NAME_gunstigstes_ladefenster_heute` (lock-in via `RestoreSensor` since v0.1.42 — no flickering on flat-price days).
