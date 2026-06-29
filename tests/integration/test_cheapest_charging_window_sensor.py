@@ -317,3 +317,89 @@ async def test_cheapest_window_ignores_restored_state_after_expiry(
     # Fresh pick — first cheap slot starts at 18:15 (slot-0 start).
     assert state.state == base.isoformat()
     assert state.attributes["average_price"] == 0.10
+
+
+async def test_cheapest_window_honours_configured_duration(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """A 30-min duration option = 2 slots; the picked window matches."""
+    from custom_components.onekommafive.const import CONF_CHARGING_WINDOW_DURATION_MINUTES
+
+    freezer.move_to("2026-06-15T12:00:00+00:00")
+    base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    # End-time → price. Slots 5 + 6 form the cheapest 30-min run.
+    prices: dict[datetime.datetime, float] = {}
+    for i in range(16):
+        end = base + slot * (i + 1)
+        prices[end] = 0.50 if i not in (5, 6) else 0.10
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-dur",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-dur"},
+        options={CONF_CHARGING_WINDOW_DURATION_MINUTES: 30},
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = _cheapest_window_state(hass)
+    expected_start = base + slot * 5
+    assert state.state == expected_start.isoformat()
+    assert state.attributes["duration_minutes"] == 30
+    assert state.attributes["slot_count"] == 2
+    assert state.attributes["end"] == (expected_start + slot * 2).isoformat()
+
+
+async def test_cheapest_window_reloads_on_options_change(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """Updating the duration via options-flow reloads the entry; sensor picks up the new duration."""
+    from custom_components.onekommafive.const import CONF_CHARGING_WINDOW_DURATION_MINUTES
+
+    freezer.move_to("2026-06-15T12:00:00+00:00")
+    base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    # 16 slots all priced 0.10 — the picker locks in the earliest n-slot run.
+    prices = {base + slot * (i + 1): 0.10 for i in range(16)}
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-reload",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-reload"},
+        options={},  # default 60 min
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+        before = _cheapest_window_state(hass)
+        assert before.attributes["duration_minutes"] == 60
+        assert before.attributes["slot_count"] == 4
+
+        # Trigger the options-update listener — should reload the entry.
+        hass.config_entries.async_update_entry(
+            entry, options={CONF_CHARGING_WINDOW_DURATION_MINUTES: 90}
+        )
+        await hass.async_block_till_done()
+
+    after = _cheapest_window_state(hass)
+    assert after.attributes["duration_minutes"] == 90
+    assert after.attributes["slot_count"] == 6

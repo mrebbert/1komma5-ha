@@ -50,10 +50,12 @@
       "init": {
         "title": "1KOMMA5° Einstellungen",
         "data": {
-          "feed_in_tariff": "Einspeisevergütung"
+          "feed_in_tariff": "Einspeisevergütung",
+          "charging_window_duration_minutes": "Dauer Ladefenster (Minuten)"
         },
         "data_description": {
-          "feed_in_tariff": "Vergütung pro eingespeister kWh (inkl. aller Boni), z.B. 0.0803 für 8,03 ct/kWh."
+          "feed_in_tariff": "Vergütung pro eingespeister kWh (inkl. aller Boni), z.B. 0.0803 für 8,03 ct/kWh.",
+          "charging_window_duration_minutes": "Länge des günstigsten Ladefensters in Minuten (Vielfaches von 15, 15–240). Standard 60. Wird vom Sensor 'Günstigstes Ladefenster heute' genutzt."
         }
       }
     }

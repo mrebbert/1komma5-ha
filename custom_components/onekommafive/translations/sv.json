@@ -50,10 +50,12 @@
       "init": {
         "title": "1KOMMA5° inställningar",
         "data": {
-          "feed_in_tariff": "Inmatningstariff"
+          "feed_in_tariff": "Inmatningstariff",
+          "charging_window_duration_minutes": "Laddningsfönster varaktighet (minuter)"
         },
         "data_description": {
-          "feed_in_tariff": "Intäkt per exporterad kWh (inkl. alla bonusar), t.ex. 0,0803 för 8,03 öre/kWh."
+          "feed_in_tariff": "Intäkt per exporterad kWh (inkl. alla bonusar), t.ex. 0,0803 för 8,03 öre/kWh.",
+          "charging_window_duration_minutes": "Längd för det billigaste laddningsfönstret idag i minuter (multipel av 15, 15–240). Standard 60."
         }
       }
     }

@@ -50,10 +50,12 @@
       "init": {
         "title": "1KOMMA5° indstillinger",
         "data": {
-          "feed_in_tariff": "Salgstarif"
+          "feed_in_tariff": "Salgstarif",
+          "charging_window_duration_minutes": "Opladningsvindue varighed (minutter)"
         },
         "data_description": {
-          "feed_in_tariff": "Indtægt pr. eksporteret kWh (inkl. alle bonusser), f.eks. 0,0803 for 8,03 øre/kWh."
+          "feed_in_tariff": "Indtægt pr. eksporteret kWh (inkl. alle bonusser), f.eks. 0,0803 for 8,03 øre/kWh.",
+          "charging_window_duration_minutes": "Varighed for det billigste opladningsvindue i dag i minutter (multiplum af 15, 15–240). Standard 60."
         }
       }
     }

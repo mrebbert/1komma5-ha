@@ -50,10 +50,12 @@
       "init": {
         "title": "1KOMMA5° Settings",
         "data": {
-          "feed_in_tariff": "Feed-in tariff"
+          "feed_in_tariff": "Feed-in tariff",
+          "charging_window_duration_minutes": "Charging-window duration (minutes)"
         },
         "data_description": {
-          "feed_in_tariff": "Revenue per exported kWh (incl. all bonuses), e.g. 0.0803 for 8.03 ct/kWh."
+          "feed_in_tariff": "Revenue per exported kWh (incl. all bonuses), e.g. 0.0803 for 8.03 ct/kWh.",
+          "charging_window_duration_minutes": "Length of the cheapest-charging-window today sensor in minutes (multiple of 15, 15–240). Default 60."
         }
       }
     }

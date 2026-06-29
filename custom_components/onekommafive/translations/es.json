@@ -50,10 +50,12 @@
       "init": {
         "title": "Ajustes de 1KOMMA5°",
         "data": {
-          "feed_in_tariff": "Tarifa de inyección a red"
+          "feed_in_tariff": "Tarifa de inyección a red",
+          "charging_window_duration_minutes": "Duración de la ventana de carga (minutos)"
         },
         "data_description": {
-          "feed_in_tariff": "Ingreso por cada kWh exportado (incl. bonus), p. ej. 0,0803 para 8,03 ct/kWh."
+          "feed_in_tariff": "Ingreso por cada kWh exportado (incl. bonus), p. ej. 0,0803 para 8,03 ct/kWh.",
+          "charging_window_duration_minutes": "Duración del sensor de la ventana de carga más barata hoy en minutos (múltiplo de 15, 15–240). Por defecto 60."
         }
       }
     }

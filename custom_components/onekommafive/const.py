@@ -18,5 +18,8 @@ ATTR_SYSTEM_NAME = "system_name"
 CONF_FEED_IN_TARIFF = "feed_in_tariff"
 DEFAULT_FEED_IN_TARIFF = 0.0803
 
+CONF_CHARGING_WINDOW_DURATION_MINUTES = "charging_window_duration_minutes"
+DEFAULT_CHARGING_WINDOW_DURATION_MINUTES = 60
+
 # Bus event fired whenever a new optimization decision is observed.
 EVENT_OPTIMIZATION_DECISION = "onekommafive_optimization_decision"

@@ -140,25 +140,31 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
 
 
 class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor):
-    """Cheapest 60-min charging window that still ends today (local time).
+    """Cheapest N-min charging window that still ends today (local time).
 
-    Locked-in: once a window is chosen, it stays as state until its end has
-    passed (or the day rolls over). Restored across HA restarts. After the
-    locked window ends, the sensor re-locks the next-cheapest window of the
-    remaining day; once less than 60 min remain today, state is ``unknown``
-    until midnight.
+    Duration is set via the options flow (default 60 min, must be a multiple
+    of 15). Locked-in: once a window is chosen, it stays as state until its
+    end has passed (or the day rolls over). Restored across HA restarts.
+    After the locked window ends, the sensor re-locks the next-cheapest
+    window of the remaining day; once less than the configured duration
+    remains today, state is ``unknown`` until midnight.
     """
 
     _attr_translation_key = "cheapest_charging_window_today"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:ev-station"
 
-    _DURATION_MINUTES = 60
-    _SLOT_COUNT = 4  # 4 × 15-min slots
-
-    def __init__(self, coordinator: Any, system_id: str, system_name: str) -> None:
-        """Initialize the cheapest-window sensor."""
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        duration_minutes: int,
+    ) -> None:
+        """Initialize the cheapest-window sensor with the configured duration."""
         super().__init__(coordinator, system_id, system_name, "cheapest_charging_window_today")
+        self._duration_minutes = duration_minutes
+        self._slot_count = duration_minutes // 15
         self._window: dict[str, Any] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -175,19 +181,27 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
         self._refresh_window()
 
     def _restore_window_from_state(self, last_state: Any) -> dict[str, Any] | None:
-        """Reconstruct a window dict from a restored State, validated for today."""
+        """Reconstruct a window dict from a restored State, validated for today.
+
+        If the persisted ``slot_count`` differs from the currently-configured
+        slot count, the user has changed the charging-window duration since
+        this state was saved — discard the lock-in so the next refresh picks
+        a fresh window with the new duration.
+        """
         try:
             end_iso = last_state.attributes.get("end")
             avg_price = last_state.attributes.get("average_price")
-            slot_count = last_state.attributes.get("slot_count", self._SLOT_COUNT)
+            slot_count = int(last_state.attributes.get("slot_count", self._slot_count))
             if not end_iso or avg_price is None:
+                return None
+            if slot_count != self._slot_count:
                 return None
             return self._validate_window(
                 {
                     "start": last_state.state,
                     "end": end_iso,
                     "average_price": float(avg_price),
-                    "slot_count": int(slot_count),
+                    "slot_count": slot_count,
                 }
             )
         except (ValueError, TypeError, AttributeError):
@@ -227,7 +241,7 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
         end_of_today_local = now_local.replace(hour=23, minute=59, second=59, microsecond=999999)
         self._window = find_cheapest_window(
             self.coordinator.data.forecast,
-            self._SLOT_COUNT,
+            self._slot_count,
             earliest_start=dt_util.as_utc(now_local),
             latest_end=dt_util.as_utc(end_of_today_local),
         )
@@ -248,7 +262,7 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
             "start": self._window["start"],
             "end": self._window["end"],
             "average_price": self._window["average_price"],
-            "duration_minutes": self._DURATION_MINUTES,
+            "duration_minutes": self._duration_minutes,
             "slot_count": self._window["slot_count"],
         }
 

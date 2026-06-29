@@ -50,10 +50,12 @@
       "init": {
         "title": "1KOMMA5° Instellingen",
         "data": {
-          "feed_in_tariff": "Terugleververgoeding"
+          "feed_in_tariff": "Terugleververgoeding",
+          "charging_window_duration_minutes": "Duur laadvenster (minuten)"
         },
         "data_description": {
-          "feed_in_tariff": "Opbrengst per teruggeleverde kWh (incl. alle bonussen), bijv. 0,0803 voor 8,03 ct/kWh."
+          "feed_in_tariff": "Opbrengst per teruggeleverde kWh (incl. alle bonussen), bijv. 0,0803 voor 8,03 ct/kWh.",
+          "charging_window_duration_minutes": "Duur van de goedkoopste-laadvenster-vandaag sensor in minuten (veelvoud van 15, 15–240). Standaard 60."
         }
       }
     }

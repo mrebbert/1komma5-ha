@@ -22,7 +22,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .const import CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
+from .const import (
+    CONF_CHARGING_WINDOW_DURATION_MINUTES,
+    CONF_FEED_IN_TARIFF,
+    DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
+    DEFAULT_FEED_IN_TARIFF,
+)
 from .entity import ASSET_TYPE_BY_DEVICE_KEY
 from .helpers import get_current_price
 from .sensor_descriptions import (
@@ -504,9 +509,16 @@ async def async_setup_entry(
     )
     entities.append(stable_price_sensor)
 
-    # Cheapest charging window today (timestamp sensor + window attributes)
+    # Cheapest charging window today (timestamp sensor + window attributes).
+    # Duration is option-driven (default 60 min, multiples of 15).
+    charging_window_duration = entry.options.get(
+        CONF_CHARGING_WINDOW_DURATION_MINUTES,
+        DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
+    )
     entities.append(
-        OneKomma5CheapestChargingWindowSensor(price_coordinator, system_id, system_name)
+        OneKomma5CheapestChargingWindowSensor(
+            price_coordinator, system_id, system_name, charging_window_duration
+        )
     )
 
     # Accumulated electricity cost sensor

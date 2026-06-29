@@ -50,10 +50,12 @@
       "init": {
         "title": "1KOMMA5° asetukset",
         "data": {
-          "feed_in_tariff": "Syöttötariffi"
+          "feed_in_tariff": "Syöttötariffi",
+          "charging_window_duration_minutes": "Latausikkunan kesto (minuuttia)"
         },
         "data_description": {
-          "feed_in_tariff": "Tulo verkkoon viedyltä kWh:lta (sis. kaikki bonukset), esim. 0,0803 = 8,03 snt/kWh."
+          "feed_in_tariff": "Tulo verkkoon viedyltä kWh:lta (sis. kaikki bonukset), esim. 0,0803 = 8,03 snt/kWh.",
+          "charging_window_duration_minutes": "Halvimman latausikkunan tämänpäiväisen anturin kesto minuutteina (15:n monikerta, 15–240). Oletus 60."
         }
       }
     }

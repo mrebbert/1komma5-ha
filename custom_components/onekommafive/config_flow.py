@@ -12,10 +12,12 @@ from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import (
+    CONF_CHARGING_WINDOW_DURATION_MINUTES,
     CONF_FEED_IN_TARIFF,
     CONF_PASSWORD,
     CONF_SYSTEM_ID,
     CONF_USERNAME,
+    DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
     DEFAULT_FEED_IN_TARIFF,
     DOMAIN,
 )
@@ -227,6 +229,13 @@ def _system_title(system: Any) -> str:
     return f"1KOMMA5° {system.id()[:8]}"
 
 
+def _multiple_of_15(value: int) -> int:
+    """Validator: charging-window duration must be a multiple of 15 minutes (slot size)."""
+    if value % 15 != 0:
+        raise vol.Invalid("must be a multiple of 15")
+    return value
+
+
 class OneKomma5OptionsFlow(OptionsFlow):
     """Handle options for the 1KOMMA5° integration."""
 
@@ -240,12 +249,24 @@ class OneKomma5OptionsFlow(OptionsFlow):
             return self.async_create_entry(data=user_input)
 
         current_tariff = self._config_entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
+        current_duration = self._config_entry.options.get(
+            CONF_CHARGING_WINDOW_DURATION_MINUTES,
+            DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
+        )
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_FEED_IN_TARIFF, default=current_tariff): vol.All(
                         vol.Coerce(float), vol.Range(min=0.0, max=0.5)
+                    ),
+                    vol.Required(
+                        CONF_CHARGING_WINDOW_DURATION_MINUTES,
+                        default=current_duration,
+                    ): vol.All(
+                        vol.Coerce(int),
+                        vol.Range(min=15, max=240),
+                        _multiple_of_15,
                     ),
                 }
             ),

@@ -111,6 +111,7 @@ After setup, additional options can be configured via **Settings → Devices & S
 | Option | Default | Description |
 |--------|---------|-------------|
 | Feed-in Tariff | 0.0803 €/kWh | Feed-in tariff used to calculate the *Feed-in Revenue* sensor. Set this to your actual contract rate (incl. all bonuses). |
+| Charging-window duration | 60 min | Length of the *Cheapest charging window today* sensor. Multiple of 15, between 15 and 240 minutes. Raise to 90/120 for longer flexible loads (wash cycles, EV bulk charges); drop to 30 for short loads (boiler, dishwasher quick programmes). Mid-day duration changes invalidate the existing lock-in so the next refresh re-picks with the new length. |
 
 ---
 
