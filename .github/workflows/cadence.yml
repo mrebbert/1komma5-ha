@@ -1,0 +1,106 @@
+name: Release cadence
+
+# Weekly auto-release path:
+#   - Every push lands on `main` (hot branch). No tags from main.
+#   - This workflow runs Sunday 20:00 UTC, fast-forwards `release/next` from
+#     `main`, then tags + releases iff `manifest.json` carries a NEW version
+#     and `release-notes/v<version>.md` exists.
+#   - HACS users see the update Monday morning EU time.
+#
+# Hotfix lane (bypasses this workflow):
+#   1. Push fix to `main`.
+#   2. Manually tag `vX.Y.Z` on main HEAD and push the tag.
+#   3. Manually create the GitHub Release in the UI pointing at that tag
+#      → `release.yml` builds + attaches the zip.
+#   4. Next cadence run fast-forwards `release/next` past the hotfix tag.
+
+on:
+  schedule:
+    - cron: '0 20 * * 0'   # Sunday 20:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cadence:
+    name: Tag release/next when main has a version bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main with full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Ensure release/next exists on origin
+        run: |
+          if git ls-remote --exit-code --heads origin release/next >/dev/null 2>&1; then
+            git fetch origin release/next:refs/remotes/origin/release/next
+          else
+            echo "::notice::release/next missing — bootstrapping at main HEAD"
+            git push origin "$(git rev-parse HEAD):refs/heads/release/next"
+            git fetch origin release/next:refs/remotes/origin/release/next
+          fi
+
+      - name: Detect commits ahead of release/next
+        id: ahead
+        run: |
+          AHEAD=$(git rev-list --count origin/release/next..HEAD)
+          echo "count=$AHEAD" >> "$GITHUB_OUTPUT"
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "::notice::main is not ahead of release/next — nothing to release."
+          fi
+
+      - name: Read pending version from manifest.json
+        if: steps.ahead.outputs.count != '0'
+        id: version
+        run: |
+          V=$(jq -r '.version' custom_components/onekommafive/manifest.json)
+          echo "version=$V"                    >> "$GITHUB_OUTPUT"
+          echo "tag=v$V"                       >> "$GITHUB_OUTPUT"
+          echo "notes=release-notes/v$V.md"    >> "$GITHUB_OUTPUT"
+
+      - name: Skip if tag already exists
+        if: steps.ahead.outputs.count != '0'
+        id: tag
+        run: |
+          if git rev-parse --verify --quiet "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Tag ${{ steps.version.outputs.tag }} already exists — main has commits but manifest.json was not bumped. Skipping cadence release; bump manifest + add ${{ steps.version.outputs.notes }} before next Sunday."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require release notes file
+        if: steps.ahead.outputs.count != '0' && steps.tag.outputs.skip == 'false'
+        run: |
+          if [ ! -f "${{ steps.version.outputs.notes }}" ]; then
+            echo "::error::Release notes ${{ steps.version.outputs.notes }} missing — add it on main before the cadence run."
+            exit 1
+          fi
+
+      - name: Fast-forward release/next from main
+        if: steps.ahead.outputs.count != '0' && steps.tag.outputs.skip == 'false'
+        run: |
+          git push origin "HEAD:refs/heads/release/next"
+
+      - name: Build release archive
+        if: steps.ahead.outputs.count != '0' && steps.tag.outputs.skip == 'false'
+        run: |
+          cd custom_components
+          zip -r ../onekommafive.zip onekommafive/
+
+      - name: Create tag + GitHub release (HEAD of release/next)
+        if: steps.ahead.outputs.count != '0' && steps.tag.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: release/next
+          name: ${{ steps.version.outputs.tag }}
+          body_path: ${{ steps.version.outputs.notes }}
+          files: onekommafive.zip

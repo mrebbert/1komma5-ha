@@ -91,6 +91,39 @@ The integration ships German (`strings.json` and `translations/de.json`) and Eng
 
 Releases are cut by the maintainer. There's no obligation for contributors to bump versions or tag — just leave the PR with `[Unreleased]` notes and the maintainer will roll them into the next release.
 
+### Release cadence (maintainer reference)
+
+The repo uses a two-branch model to keep HACS-user release noise low:
+
+- **`main`** — hot branch. Every commit lands here; CI runs Validate + Tests + CodeQL on push. **No tags from main** under normal circumstances.
+- **`release/next`** — release branch. Tags and GitHub Releases originate here only.
+
+A scheduled workflow (`.github/workflows/cadence.yml`) runs every **Sunday 20:00 UTC** (Monday morning EU time for HACS users). It:
+
+1. Checks whether `main` is ahead of `release/next`. If not, logs `nothing to release` and exits.
+2. Reads `version` from `custom_components/onekommafive/manifest.json`.
+3. If a tag `vX.Y.Z` for that version already exists, the cadence logs a warning and skips — `main` has commits but `manifest.json` was not bumped, so there's no new release to cut.
+4. If `release-notes/vX.Y.Z.md` is missing, the workflow fails loudly so notes don't accidentally ship empty.
+5. Otherwise: fast-forwards `release/next` from `main`, builds the zip, creates the GitHub Release with the curated notes file as body and the zip attached.
+
+To get changes into the next cadence release, **on `main` before Sunday 20:00 UTC**:
+
+1. Bump `version` in `custom_components/onekommafive/manifest.json`.
+2. Rotate the CHANGELOG: move the `## [Unreleased]` block to `## [X.Y.Z] - YYYY-MM-DD`.
+3. Add `release-notes/vX.Y.Z.md` with the curated release body.
+4. Commit + push.
+
+The workflow can also be triggered manually via Actions → Release cadence → "Run workflow" (e.g. for testing).
+
+#### Hotfix lane (bypasses the cadence)
+
+When something is broken and waiting for Sunday isn't acceptable:
+
+1. Push the fix to `main` as usual.
+2. Manually tag `vX.Y.Z` on `main` HEAD: `git tag vX.Y.Z && git push --tags`.
+3. Manually create the GitHub Release in the UI pointing at that tag — `.github/workflows/release.yml` fires on the `release: published` event and attaches the zip.
+4. The next Sunday cadence run fast-forwards `release/next` past the hotfix tag, no conflict.
+
 ## Code style notes
 
 - The integration uses Python 3.12+ syntax (`type` aliases, PEP 695 generics, `datetime.UTC`).
