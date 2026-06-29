@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Showcase dashboard variant** (`dashboard/dashboard-showcase.yaml`) — six views (Grid / Vehicle / Prices & costs / Optimization / Weather / System) that exercise the full integration surface, including the per-asset sub-devices, weather entity, AI optimization decisions, connectivity binaries, active-feature flags, and diagnostic update timestamps. The original three-view `dashboard.yaml` stays as the compact daily-driver layout; pick the showcase when you want to see what's possible. Both share the same placeholder convention (`SYSTEM_NAME` / `CAR_IDENTIFIER`), custom-card requirements (`apexcharts-card` + `button-card`), and `input_select.stromkosten_zeitspanne` helper. Documented in `dashboard/README.md` with thumbnails of all six tabs.
+
 ### Fixed
 - Per-asset connectivity binary sensors no longer duplicate the asset type in their display name. Since the v0.1.44 sub-device split, HA composed `<device-name> + <entity-name>` — so a sensor on the "Wechselrichter" sub-device whose translation said "Wechselrichter verbunden" rendered as "Wechselrichter Wechselrichter verbunden". The four asset-type translations (`inverter_connected` / `heat_pump_connected` / `meter_connected` / `wallbox_connected`) are now just the past-participle word ("Verbunden" / "Connected" / "Verbonden" / "Conectado" / "Forbundet" / "Ansluten" / "Yhdistetty") across all seven locales — the device name carries the noun. `site_connected` stays unchanged (lives on the parent device, not duplicated). `entity_id`s and `unique_id`s are unchanged; existing automations and dashboards keep working.
 
