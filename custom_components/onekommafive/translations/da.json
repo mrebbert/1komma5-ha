@@ -250,6 +250,9 @@
       "cheapest_charging_window_today": {
         "name": "Billigste ladevindue i dag"
       },
+      "cheapest_charging_window_tomorrow": {
+        "name": "Billigste ladevindue i morgen"
+      },
       "electricity_cost": {
         "name": "Strømomkostninger"
       },

@@ -1,6 +1,6 @@
 # 1KOMMA5° automation blueprints
 
-Six ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
+Seven ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
 common automations on top of this integration.
 
 ## Importing
@@ -74,6 +74,20 @@ draining the house battery.
 Inputs: battery SoC sensor, battery-full threshold (default 95 %), PV
 power sensor, PV surplus threshold (default 5 000 W), target switch,
 deactivation delay (default 5 min).
+
+### `notify_negative_price_started.yaml` — Notify when the grid pays you
+Fires a notification the moment the active 15-min electricity price
+becomes ≤ 0. Listens to the
+`onekommafive_negative_price_started` bus event — granularity is the
+price-coordinator refresh interval (default 1 h), so the alert may
+arrive up to a refresh-cycle late.
+
+Companion to `notify_negative_prices_tomorrow.yaml` (forecast-side
+heads-up about *tomorrow's* negative slots).
+
+Inputs: notify service, title, message (Jinja-templatable with
+`trigger.event.data.price` and
+`trigger.event.data.negative_price_slots_remaining`).
 
 ### `notify_connectivity_lost.yaml` — Notify when a device goes offline
 Sends a notification when one of the v0.1.38 connectivity sensors (site,

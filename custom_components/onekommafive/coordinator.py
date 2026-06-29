@@ -11,6 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    EVENT_NEGATIVE_PRICE_ENDED,
+    EVENT_NEGATIVE_PRICE_STARTED,
     EVENT_OPTIMIZATION_DECISION,
     LIVE_UPDATE_INTERVAL_SECONDS,
     OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
@@ -194,6 +196,11 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     _coordinator_name = "1KOMMA5° Prices"
     _interval_seconds = PRICE_UPDATE_INTERVAL_SECONDS
 
+    # Tracks the active-slot price sign across refreshes so we can detect
+    # negative ↔ positive edges and fire bus events on transitions.
+    # None on the first refresh — no event then.
+    _last_active_was_negative: bool | None = None
+
     def _fetch(self) -> PriceData:
         """Fetch price data synchronously.
 
@@ -261,6 +268,37 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             tomorrow_lowest_price=tomorrow_lowest,
             tomorrow_highest_price=tomorrow_highest,
         )
+
+    async def _async_update_data(self) -> PriceData:
+        """Fetch + fire HA bus events for negative-price edge transitions."""
+        data = await super()._async_update_data()
+        self._fire_negative_price_edge_events(data)
+        return data
+
+    def _fire_negative_price_edge_events(self, data: PriceData) -> None:
+        """Detect a negative ↔ positive transition on the active slot and fire events.
+
+        Granularity is the coordinator refresh interval (1 h by default), so an
+        edge may be reported up to one refresh-cycle late. The first refresh
+        after HA start primes ``_last_active_was_negative`` but fires no event.
+        """
+        if data.current_price is None:
+            return
+        is_negative_now = data.current_price <= 0
+        previous = self._last_active_was_negative
+        self._last_active_was_negative = is_negative_now
+
+        if previous is None or previous == is_negative_now:
+            return
+
+        payload = {
+            "system_id": self._system.id(),
+            "price": data.current_price,
+            "negative_price_slots_remaining": data.negative_price_slots_today,
+        }
+        event_type = EVENT_NEGATIVE_PRICE_STARTED if is_negative_now else EVENT_NEGATIVE_PRICE_ENDED
+        _LOGGER.debug("Firing %s: %s", event_type, payload)
+        self.hass.bus.async_fire(event_type, payload)
 
 
 class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData]):

@@ -403,3 +403,127 @@ async def test_cheapest_window_reloads_on_options_change(
     after = _cheapest_window_state(hass)
     assert after.attributes["duration_minutes"] == 90
     assert after.attributes["slot_count"] == 6
+
+
+def _tomorrow_window_state(hass: HomeAssistant):
+    for state in hass.states.async_all("sensor"):
+        if state.entity_id.endswith("_cheapest_charging_window_tomorrow"):
+            return state
+    raise AssertionError("cheapest charging window tomorrow sensor not registered")
+
+
+async def test_tomorrow_window_picks_cheapest_tomorrow_slot(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """Tomorrow-window sensor selects the cheapest 60-min run from tomorrow's slots."""
+    await hass.config.async_set_time_zone("UTC")
+    freezer.move_to("2026-06-15T22:00:00+00:00")  # Late evening; tomorrow's prices loaded.
+    # Tomorrow starts at 2026-06-16T00:00 UTC. Build 16 tomorrow-slots with a min run.
+    tomorrow_base = datetime.datetime(2026, 6, 16, 0, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    prices: dict[datetime.datetime, float] = {}
+    # 4 today-slots, all expensive, so the today-window picker has data but tomorrow is the cheap one.
+    today_base = datetime.datetime(2026, 6, 15, 22, 15, tzinfo=datetime.UTC)
+    for i in range(4):
+        prices[today_base + slot * i] = 0.90
+    # 16 tomorrow-slots; slots 4-7 form the cheapest 60-min block.
+    for i in range(16):
+        end = tomorrow_base + slot * (i + 1)
+        prices[end] = 0.50 if i not in (4, 5, 6, 7) else 0.10
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-tmrw",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-tmrw"},
+    )
+    entry.add_to_hass(hass)
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = _tomorrow_window_state(hass)
+    expected_start = tomorrow_base + slot * 4
+    assert state.state == expected_start.isoformat()
+    assert state.attributes["duration_minutes"] == 60
+    assert state.attributes["slot_count"] == 4
+    assert state.attributes["average_price"] == 0.10
+
+
+async def test_tomorrow_window_unknown_without_tomorrow_forecast(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """Without tomorrow-slots in the forecast the tomorrow sensor stays unknown."""
+    await hass.config.async_set_time_zone("UTC")
+    freezer.move_to(
+        "2026-06-15T08:00:00+00:00"
+    )  # Morning — tomorrow's prices typically not yet available.
+    today_base = datetime.datetime(2026, 6, 15, 8, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    # Only today-slots, no tomorrow data.
+    prices = {today_base + slot * i: 0.20 for i in range(16)}
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-no-tmrw",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-no-tmrw"},
+    )
+    entry.add_to_hass(hass)
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = _tomorrow_window_state(hass)
+    assert state.state in ("unknown", "unavailable")
+    assert "average_price" not in state.attributes
+
+
+async def test_tomorrow_window_honours_configured_duration(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
+    """The tomorrow sensor uses the same options-flow duration as the today twin."""
+    from custom_components.onekommafive.const import CONF_CHARGING_WINDOW_DURATION_MINUTES
+
+    await hass.config.async_set_time_zone("UTC")
+    freezer.move_to("2026-06-15T22:00:00+00:00")
+    tomorrow_base = datetime.datetime(2026, 6, 16, 0, 15, tzinfo=datetime.UTC)
+    slot = datetime.timedelta(minutes=15)
+    prices: dict[datetime.datetime, float] = {}
+    # 30-min option → slots 2 + 3 form the cheapest run.
+    for i in range(16):
+        end = tomorrow_base + slot * (i + 1)
+        prices[end] = 0.50 if i not in (2, 3) else 0.10
+
+    system = mock_system_factory(prices=_market_prices(prices))
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-tmrw-30",
+        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-tmrw-30"},
+        options={CONF_CHARGING_WINDOW_DURATION_MINUTES: 30},
+    )
+    entry.add_to_hass(hass)
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems.return_value = [system]
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = _tomorrow_window_state(hass)
+    expected_start = tomorrow_base + slot * 2
+    assert state.state == expected_start.isoformat()
+    assert state.attributes["duration_minutes"] == 30
+    assert state.attributes["slot_count"] == 2

@@ -250,6 +250,9 @@
       "cheapest_charging_window_today": {
         "name": "Tämän päivän halvin latausikkuna"
       },
+      "cheapest_charging_window_tomorrow": {
+        "name": "Huomisen halvin latausikkuna"
+      },
       "electricity_cost": {
         "name": "Sähkökustannukset"
       },

@@ -250,6 +250,9 @@
       "cheapest_charging_window_today": {
         "name": "Cheapest charging window today"
       },
+      "cheapest_charging_window_tomorrow": {
+        "name": "Cheapest charging window tomorrow"
+      },
       "electricity_cost": {
         "name": "Electricity cost"
       },

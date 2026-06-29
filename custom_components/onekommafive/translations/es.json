@@ -250,6 +250,9 @@
       "cheapest_charging_window_today": {
         "name": "Ventana de carga más barata hoy"
       },
+      "cheapest_charging_window_tomorrow": {
+        "name": "Ventana de carga más barata mañana"
+      },
       "electricity_cost": {
         "name": "Coste de la electricidad"
       },

@@ -6,6 +6,7 @@ The actual SENSORS configuration tuples and the platform's
 
 from __future__ import annotations
 
+import datetime as _dt
 import logging
 from datetime import datetime
 from typing import Any
@@ -256,6 +257,86 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Expose start/end/avg-price/duration on the sensor."""
+        if self._window is None:
+            return None
+        return {
+            "start": self._window["start"],
+            "end": self._window["end"],
+            "average_price": self._window["average_price"],
+            "duration_minutes": self._duration_minutes,
+            "slot_count": self._window["slot_count"],
+        }
+
+
+class OneKomma5CheapestChargingWindowTomorrowSensor(OneKomma5PriceEntity, SensorEntity):
+    """Cheapest N-min charging window in **tomorrow's** forecast (HA-local time).
+
+    Twin of `OneKomma5CheapestChargingWindowSensor` but for tomorrow. Uses the
+    same option-driven duration. No lock-in semantic — tomorrow's window
+    can't be acted on before midnight, so re-picking on every refresh is
+    safe (and necessary as prices update). State is `unknown` until the
+    price coordinator picks up tomorrow's prices, typically around 13:00
+    CET on the previous day.
+    """
+
+    _attr_translation_key = "cheapest_charging_window_tomorrow"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:ev-station"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        duration_minutes: int,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, "cheapest_charging_window_tomorrow")
+        self._duration_minutes = duration_minutes
+        self._slot_count = duration_minutes // 15
+        self._window: dict[str, Any] | None = None
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._refresh_window()
+        super()._handle_coordinator_update()
+
+    def _refresh_window(self) -> None:
+        self._window = None
+        if self.coordinator.data is None or not self.coordinator.data.forecast:
+            return
+        now_local = dt_util.now()
+        tomorrow_local = now_local.date() + _dt.timedelta(days=1)
+        start_of_tomorrow = now_local.replace(
+            year=tomorrow_local.year,
+            month=tomorrow_local.month,
+            day=tomorrow_local.day,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        end_of_tomorrow = start_of_tomorrow.replace(
+            hour=23, minute=59, second=59, microsecond=999999
+        )
+        self._window = find_cheapest_window(
+            self.coordinator.data.forecast,
+            self._slot_count,
+            earliest_start=dt_util.as_utc(start_of_tomorrow),
+            latest_end=dt_util.as_utc(end_of_tomorrow),
+        )
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._refresh_window()
+
+    @property
+    def native_value(self) -> datetime | None:
+        if self._window is None:
+            return None
+        return datetime.fromisoformat(self._window["start"])
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
         if self._window is None:
             return None
         return {

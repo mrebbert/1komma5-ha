@@ -250,6 +250,9 @@
       "cheapest_charging_window_today": {
         "name": "Günstigstes Ladefenster heute"
       },
+      "cheapest_charging_window_tomorrow": {
+        "name": "Günstigstes Ladefenster morgen"
+      },
       "electricity_cost": {
         "name": "Stromkosten"
       },

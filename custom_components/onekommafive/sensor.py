@@ -41,6 +41,7 @@ from .sensor_entities import (
     CURRENCY_EUR_PER_KWH,
     OneKomma5ActiveFeaturesSensor,
     OneKomma5CheapestChargingWindowSensor,
+    OneKomma5CheapestChargingWindowTomorrowSensor,
     OneKomma5ConsumerCostSensor,
     OneKomma5CostSensor,
     OneKomma5DiagnosticSensor,
@@ -517,6 +518,11 @@ async def async_setup_entry(
     )
     entities.append(
         OneKomma5CheapestChargingWindowSensor(
+            price_coordinator, system_id, system_name, charging_window_duration
+        )
+    )
+    entities.append(
+        OneKomma5CheapestChargingWindowTomorrowSensor(
             price_coordinator, system_id, system_name, charging_window_duration
         )
     )

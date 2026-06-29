@@ -23,3 +23,9 @@ DEFAULT_CHARGING_WINDOW_DURATION_MINUTES = 60
 
 # Bus event fired whenever a new optimization decision is observed.
 EVENT_OPTIMIZATION_DECISION = "onekommafive_optimization_decision"
+
+# Bus events fired on edge transitions of the active electricity price.
+# `_started`  → previous active slot had price > 0, new slot has price ≤ 0.
+# `_ended`    → previous active slot had price ≤ 0, new slot has price > 0.
+EVENT_NEGATIVE_PRICE_STARTED = "onekommafive_negative_price_started"
+EVENT_NEGATIVE_PRICE_ENDED = "onekommafive_negative_price_ended"

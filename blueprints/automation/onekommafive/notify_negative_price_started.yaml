@@ -1,0 +1,63 @@
+blueprint:
+  name: 1KOMMA5° — Notify when the grid pays you
+  description: >
+    Send a notification the moment the active 15-min electricity price
+    becomes ≤ 0 — i.e. the spot market is paying you to consume.
+
+
+    Listens to the `onekommafive_negative_price_started` bus event
+    fired by the price coordinator on every positive→negative
+    transition of the active slot. The mirror
+    `onekommafive_negative_price_ended` event is also fired but
+    typically less interesting; build a second instance off this
+    blueprint with the alternate `event_type` if you want both.
+
+
+    Companion to `notify_negative_prices_tomorrow.yaml`, which is the
+    forecast-side (heads-up about *tomorrow* containing negative
+    slots). This blueprint reacts to the *now*-side.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/notify_negative_price_started.yaml
+
+  input:
+    notify_target:
+      name: Notification target
+      description: >
+        The `notify` service to call (e.g. `notify.mobile_app_pixel`,
+        `notify.persistent_notification`, `notify.notify`).
+      default: notify.persistent_notification
+      selector:
+        text: {}
+    title:
+      name: Notification title
+      default: "1KOMMA5°: The grid is paying you"
+      selector:
+        text: {}
+    message:
+      name: Notification message
+      description: >
+        Supports Jinja templates. Available variable:
+        `trigger.event.data.price` (current EUR/kWh, negative number),
+        `trigger.event.data.negative_price_slots_remaining` (count of
+        remaining negative 15-min slots today).
+      default: >
+        Active electricity price just turned negative: {{ trigger.event.data.price }}
+        EUR/kWh. Negative slots remaining today:
+        {{ trigger.event.data.negative_price_slots_remaining }}.
+      selector:
+        text:
+          multiline: true
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: event
+    event_type: onekommafive_negative_price_started
+
+action:
+  - service: !input notify_target
+    data:
+      title: !input title
+      message: !input message

@@ -131,12 +131,13 @@ The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant 
 
 ## Home Assistant Automation Blueprints
 
-Six ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
+Seven ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
 
 - **Run during cheapest window** — schedules a switch for the cheapest N-minute window each day (dishwasher, washing machine, EV)
 - **Follow cheap electricity** — mirrors a switch to `binary_sensor…_cheap_electricity` for opportunistic loads (water heater, pool pump)
 - **Notify on AI grid-charge decision** — pings you whenever the Heartbeat AI starts charging the battery from the grid
 - **Notify on negative prices tomorrow** — heads-up when tomorrow's forecast contains at least N negative-price slots (fires around 13:00 CET when tomorrow's prices arrive)
+- **Notify when the grid pays you** — fires the moment the active slot turns negative, built on the new bus event
 - **EV charge on PV surplus** — toggles a switch ON when the home battery is full AND PV power exceeds a threshold, OFF when either condition fails
 - **Notify when a device goes offline** — alerts you when site, inverter, heat pump, meter or wallbox connectivity sensor stays OFF for a configurable debounce
 
@@ -203,7 +204,8 @@ Installations missing one of the four asset types (e.g. no heat pump, or a grid-
 | Average Electricity Price Tomorrow | `tomorrow_average_price` | Tomorrow's average all-in price (available after ~13:00 CET) | EUR/kWh | 1 h |
 | Lowest Electricity Price Tomorrow | `tomorrow_lowest_price` | Tomorrow's lowest all-in price | EUR/kWh | 1 h |
 | Highest Electricity Price Tomorrow | `tomorrow_highest_price` | Tomorrow's highest all-in price | EUR/kWh | 1 h |
-| Cheapest Charging Window Today | `cheapest_charging_window_today` | Start timestamp of the cheapest contiguous 60-min window remaining today. Attributes: `start`, `end`, `average_price`, `duration_minutes`, `slot_count`. Returns "unknown" once less than 60 min remain today. | timestamp | 15 min |
+| Cheapest Charging Window Today | `cheapest_charging_window_today` | Start timestamp of the cheapest contiguous N-min window remaining today (N = configurable via options flow, default 60). Attributes: `start`, `end`, `average_price`, `duration_minutes`, `slot_count`. Returns "unknown" once less than N min remain today. | timestamp | 15 min |
+| Cheapest Charging Window Tomorrow | `cheapest_charging_window_tomorrow` | Twin of the today-sensor for tomorrow's forecast. Same attributes, same configurable duration. Stays "unknown" until tomorrow's prices arrive (typically around 13:00 CET). Fills the evening-planning gap. | timestamp | 15 min |
 
 All price sensors use `state_class: measurement`, so Home Assistant automatically records **long-term statistics** (hourly min/max/mean). Price history is visible in the History panel and can be used for trend analysis.
 
@@ -542,6 +544,32 @@ action:
   - service: switch.turn_on
     target:
       entity_id: switch.dishwasher
+```
+
+### Bus events: `onekommafive_negative_price_started` / `onekommafive_negative_price_ended`
+
+The price coordinator fires these edge events when the active 15-min slot transitions across zero — `_started` on a positive→negative flip, `_ended` on the reverse. Lets automations subscribe via `platform: event` with one line instead of building edge detection on top of `numeric_state`.
+
+The first refresh after a HA start primes the tracker but emits no event (to avoid spurious notifications on restart). Granularity is the coordinator refresh interval (1 h by default) — an edge may be reported up to one refresh-cycle late.
+
+**Event data (both events):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `system_id` | string | The 1KOMMA5° system UUID |
+| `price` | float | Current active-slot price in EUR/kWh (negative on `_started`, positive on `_ended`) |
+| `negative_price_slots_remaining` | int | Count of remaining negative 15-min slots in today's forecast |
+
+**Example automation** — pre-cool the freezer while the grid pays you:
+
+```yaml
+trigger:
+  - platform: event
+    event_type: onekommafive_negative_price_started
+action:
+  - service: switch.turn_on
+    target:
+      entity_id: switch.freezer_pre_cool
 ```
 
 ---

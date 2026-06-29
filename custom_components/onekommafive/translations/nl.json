@@ -250,6 +250,9 @@
       "cheapest_charging_window_today": {
         "name": "Goedkoopste laadvenster vandaag"
       },
+      "cheapest_charging_window_tomorrow": {
+        "name": "Goedkoopste laadvenster morgen"
+      },
       "electricity_cost": {
         "name": "Stroomkosten"
       },
