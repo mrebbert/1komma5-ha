@@ -102,6 +102,20 @@
           "description": "Bij meerdere 1KOMMA5°-systemen: kies het doelsysteem."
         }
       }
+    },
+    "refresh_now": {
+      "name": "Coördinator-verversing forceren",
+      "description": "Forceert een onmiddellijke ververs van een (of alle) datacoördinatoren. Handig na een stroomuitval, voor debugging en als reset-hook in automatiseringen.",
+      "fields": {
+        "coordinator": {
+          "name": "Coördinator",
+          "description": "Welke coördinator vernieuwen — of 'all' om alle te vernieuwen."
+        },
+        "config_entry_id": {
+          "name": "Integratie",
+          "description": "Bij meerdere 1KOMMA5°-systemen: kies het doelsysteem."
+        }
+      }
     }
   },
   "entity": {

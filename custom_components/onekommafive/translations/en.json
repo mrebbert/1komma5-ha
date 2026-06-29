@@ -102,6 +102,20 @@
           "description": "When multiple 1KOMMA5° systems are configured: select the target system."
         }
       }
+    },
+    "refresh_now": {
+      "name": "Force coordinator refresh",
+      "description": "Force an immediate refresh of one (or all) data coordinators. Useful after a power outage, for debugging, and as a reset hook in automations.",
+      "fields": {
+        "coordinator": {
+          "name": "Coordinator",
+          "description": "Which coordinator to refresh — or 'all' to refresh every coordinator."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "When multiple 1KOMMA5° systems are configured: select the target system."
+        }
+      }
     }
   },
   "entity": {

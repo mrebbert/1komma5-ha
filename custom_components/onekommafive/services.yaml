@@ -47,3 +47,22 @@ get_most_expensive_window:
       selector:
         config_entry:
           integration: onekommafive
+
+refresh_now:
+  fields:
+    coordinator:
+      default: live
+      example: live
+      selector:
+        select:
+          options:
+            - live
+            - price
+            - optimization
+            - weather
+            - system_status
+            - all
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: onekommafive

@@ -102,6 +102,20 @@
           "description": "Kun käytössä on useita 1KOMMA5°-järjestelmiä: valitse kohdejärjestelmä."
         }
       }
+    },
+    "refresh_now": {
+      "name": "Pakota koordinaattorin päivitys",
+      "description": "Pakottaa yhden (tai kaikkien) data-koordinaattorin välittömän päivityksen. Hyödyllinen sähkökatkon jälkeen, vianetsintään ja automaatioiden palautuskoukkuna.",
+      "fields": {
+        "coordinator": {
+          "name": "Koordinaattori",
+          "description": "Mikä koordinaattori päivitetään — tai 'all' kaikkien päivittämiseen."
+        },
+        "config_entry_id": {
+          "name": "Integraatio",
+          "description": "Kun käytössä on useita 1KOMMA5°-järjestelmiä: valitse kohdejärjestelmä."
+        }
+      }
     }
   },
   "entity": {

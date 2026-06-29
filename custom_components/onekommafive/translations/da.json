@@ -102,6 +102,20 @@
           "description": "Hvis flere 1KOMMA5°-systemer er konfigureret: vælg målsystemet."
         }
       }
+    },
+    "refresh_now": {
+      "name": "Tvunget koordinator-opdatering",
+      "description": "Fremtvinger en øjeblikkelig opdatering af én (eller alle) data-koordinatorer. Nyttig efter strømsvigt, til fejlfinding og som reset-hook i automatiseringer.",
+      "fields": {
+        "coordinator": {
+          "name": "Koordinator",
+          "description": "Hvilken koordinator der skal opdateres — eller 'all' for at opdatere alle."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Hvis flere 1KOMMA5°-systemer er konfigureret: vælg målsystemet."
+        }
+      }
     }
   },
   "entity": {

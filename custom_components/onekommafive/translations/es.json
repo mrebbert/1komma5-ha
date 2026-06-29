@@ -102,6 +102,20 @@
           "description": "Cuando hay varios sistemas 1KOMMA5° configurados: elige el sistema objetivo."
         }
       }
+    },
+    "refresh_now": {
+      "name": "Forzar actualización del coordinador",
+      "description": "Fuerza una actualización inmediata de uno (o todos) los coordinadores de datos. Útil tras un apagón, para depuración y como gancho de reinicio en automatizaciones.",
+      "fields": {
+        "coordinator": {
+          "name": "Coordinador",
+          "description": "Qué coordinador actualizar — o 'all' para actualizar todos."
+        },
+        "config_entry_id": {
+          "name": "Integración",
+          "description": "Cuando hay varios sistemas 1KOMMA5° configurados: elige el sistema objetivo."
+        }
+      }
     }
   },
   "entity": {

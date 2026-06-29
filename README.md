@@ -492,6 +492,44 @@ action:
         # Or schedule via wait_until / time pattern using window.start
 ```
 
+### Service: `onekommafive.refresh_now`
+
+Force an immediate refresh of one (or all) data coordinators. Useful after a power outage, for debugging, and as a reset hook in automations (e.g. "after closing the breaker, re-poll live data right away instead of waiting up to 30 s").
+
+**Parameters:**
+
+| Field | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `coordinator` | no | `live` | One of `live`, `price`, `optimization`, `weather`, `system_status`, or `all` |
+| `config_entry_id` | no | — | Required only when multiple 1KOMMA5° systems are configured |
+
+**Response** (returned only when the caller uses `response_variable:`):
+
+```yaml
+refreshed: ["live"]
+failed: []
+```
+
+`all` refreshes every coordinator in parallel; per-coordinator failures land in `failed` but don't raise — the service always returns the breakdown so callers can branch on it.
+
+**Example automation** — refresh live data when a manual button is pressed:
+
+```yaml
+trigger:
+  - platform: state
+    entity_id: input_button.poll_now
+action:
+  - service: onekommafive.refresh_now
+    data:
+      coordinator: all
+    response_variable: refresh
+  - if: "{{ refresh.failed | length > 0 }}"
+    then:
+      - service: notify.persistent_notification
+        data:
+          message: "1KOMMA5° refresh failed: {{ refresh.failed }}"
+```
+
 ### Bus event: `onekommafive_optimization_decision`
 
 Whenever the integration sees a new optimization decision from the Heartbeat AI, it fires a Home Assistant bus event so you can drive automations from it. The first refresh after a Home Assistant restart fires **one** event for the most recent decision (so the wiring is immediately verifiable in Developer Tools → Events); the day's earlier decisions are not replayed.

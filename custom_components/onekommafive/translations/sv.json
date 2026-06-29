@@ -102,6 +102,20 @@
           "description": "Vid flera konfigurerade 1KOMMA5°-system: välj målsystemet."
         }
       }
+    },
+    "refresh_now": {
+      "name": "Tvinga koordinatoruppdatering",
+      "description": "Tvingar en omedelbar uppdatering av en (eller alla) data-koordinatorer. Användbar efter strömavbrott, för felsökning och som återställningskrok i automatiseringar.",
+      "fields": {
+        "coordinator": {
+          "name": "Koordinator",
+          "description": "Vilken koordinator som ska uppdateras — eller 'all' för att uppdatera alla."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Vid flera konfigurerade 1KOMMA5°-system: välj målsystemet."
+        }
+      }
     }
   },
   "entity": {
