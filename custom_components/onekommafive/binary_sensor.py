@@ -103,6 +103,24 @@ async def async_setup_entry(
         for feature_name, translation_key in ACTIVE_FEATURE_BINARY_SENSORS
     )
 
+    # Static-metadata binaries from SystemDetails (fetched once at setup).
+    entities.extend(
+        [
+            OneKomma5EnergyTraderActiveSensor(
+                data.system_status_coordinator,
+                system_id,
+                data.system_name,
+                data.details,
+            ),
+            OneKomma5DynamicPulseCompatibleSensor(
+                data.system_status_coordinator,
+                system_id,
+                data.system_name,
+                data.details,
+            ),
+        ]
+    )
+
     async_add_entities(entities)
 
 
@@ -482,3 +500,45 @@ ACTIVE_FEATURE_BINARY_SENSORS = (
     ("TIME_OF_USE_OPTIMIZATION", "time_of_use_active"),
     ("SMART_CHARGING", "smart_charging_active"),
 )
+
+
+class _OneKomma5DetailsBinarySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+    """Base for binaries whose value comes from `SystemDetails` (fetched once
+    at setup, not via any coordinator). The system-status coordinator
+    subscription is purely for device parenting + availability."""
+
+    _details_field: str  # subclasses override
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        details: Any | None,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, self._attr_translation_key)
+        self._details = details
+
+    @property
+    def is_on(self) -> bool | None:
+        if self._details is None:
+            return None
+        return getattr(self._details, self._details_field, None)
+
+
+class OneKomma5EnergyTraderActiveSensor(_OneKomma5DetailsBinarySensor):
+    """ON when the site is enrolled in 1KOMMA5°'s virtual power plant
+    (energy trading). Reads `SystemDetails.energy_trader_active`."""
+
+    _attr_translation_key = "energy_trader_active"
+    _attr_icon = "mdi:transmission-tower"
+    _details_field = "energy_trader_active"
+
+
+class OneKomma5DynamicPulseCompatibleSensor(_OneKomma5DetailsBinarySensor):
+    """ON when the site is technically compatible with Dynamic Pulse
+    (dynamic-tariff optimisation). Reads `SystemDetails.dynamic_pulse_compatible`."""
+
+    _attr_translation_key = "dynamic_pulse_compatible"
+    _attr_icon = "mdi:flash"
+    _details_field = "dynamic_pulse_compatible"

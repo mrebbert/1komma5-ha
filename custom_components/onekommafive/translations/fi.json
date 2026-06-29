@@ -141,6 +141,12 @@
       },
       "smart_charging_active": {
         "name": "Älylataus aktiivinen"
+      },
+      "energy_trader_active": {
+        "name": "Energiakauppa aktiivinen"
+      },
+      "dynamic_pulse_compatible": {
+        "name": "Dynamic Pulse -yhteensopiva"
       }
     },
     "sensor": {
@@ -306,6 +312,9 @@
       },
       "active_features": {
         "name": "Aktiiviset toiminnot"
+      },
+      "system_age_days": {
+        "name": "Järjestelmän ikä"
       },
       "weather_sunshine_today": {
         "name": "Auringonpaisteen kesto tänään"

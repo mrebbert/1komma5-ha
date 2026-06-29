@@ -365,6 +365,8 @@ Sensors exposing the Heartbeat AI optimization decisions. Updated every 15 minut
 | Site connectivity | `site_connected` | ON when the 1KOMMA5° cloud reports the site as `CONNECTED`. Aggregate signal. Attributes: `site_status`, `asset_count`. | 5 min |
 | Inverter / Heat pump / Meter / Wallbox connectivity | `inverter_connected`, `heat_pump_connected`, `meter_connected`, `wallbox_connected` | One ON/OFF per asset type — only registered when the cloud actually reports an asset of that type. AND-logic: ON only when every asset of the type is `CONNECTED`. Attributes: `count`, `connected_count`, `assets` (manufacturer / model / firmware, PII-safe). | 5 min |
 | Active features | `dynamic_tariff_active`, `time_of_use_active`, `smart_charging_active` | One Boolean per feature flag returned by the 1KOMMA5° customer-features API. Lets you gate automations on `condition: state binary_sensor.<…>_active is on` without parsing the `aktive_funktionen` attribute list. | 5 min |
+| Energy trading active | `energy_trader_active` | ON when the site is enrolled in 1KOMMA5°'s virtual power plant (energy trading). Sourced from `SystemDetails.energy_trader_active`, captured once at setup. | static |
+| Dynamic Pulse compatible | `dynamic_pulse_compatible` | ON when the site's hardware/contract qualifies for Dynamic Pulse (dynamic-tariff optimisation). Sourced from `SystemDetails.dynamic_pulse_compatible`. | static |
 
 ### EV Charger / Wallbox
 
@@ -432,6 +434,7 @@ These sensors are hidden by default (`entity_category: diagnostic`) and useful f
 | Last Optimization Update | `diag_optimization_update` | Timestamp of the last successful optimization data fetch |
 | Last Weather Update | `diag_weather_update` | Timestamp of the last successful weather data fetch |
 | Last Connectivity Update | `diag_system_status_update` | Timestamp of the last successful site-status / asset-inventory fetch |
+| System age | `system_age_days` | Days since `SystemDetails.earliest_measurement` — i.e. how long the 1KOMMA5° cloud has been collecting data for this site. Unit `d`, `state_class=measurement`. Recomputed on every system-status refresh so it advances by 1 within minutes of midnight. Clamped to 0 on clock skew; `unknown` if `earliest_measurement` is missing or unparseable. |
 
 The integration also reports a structured summary in **Settings → System → Repairs → System Information**: per-coordinator update status, API reachability, SDK version, resolved currency + country code. Use this for bug reports instead of running the full diagnostics download — it's PII-safe (no customer/system identifiers, no addresses).
 

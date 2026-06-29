@@ -141,6 +141,12 @@
       },
       "smart_charging_active": {
         "name": "Smart charging active"
+      },
+      "energy_trader_active": {
+        "name": "Energy trading active"
+      },
+      "dynamic_pulse_compatible": {
+        "name": "Dynamic Pulse compatible"
       }
     },
     "sensor": {
@@ -306,6 +312,9 @@
       },
       "active_features": {
         "name": "Active features"
+      },
+      "system_age_days": {
+        "name": "System age"
       },
       "weather_sunshine_today": {
         "name": "Sunshine today"

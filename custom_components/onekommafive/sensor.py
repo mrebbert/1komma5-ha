@@ -46,6 +46,7 @@ from .sensor_entities import (
     OneKomma5OptimizationSensor,
     OneKomma5PriceSensor,
     OneKomma5StablePriceSensor,
+    OneKomma5SystemAgeDaysSensor,
     OneKomma5WeatherSensor,
 )
 
@@ -595,6 +596,15 @@ async def async_setup_entry(
             data.system_status_coordinator,
             system_id,
             system_name,
+        )
+    )
+
+    entities.append(
+        OneKomma5SystemAgeDaysSensor(
+            data.system_status_coordinator,
+            system_id,
+            system_name,
+            data.details,
         )
     )
 

@@ -708,6 +708,46 @@ class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
         return self._last_success
 
 
+class OneKomma5SystemAgeDaysSensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """Days since the earliest measurement on this 1KOMMA5° system.
+
+    Derived from `SystemDetails.earliest_measurement` (ISO date `YYYY-MM-DD`).
+    The value is rebuilt on every coordinator update (15 min) so it advances
+    by 1 within minutes of midnight without a special timer.
+    """
+
+    _attr_translation_key = "system_age_days"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "d"
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        details: Any | None,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, "system_age_days")
+        self._details = details
+
+    @property
+    def native_value(self) -> int | None:
+        if self._details is None:
+            return None
+        earliest = getattr(self._details, "earliest_measurement", None)
+        if not earliest:
+            return None
+        try:
+            start = datetime.fromisoformat(earliest).date()
+        except ValueError:
+            _LOGGER.debug("Invalid earliest_measurement: %r", earliest)
+            return None
+        delta = (dt_util.now().date() - start).days
+        return max(delta, 0)
+
+
 class OneKomma5ActiveFeaturesSensor(OneKomma5SystemStatusEntity, SensorEntity):
     """Diagnostic sensor exposing the customer's enabled feature flags.
 

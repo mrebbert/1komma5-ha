@@ -141,6 +141,12 @@
       },
       "smart_charging_active": {
         "name": "Smart opladning aktiv"
+      },
+      "energy_trader_active": {
+        "name": "Energihandel aktiv"
+      },
+      "dynamic_pulse_compatible": {
+        "name": "Dynamic Pulse-kompatibel"
       }
     },
     "sensor": {
@@ -306,6 +312,9 @@
       },
       "active_features": {
         "name": "Aktive funktioner"
+      },
+      "system_age_days": {
+        "name": "Systemets alder"
       },
       "weather_sunshine_today": {
         "name": "Solskin i dag"

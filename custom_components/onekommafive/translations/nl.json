@@ -141,6 +141,12 @@
       },
       "smart_charging_active": {
         "name": "Slim laden actief"
+      },
+      "energy_trader_active": {
+        "name": "Energiehandel actief"
+      },
+      "dynamic_pulse_compatible": {
+        "name": "Dynamic Pulse-compatibel"
       }
     },
     "sensor": {
@@ -306,6 +312,9 @@
       },
       "active_features": {
         "name": "Actieve functies"
+      },
+      "system_age_days": {
+        "name": "Systeemleeftijd"
       },
       "weather_sunshine_today": {
         "name": "Zonneschijn vandaag"

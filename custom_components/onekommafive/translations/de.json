@@ -141,6 +141,12 @@
       },
       "smart_charging_active": {
         "name": "Intelligentes Laden aktiv"
+      },
+      "energy_trader_active": {
+        "name": "Energiehandel aktiv"
+      },
+      "dynamic_pulse_compatible": {
+        "name": "Dynamic-Pulse-fähig"
       }
     },
     "sensor": {
@@ -306,6 +312,9 @@
       },
       "active_features": {
         "name": "Aktive Funktionen"
+      },
+      "system_age_days": {
+        "name": "Systemalter"
       },
       "weather_sunshine_today": {
         "name": "Sonnenscheindauer heute"
