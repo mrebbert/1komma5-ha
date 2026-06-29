@@ -185,7 +185,9 @@ Installations missing one of the four asset types (e.g. no heat pump, or a grid-
 | EV Charger Power | `ev_chargers_power` | Aggregated EV charger power | W | 30 s |
 | Heat Pump Power | `heat_pumps_power` | Aggregated heat pump power | W | 30 s |
 | AC Power | `acs_power` | Aggregated AC power | W | 30 s |
-| Self-Sufficiency | `self_sufficiency` | Self-sufficiency ratio | % | 30 s |
+| Self-Sufficiency | `self_sufficiency` | Self-sufficiency ratio (`state_class: measurement`) — Home Assistant records the long-term-statistics automatically, so the daily / weekly / monthly trend is available without an extra sensor (see note below). | % | 30 s |
+
+> **Plotting the self-sufficiency trend** — drop the entity into a `statistics-graph` card to see the min/max/mean per hour or day. For a single rolling-average value (e.g. "self-sufficiency over the last 24 hours") build a [Statistics-Helper](https://www.home-assistant.io/integrations/statistics/) (**Settings → Devices & Services → Helpers → Create helper → Statistics**) pointing at the sensor; no integration code needed.
 
 ### Dynamic price sensors (dynamischer Stromtarif)
 
