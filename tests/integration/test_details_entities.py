@@ -1,16 +1,4 @@
-"""Tier-2 tests for entities that surface `SystemDetails` fields.
-
-Covers the three entities introduced for backlog items #1, #2, #3:
-
-- ``binary_sensor.<sys>_energy_trader_active`` from ``SystemDetails.energy_trader_active``
-- ``binary_sensor.<sys>_dynamic_pulse_compatible`` from ``SystemDetails.dynamic_pulse_compatible``
-- ``sensor.<sys>_system_age_days`` derived from ``SystemDetails.earliest_measurement``
-
-All three are populated once at setup (``SystemDetails`` is rarely-changing
-metadata, fetched by ``get_details()``) — they don't track a coordinator's
-data, but subscribe to the system-status coordinator so device parenting and
-availability propagate from there.
-"""
+"""Tier-2 tests for the SystemDetails-backed entities."""
 
 from __future__ import annotations
 

@@ -1,10 +1,4 @@
-"""Tier-2 tests for the negative-price bus events.
-
-The price coordinator fires `onekommafive_negative_price_started` /
-`onekommafive_negative_price_ended` when the active 15-min slot
-transitions across the zero-price boundary. The first refresh after
-HA start primes the tracker but emits no event.
-"""
+"""Tier-2 tests for the negative-price bus events."""
 
 from __future__ import annotations
 
@@ -73,12 +67,10 @@ async def _setup_with_prices(
 async def test_first_refresh_does_not_fire_events(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
-    """Priming the tracker on the first refresh must not emit any event."""
     await hass.config.async_set_time_zone("UTC")
     freezer.move_to("2026-06-15T12:00:00+00:00")
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
     slot = datetime.timedelta(minutes=15)
-    # All positive prices for the active slot.
     prices = {base + slot * i: 0.20 for i in range(16)}
 
     started = _capture_events(hass, EVENT_NEGATIVE_PRICE_STARTED)
@@ -92,12 +84,10 @@ async def test_first_refresh_does_not_fire_events(
 async def test_positive_to_negative_fires_started(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
-    """Transition from positive active slot to negative fires `_started`."""
     await hass.config.async_set_time_zone("UTC")
     freezer.move_to("2026-06-15T12:00:00+00:00")
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
     slot = datetime.timedelta(minutes=15)
-    # First slot positive, then negative.
     prices = {base + slot * i: 0.20 for i in range(16)}
 
     entry = await _setup_with_prices(
@@ -106,7 +96,6 @@ async def test_positive_to_negative_fires_started(
     started = _capture_events(hass, EVENT_NEGATIVE_PRICE_STARTED)
     ended = _capture_events(hass, EVENT_NEGATIVE_PRICE_ENDED)
 
-    # Re-fetch with the active slot now negative.
     freezer.move_to("2026-06-15T13:00:00+00:00")
     new_base = datetime.datetime(2026, 6, 15, 13, 15, tzinfo=datetime.UTC)
     negative_prices = {new_base + slot * i: -0.05 for i in range(16)}
@@ -124,7 +113,6 @@ async def test_positive_to_negative_fires_started(
 async def test_negative_to_positive_fires_ended(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
-    """Transition from negative active slot back to positive fires `_ended`."""
     await hass.config.async_set_time_zone("UTC")
     freezer.move_to("2026-06-15T12:00:00+00:00")
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
@@ -151,7 +139,6 @@ async def test_negative_to_positive_fires_ended(
 
 
 async def test_no_transition_no_event(hass: HomeAssistant, mock_system_factory, freezer) -> None:
-    """A second refresh with the same sign does not fire anything."""
     await hass.config.async_set_time_zone("UTC")
     freezer.move_to("2026-06-15T12:00:00+00:00")
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)

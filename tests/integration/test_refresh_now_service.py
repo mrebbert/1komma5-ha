@@ -1,10 +1,4 @@
-"""Tier-2 tests for ``onekommafive.refresh_now``.
-
-The service forces an immediate refresh of one (or all) coordinators —
-useful after a power outage, for debugging, and as a reset hook in
-automations. Returns ``{"refreshed": [...], "failed": [...]}`` so callers
-can gate on per-coordinator success.
-"""
+"""Tier-2 tests for ``onekommafive.refresh_now``."""
 
 from __future__ import annotations
 

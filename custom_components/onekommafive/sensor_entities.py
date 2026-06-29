@@ -269,15 +269,7 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
 
 
 class OneKomma5CheapestChargingWindowTomorrowSensor(OneKomma5PriceEntity, SensorEntity):
-    """Cheapest N-min charging window in **tomorrow's** forecast (HA-local time).
-
-    Twin of `OneKomma5CheapestChargingWindowSensor` but for tomorrow. Uses the
-    same option-driven duration. No lock-in semantic — tomorrow's window
-    can't be acted on before midnight, so re-picking on every refresh is
-    safe (and necessary as prices update). State is `unknown` until the
-    price coordinator picks up tomorrow's prices, typically around 13:00
-    CET on the previous day.
-    """
+    """Cheapest N-min charging window in tomorrow's forecast (HA-local time, no lock-in)."""
 
     _attr_translation_key = "cheapest_charging_window_tomorrow"
     _attr_device_class = SensorDeviceClass.TIMESTAMP

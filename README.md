@@ -548,29 +548,11 @@ action:
 
 ### Bus events: `onekommafive_negative_price_started` / `onekommafive_negative_price_ended`
 
-The price coordinator fires these edge events when the active 15-min slot transitions across zero — `_started` on a positive→negative flip, `_ended` on the reverse. Lets automations subscribe via `platform: event` with one line instead of building edge detection on top of `numeric_state`.
+Fired on positive↔negative edges of the active 15-min slot. The first refresh after HA start primes the tracker without firing. Granularity = coordinator refresh interval (1 h by default).
 
-The first refresh after a HA start primes the tracker but emits no event (to avoid spurious notifications on restart). Granularity is the coordinator refresh interval (1 h by default) — an edge may be reported up to one refresh-cycle late.
+**Event data:** `system_id` (string), `price` (float, EUR/kWh), `negative_price_slots_remaining` (int).
 
-**Event data (both events):**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `system_id` | string | The 1KOMMA5° system UUID |
-| `price` | float | Current active-slot price in EUR/kWh (negative on `_started`, positive on `_ended`) |
-| `negative_price_slots_remaining` | int | Count of remaining negative 15-min slots in today's forecast |
-
-**Example automation** — pre-cool the freezer while the grid pays you:
-
-```yaml
-trigger:
-  - platform: event
-    event_type: onekommafive_negative_price_started
-action:
-  - service: switch.turn_on
-    target:
-      entity_id: switch.freezer_pre_cool
-```
+See the `notify_negative_price_started.yaml` blueprint for a ready-made notification automation.
 
 ---
 

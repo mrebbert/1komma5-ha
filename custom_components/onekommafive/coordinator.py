@@ -196,9 +196,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     _coordinator_name = "1KOMMA5° Prices"
     _interval_seconds = PRICE_UPDATE_INTERVAL_SECONDS
 
-    # Tracks the active-slot price sign across refreshes so we can detect
-    # negative ↔ positive edges and fire bus events on transitions.
-    # None on the first refresh — no event then.
+    # None on the first refresh primes the tracker without firing an event.
     _last_active_was_negative: bool | None = None
 
     def _fetch(self) -> PriceData:
@@ -276,12 +274,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         return data
 
     def _fire_negative_price_edge_events(self, data: PriceData) -> None:
-        """Detect a negative ↔ positive transition on the active slot and fire events.
-
-        Granularity is the coordinator refresh interval (1 h by default), so an
-        edge may be reported up to one refresh-cycle late. The first refresh
-        after HA start primes ``_last_active_was_negative`` but fires no event.
-        """
+        """Fire negative-price edge events. Granularity = coordinator refresh interval."""
         if data.current_price is None:
             return
         is_negative_now = data.current_price <= 0
