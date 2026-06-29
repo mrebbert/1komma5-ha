@@ -1,0 +1,85 @@
+blueprint:
+  name: 1KOMMA5° — Notify on negative electricity prices tomorrow
+  description: >
+    Send a notification when tomorrow's price forecast contains at least
+    one negative-price slot — i.e. when the spot market is paying you to
+    consume electricity. The 1KOMMA5° price coordinator picks up
+    tomorrow's prices around 13:00 CET, so this is when the notification
+    usually fires.
+
+
+    Useful as a heads-up to plan flexible loads (washing machine, dryer,
+    EV bulk charge, electric heater) into the cheap (or paid) hours.
+    Pair with the `cheapest_window` blueprint to act on it automatically.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/notify_negative_prices_tomorrow.yaml
+
+  input:
+    negative_slots_sensor:
+      name: Negative-price-slots sensor (tomorrow)
+      description: >
+        The 1KOMMA5° `…_negative_price_slots_tomorrow` sensor — a counter
+        of 15-minute slots in tomorrow's forecast with price ≤ 0.
+      selector:
+        entity:
+          domain: sensor
+          integration: onekommafive
+    minimum_slots:
+      name: Minimum slot count
+      description: >
+        Fire only when the count is at least this many slots. Default 1
+        — any negative-price window triggers. Raise to 4+ to gate on
+        hour-or-longer negative periods.
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 96
+          step: 1
+          mode: slider
+    notify_target:
+      name: Notification target
+      description: >
+        The `notify` service to call (e.g. `notify.mobile_app_pixel`,
+        `notify.persistent_notification`, `notify.notify`).
+      default: notify.persistent_notification
+      selector:
+        text: {}
+    title:
+      name: Notification title
+      default: "1KOMMA5°: Negative electricity prices tomorrow"
+      selector:
+        text: {}
+    message:
+      name: Notification message
+      description: >
+        Supports Jinja templates. Available variable: `trigger.to_state.state`
+        (the slot count as a string).
+      default: >
+        Tomorrow's forecast contains {{ trigger.to_state.state }} negative-price
+        slot(s). Consider scheduling flexible loads into the paid hours.
+      selector:
+        text:
+          multiline: true
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input negative_slots_sensor
+    above: 0
+
+variables:
+  minimum_slots: !input minimum_slots
+
+condition:
+  - condition: template
+    value_template: "{{ (trigger.to_state.state | int(0)) >= minimum_slots }}"
+
+action:
+  - service: !input notify_target
+    data:
+      title: !input title
+      message: !input message

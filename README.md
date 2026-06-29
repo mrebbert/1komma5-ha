@@ -152,11 +152,13 @@ The [`dashboard/`](dashboard/) directory contains a ready-to-use Home Assistant 
 
 ## Home Assistant Automation Blueprints
 
-Four ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
+Six ready-to-import blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
 
 - **Run during cheapest window** — schedules a switch for the cheapest N-minute window each day (dishwasher, washing machine, EV)
 - **Follow cheap electricity** — mirrors a switch to `binary_sensor…_cheap_electricity` for opportunistic loads (water heater, pool pump)
 - **Notify on AI grid-charge decision** — pings you whenever the Heartbeat AI starts charging the battery from the grid
+- **Notify on negative prices tomorrow** — heads-up when tomorrow's forecast contains at least N negative-price slots (fires around 13:00 CET when tomorrow's prices arrive)
+- **EV charge on PV surplus** — toggles a switch ON when the home battery is full AND PV power exceeds a threshold, OFF when either condition fails
 - **Notify when a device goes offline** — alerts you when site, inverter, heat pump, meter or wallbox connectivity sensor stays OFF for a configurable debounce
 
 → [Blueprints README with import instructions](blueprints/automation/onekommafive/README.md)

@@ -1,0 +1,150 @@
+blueprint:
+  name: 1KOMMA5° — EV charge on PV surplus
+  description: >
+    Switch a target entity (typically a smart-plug controlling EV
+    charging, an `input_boolean`, or the wallbox's charging-mode
+    selector) ON when the home battery is full AND PV production
+    exceeds a configurable threshold. Switch back OFF when either
+    condition fails.
+
+
+    Use case: opportunistic top-up charging from spare solar power on
+    bright midday hours, without pulling from the grid. The
+    "battery full" gate ensures the house battery is prioritised — only
+    the genuine surplus goes to the car.
+
+
+    For wallbox automation, set `target_switch` to an `input_boolean` and
+    chain a second automation off it that calls
+    `select.select_option` on the EV charging-mode entity with value
+    `SOLAR_CHARGE` (on) / `SMART_CHARGE` (off).
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/ev_charge_on_pv_surplus.yaml
+
+  input:
+    battery_soc_sensor:
+      name: Battery state-of-charge sensor
+      description: >
+        The 1KOMMA5° `…_batteriestand` (battery SoC %) sensor.
+      selector:
+        entity:
+          domain: sensor
+          integration: onekommafive
+    battery_full_threshold:
+      name: Battery-full threshold (%)
+      description: >
+        Activate only when battery SoC is at or above this value. Default
+        95 — leaves a small headroom so brief dips below 100 don't kill
+        the trigger.
+      default: 95
+      selector:
+        number:
+          min: 70
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+          mode: slider
+    pv_power_sensor:
+      name: PV power sensor
+      description: >
+        The 1KOMMA5° `…_pv_leistung` (PV power) sensor — current solar
+        output in watts.
+      selector:
+        entity:
+          domain: sensor
+          integration: onekommafive
+    pv_surplus_threshold:
+      name: PV surplus threshold (W)
+      description: >
+        Activate only when PV power is above this value. Default 5000 W
+        (typical EV slow-charge demand). For 11 kW wallboxes set higher;
+        for 3.7 kW set lower.
+      default: 5000
+      selector:
+        number:
+          min: 1000
+          max: 22000
+          step: 250
+          unit_of_measurement: W
+          mode: slider
+    target_switch:
+      name: Target switch
+      description: >
+        The switch / input_boolean that follows the PV-surplus state.
+      selector:
+        entity:
+          domain:
+            - switch
+            - input_boolean
+    deactivation_delay_minutes:
+      name: Deactivation delay (minutes)
+      description: >
+        Once the conditions fail, wait this many minutes before
+        switching off — smooths out brief cloud-cover dips. Default 5.
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 30
+          step: 1
+          unit_of_measurement: min
+          mode: slider
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input pv_power_sensor
+    above: !input pv_surplus_threshold
+    id: pv_above
+  - platform: numeric_state
+    entity_id: !input pv_power_sensor
+    below: !input pv_surplus_threshold
+    id: pv_below
+  - platform: numeric_state
+    entity_id: !input battery_soc_sensor
+    below: !input battery_full_threshold
+    id: battery_drained
+
+variables:
+  battery_soc_sensor: !input battery_soc_sensor
+  battery_full_threshold: !input battery_full_threshold
+  pv_power_sensor: !input pv_power_sensor
+  pv_surplus_threshold: !input pv_surplus_threshold
+  deactivation_delay_minutes: !input deactivation_delay_minutes
+
+action:
+  - choose:
+      - alias: PV surplus AND battery full → ON
+        conditions:
+          - condition: trigger
+            id: pv_above
+          - condition: numeric_state
+            entity_id: !input battery_soc_sensor
+            above: !input battery_full_threshold
+        sequence:
+          - service: homeassistant.turn_on
+            target:
+              entity_id: !input target_switch
+
+      - alias: PV dropped or battery drained → OFF (after delay)
+        conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: pv_below
+              - condition: trigger
+                id: battery_drained
+        sequence:
+          - delay:
+              minutes: !input deactivation_delay_minutes
+          - alias: Re-check after the delay — only turn off if conditions still fail
+            condition: template
+            value_template: >
+              {{ states(pv_power_sensor) | float(0) < pv_surplus_threshold
+                 or states(battery_soc_sensor) | float(0) < battery_full_threshold }}
+          - service: homeassistant.turn_off
+            target:
+              entity_id: !input target_switch

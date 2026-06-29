@@ -1,6 +1,6 @@
 # 1KOMMA5° automation blueprints
 
-Four ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
+Six ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
 common automations on top of this integration.
 
 ## Importing
@@ -49,6 +49,31 @@ the full forecast and the current battery state.
 
 Inputs: grid-charge binary sensor, notify service, title, message
 (Jinja-templatable).
+
+### `notify_negative_prices_tomorrow.yaml` — Notify on negative prices tomorrow
+Fires a notification when tomorrow's price forecast contains at least one
+negative-price slot (i.e. the spot market pays you to consume). The price
+coordinator picks up tomorrow's prices around 13:00 CET, so that's when the
+heads-up usually arrives.
+
+Configurable `minimum_slots` gate — raise from the default `1` if you only
+want to hear about hour-or-longer negative windows (≥ 4 slots).
+
+Inputs: `…_negative_price_slots_tomorrow` sensor, minimum slot count,
+notify service, title, message (Jinja-templatable).
+
+### `ev_charge_on_pv_surplus.yaml` — EV charge on PV surplus
+Toggles a target switch (smart plug, `input_boolean`, or hand-off to the
+wallbox charging-mode selector) ON when the home battery is full **AND**
+PV power exceeds a threshold, OFF when either condition fails. A
+deactivation delay smooths out brief cloud cover.
+
+Typical use: opportunistic EV top-up from genuine solar surplus, without
+draining the house battery.
+
+Inputs: battery SoC sensor, battery-full threshold (default 95 %), PV
+power sensor, PV surplus threshold (default 5 000 W), target switch,
+deactivation delay (default 5 min).
 
 ### `notify_connectivity_lost.yaml` — Notify when a device goes offline
 Sends a notification when one of the v0.1.38 connectivity sensors (site,
