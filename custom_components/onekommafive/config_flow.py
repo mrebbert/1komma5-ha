@@ -229,11 +229,7 @@ def _system_title(system: Any) -> str:
     return f"1KOMMA5° {system.id()[:8]}"
 
 
-def _multiple_of_15(value: int) -> int:
-    """Validator: charging-window duration must be a multiple of 15 minutes (slot size)."""
-    if value % 15 != 0:
-        raise vol.Invalid("must be a multiple of 15")
-    return value
+_CHARGING_WINDOW_DURATION_CHOICES = tuple(range(15, 241, 15))
 
 
 class OneKomma5OptionsFlow(OptionsFlow):
@@ -263,11 +259,7 @@ class OneKomma5OptionsFlow(OptionsFlow):
                     vol.Required(
                         CONF_CHARGING_WINDOW_DURATION_MINUTES,
                         default=current_duration,
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=15, max=240),
-                        _multiple_of_15,
-                    ),
+                    ): vol.In(_CHARGING_WINDOW_DURATION_CHOICES),
                 }
             ),
         )
