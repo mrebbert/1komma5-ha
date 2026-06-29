@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.47] - 2026-07-05
+
 ### Added
 - **Showcase dashboard variant** (`dashboard/dashboard-showcase.yaml`) — six views (Grid / Vehicle / Prices & costs / Optimization / Weather / System) that exercise the full integration surface, including the per-asset sub-devices, weather entity, AI optimization decisions, connectivity binaries, active-feature flags, and diagnostic update timestamps. The original three-view `dashboard.yaml` stays as the compact daily-driver layout; pick the showcase when you want to see what's possible. Both share the same placeholder convention (`SYSTEM_NAME` / `CAR_IDENTIFIER`), custom-card requirements (`apexcharts-card` + `button-card`), and `input_select.stromkosten_zeitspanne` helper. Documented in `dashboard/README.md` with thumbnails of all six tabs.
 - **Three new `SystemDetails`-backed entities** — surface metadata already fetched once at setup but previously only visible via the diagnostics download:
