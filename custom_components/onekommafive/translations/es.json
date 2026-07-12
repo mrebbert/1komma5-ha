@@ -340,6 +340,12 @@
       },
       "weather_sunshine_tomorrow": {
         "name": "Insolación mañana"
+      },
+      "daily_savings": {
+        "name": "Ahorro diario"
+      },
+      "diag_energy_update": {
+        "name": "Última actualización de energía"
       }
     },
     "switch": {

@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    ENERGY_UPDATE_INTERVAL_SECONDS,
     EVENT_NEGATIVE_PRICE_ENDED,
     EVENT_NEGATIVE_PRICE_STARTED,
     EVENT_OPTIMIZATION_DECISION,
@@ -61,6 +62,13 @@ class WeatherData:
     """Container for weather data fetched from the API."""
 
     weather: Any  # onekommafive.models.WeatherData
+
+
+@dataclass
+class EnergyTodayData:
+    """Container for today's aggregated energy data fetched from the API."""
+
+    energy: Any  # onekommafive.models.EnergyData (daily running totals, reset at midnight)
 
 
 @dataclass
@@ -383,6 +391,18 @@ class OneKomma5WeatherCoordinator(OneKomma5BaseCoordinator[WeatherData]):
     def _fetch(self) -> WeatherData:
         """Fetch weather data synchronously."""
         return WeatherData(weather=self._system.get_weather())
+
+
+class OneKomma5EnergyCoordinator(OneKomma5BaseCoordinator[EnergyTodayData]):
+    """Coordinator for today's aggregated energy data (incl. cloud savings)."""
+
+    _data_label = "energy data"
+    _coordinator_name = "1KOMMA5° Energy"
+    _interval_seconds = ENERGY_UPDATE_INTERVAL_SECONDS
+
+    def _fetch(self) -> EnergyTodayData:
+        """Fetch today's energy aggregation synchronously."""
+        return EnergyTodayData(energy=self._system.get_energy_today())
 
 
 class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData]):

@@ -340,6 +340,12 @@
       },
       "weather_sunshine_tomorrow": {
         "name": "Auringonpaisteen kesto huomenna"
+      },
+      "daily_savings": {
+        "name": "Päivittäinen säästö"
+      },
+      "diag_energy_update": {
+        "name": "Viimeisin energiapäivitys"
       }
     },
     "switch": {

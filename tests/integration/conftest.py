@@ -53,6 +53,7 @@ def mock_system_factory():
         prices: MagicMock | None = None,
         optimizations: MagicMock | None = None,
         weather: MagicMock | None = None,
+        energy: MagicMock | None = None,
         details: MagicMock | None = None,
         site_status: str | None = "CONNECTED",
         assets: list | None = None,
@@ -119,6 +120,14 @@ def mock_system_factory():
                 forecasts=[],
             )
         system.get_weather.return_value = weather
+
+        if energy is None:
+            energy = MagicMock(
+                savings_eur=0.0,
+                self_sufficiency=0.0,
+                updated_at=None,
+            )
+        system.get_energy_today.return_value = energy
 
         if details is None:
             details = MagicMock(

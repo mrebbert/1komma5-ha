@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `sensor.<sys>_daily_savings` — today's cloud-computed energy savings (€), read from the previously-unused `get_energy_today()` endpoint (`EnergyData.savings_eur`). Daily running total that resets at local midnight (`state_class=total`, `last_reset` = start of local day), so Long-Term Statistics records one cycle per day. New `OneKomma5EnergyCoordinator` (15-min interval) backs it, with a matching `diag_energy_update` diagnostic timestamp. Currency follows the resolved account currency.
+- Translations for the two new entities across all seven shipped locales.
+
 ## [0.1.47] - 2026-07-05
 
 ### Added

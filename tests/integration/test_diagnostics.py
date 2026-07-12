@@ -79,6 +79,7 @@ async def test_diagnostics_includes_all_five_coordinators(
         "optimization",
         "weather",
         "system_status",
+        "energy",
     }
     for snap in diag["coordinators"].values():
         assert "last_update_success" in snap

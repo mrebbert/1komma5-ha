@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import (
+    OneKomma5EnergyCoordinator,
     OneKomma5LiveCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
@@ -148,6 +149,10 @@ class OneKomma5SystemStatusEntity(_BaseSystemEntity[OneKomma5SystemStatusCoordin
 
 class OneKomma5WeatherEntity(_BaseSystemEntity[OneKomma5WeatherCoordinator]):
     """Base entity for sensors backed by the weather coordinator."""
+
+
+class OneKomma5EnergyEntity(_BaseSystemEntity[OneKomma5EnergyCoordinator]):
+    """Base entity for sensors backed by the energy (today) coordinator."""
 
 
 class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):

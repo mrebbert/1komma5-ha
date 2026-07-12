@@ -340,6 +340,12 @@
       },
       "weather_sunshine_tomorrow": {
         "name": "Zonneschijn morgen"
+      },
+      "daily_savings": {
+        "name": "Dagelijkse besparing"
+      },
+      "diag_energy_update": {
+        "name": "Laatste energie-update"
       }
     },
     "switch": {

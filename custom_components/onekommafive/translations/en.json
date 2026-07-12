@@ -340,6 +340,12 @@
       },
       "weather_sunshine_tomorrow": {
         "name": "Sunshine tomorrow"
+      },
+      "daily_savings": {
+        "name": "Daily savings"
+      },
+      "diag_energy_update": {
+        "name": "Last energy update"
       }
     },
     "switch": {

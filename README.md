@@ -320,6 +320,7 @@ Accumulated monetary sensors derived from energy flow and dynamic pricing. Both 
 | Household Cost | `household_cost` | Same allocation for all remaining household appliances. | EUR |
 | AC Cost | `ac_cost` | Same allocation for the air-conditioning unit. The API currently mocks `acs_power` for systems without an AC — this sensor may be non-zero even then. | EUR |
 | Feed-in Revenue | `feed_in_revenue` | Cumulative feed-in revenue — integrates grid export power × a fixed feed-in tariff (default: 0.0803 €/kWh, configurable). | EUR |
+| Daily Savings | `daily_savings` | Today's cloud-computed energy savings, reported directly by 1KOMMA5° (`get_energy_today`). A daily running total that **resets at local midnight** (`last_reset` set accordingly), so Long-Term Statistics records one value per day. Updated every 15 minutes. | EUR |
 
 The four per-consumer cost sensors always sum to `electricity_cost` — when PV/battery cover all consumption, the grid bill is zero and all five sensors stop accumulating together.
 

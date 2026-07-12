@@ -24,6 +24,7 @@ from homeassistant.util import dt as dt_util
 
 from .coordinator import LiveData
 from .entity import (
+    OneKomma5EnergyEntity,
     OneKomma5Entity,
     OneKomma5EVEntity,
     OneKomma5OptimizationEntity,
@@ -861,3 +862,45 @@ class OneKomma5ActiveFeaturesSensor(OneKomma5SystemStatusEntity, SensorEntity):
         if self.coordinator.data is None:
             return None
         return {"features": list(self.coordinator.data.active_features)}
+
+
+class OneKomma5DailySavingsSensor(OneKomma5EnergyEntity, SensorEntity):
+    """Today's cloud-computed energy savings (€), from ``EnergyData.savings_eur``.
+
+    A daily running total that resets at local midnight when the API rolls over
+    to a new day. Modelled as ``state_class=TOTAL`` with ``last_reset`` pinned to
+    the start of the local day so Long-Term Statistics records one cycle per day.
+    Monetary → TOTAL (not TOTAL_INCREASING, which is incompatible with the
+    monetary device class).
+    """
+
+    _attr_translation_key = "daily_savings"
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_suggested_display_precision = 2
+    _attr_icon = "mdi:piggy-bank-outline"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        *,
+        currency: str = "EUR",
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, "daily_savings")
+        self._attr_native_unit_of_measurement = currency
+
+    @property
+    def last_reset(self) -> datetime | None:
+        """Local midnight — the API resets the daily savings total each day."""
+        return dt_util.start_of_local_day()
+
+    @property
+    def native_value(self) -> float | None:
+        if self.coordinator.data is None:
+            return None
+        savings = getattr(self.coordinator.data.energy, "savings_eur", None)
+        if savings is None:
+            return None
+        return round(savings, 2)

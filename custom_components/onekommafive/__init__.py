@@ -12,6 +12,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
 from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME
 from .coordinator import (
+    OneKomma5EnergyCoordinator,
     OneKomma5LiveCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
@@ -42,6 +43,7 @@ class OneKomma5Data:
     optimization_coordinator: OneKomma5OptimizationCoordinator
     weather_coordinator: OneKomma5WeatherCoordinator
     system_status_coordinator: OneKomma5SystemStatusCoordinator
+    energy_coordinator: OneKomma5EnergyCoordinator
     system: object  # onekommafive.system.System
     system_name: str  # pre-fetched in executor to avoid blocking calls in async context
     # Full SystemDetails captured once at setup. Used only for diagnostics —
@@ -109,6 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     optimization_coordinator = OneKomma5OptimizationCoordinator(hass, system)
     weather_coordinator = OneKomma5WeatherCoordinator(hass, system)
     system_status_coordinator = OneKomma5SystemStatusCoordinator(hass, system, customer_id)
+    energy_coordinator = OneKomma5EnergyCoordinator(hass, system)
 
     await live_coordinator.async_config_entry_first_refresh()
 
@@ -135,12 +138,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     except Exception:
         _LOGGER.warning("Initial system-status fetch failed, will retry on next interval")
 
+    try:
+        await energy_coordinator.async_refresh()
+    except Exception:
+        _LOGGER.warning("Initial energy fetch failed, will retry on next interval")
+
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,
         price_coordinator=price_coordinator,
         optimization_coordinator=optimization_coordinator,
         weather_coordinator=weather_coordinator,
         system_status_coordinator=system_status_coordinator,
+        energy_coordinator=energy_coordinator,
         system=system,
         system_name=system_name,
         details=details,

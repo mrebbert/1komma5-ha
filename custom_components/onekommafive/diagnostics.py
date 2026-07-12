@@ -81,6 +81,17 @@ def _weather_summary(data: Any) -> dict[str, Any]:
     }
 
 
+def _energy_summary(data: Any) -> dict[str, Any]:
+    if data is None:
+        return {}
+    energy = data.energy
+    return {
+        "savings_eur": getattr(energy, "savings_eur", None),
+        "self_sufficiency": getattr(energy, "self_sufficiency", None),
+        "updated_at": getattr(energy, "updated_at", None),
+    }
+
+
 def _system_status_summary(data: Any) -> dict[str, Any]:
     if data is None:
         return {}
@@ -174,6 +185,10 @@ async def async_get_config_entry_diagnostics(
             "system_status": {
                 **_coordinator_snapshot(data.system_status_coordinator),
                 "summary": _system_status_summary(data.system_status_coordinator.data),
+            },
+            "energy": {
+                **_coordinator_snapshot(data.energy_coordinator),
+                "summary": _energy_summary(data.energy_coordinator.data),
             },
         },
         "system": {

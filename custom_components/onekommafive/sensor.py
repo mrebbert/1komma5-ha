@@ -44,6 +44,7 @@ from .sensor_entities import (
     OneKomma5CheapestChargingWindowTomorrowSensor,
     OneKomma5ConsumerCostSensor,
     OneKomma5CostSensor,
+    OneKomma5DailySavingsSensor,
     OneKomma5DiagnosticSensor,
     OneKomma5EnergySensor,
     OneKomma5EVSensor,
@@ -597,6 +598,13 @@ async def async_setup_entry(
                 for desc in EV_SENSORS
             )
 
+    # Daily savings sensor (cloud-computed, resets at local midnight)
+    entities.append(
+        OneKomma5DailySavingsSensor(
+            data.energy_coordinator, system_id, system_name, currency=currency
+        )
+    )
+
     # Diagnostic sensors (last successful update per coordinator)
     entities.extend(
         OneKomma5DiagnosticSensor(coordinator, system_id, system_name, key)
@@ -606,6 +614,7 @@ async def async_setup_entry(
             (optimization_coordinator, "diag_optimization_update"),
             (weather_coordinator, "diag_weather_update"),
             (data.system_status_coordinator, "diag_system_status_update"),
+            (data.energy_coordinator, "diag_energy_update"),
         )
     )
 
