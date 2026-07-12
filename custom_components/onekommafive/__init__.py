@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -44,7 +45,7 @@ class OneKomma5Data:
     weather_coordinator: OneKomma5WeatherCoordinator
     system_status_coordinator: OneKomma5SystemStatusCoordinator
     energy_coordinator: OneKomma5EnergyCoordinator
-    system: object  # onekommafive.system.System
+    system: Any  # onekommafive.system.System (SDK ships no type hints → Any)
     system_name: str  # pre-fetched in executor to avoid blocking calls in async context
     # Full SystemDetails captured once at setup. Used only for diagnostics —
     # never surfaced as entities. None if the call failed at setup.

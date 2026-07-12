@@ -451,7 +451,9 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
             restored := await self.async_get_last_sensor_data()
         ) and restored.native_value is not None:
             try:
-                self._accumulated = float(restored.native_value)
+                # RestoreSensor may hand back a non-numeric type (date/str);
+                # the except guards it. mypy can't see the runtime guard.
+                self._accumulated = float(restored.native_value)  # type: ignore[arg-type]
             except (TypeError, ValueError):
                 self._accumulated = 0.0
 
@@ -564,7 +566,8 @@ class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, R
             and restored.native_value is not None
         ):
             try:
-                self._stable_price = float(restored.native_value)
+                # See the accumulator note above — non-numeric restore is guarded.
+                self._stable_price = float(restored.native_value)  # type: ignore[arg-type]
                 self.async_write_ha_state()
             except (TypeError, ValueError) as err:
                 _LOGGER.debug(

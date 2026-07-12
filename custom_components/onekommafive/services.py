@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
@@ -182,7 +182,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 failed.append(name)
             else:
                 refreshed.append(name)
-        return {"refreshed": refreshed, "failed": failed}
+        # str lists are valid JSON; cast past mypy's invariant JsonValueType.
+        return cast(ServiceResponse, {"refreshed": refreshed, "failed": failed})
 
     hass.services.async_register(
         DOMAIN,

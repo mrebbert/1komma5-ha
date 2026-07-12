@@ -39,7 +39,7 @@ def _ev_smart_charge_available(ev: Any) -> bool:
     return ev.charging_mode() == ChargingMode.SMART_CHARGE
 
 
-EV_NUMBER_DEFAULTS = {
+EV_NUMBER_DEFAULTS: dict[str, Any] = {
     "device_class": NumberDeviceClass.BATTERY,
     "native_unit_of_measurement": PERCENTAGE,
     "native_min_value": 0.0,

@@ -49,8 +49,8 @@ class PriceData:
     current_price: float | None
     current_price_with_grid_costs: float | None
     forecast: list[dict[str, Any]]  # sorted list of {start, end, price} dicts
-    all_in_prices: dict[str, float] = None  # full price dict for dynamic lookups
-    grid_prices: dict[str, float] = None  # full grid-cost price dict
+    all_in_prices: dict[str, float] | None = None  # full price dict for dynamic lookups
+    grid_prices: dict[str, float] | None = None  # full grid-cost price dict
     negative_price_slots_today: int = 0
     negative_price_slots_tomorrow: int | None = None
     tomorrow_average_price: float | None = None

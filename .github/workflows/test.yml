@@ -43,7 +43,27 @@ jobs:
         run: pip install -e ".[test-integration]"
 
       - name: Run integration pytest
-        run: pytest tests/integration -v
+        run: pytest tests/integration -v --cov=custom_components/onekommafive --cov-report=term-missing --cov-fail-under=90
+
+  typecheck:
+    name: Type check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # Needs the HA stack installed so mypy can resolve homeassistant.* types.
+      - name: Install typecheck dependencies
+        run: pip install -e ".[test-integration,typecheck]"
+
+      - name: Run mypy
+        run: mypy
 
   lint:
     name: Lint (ruff via pre-commit)

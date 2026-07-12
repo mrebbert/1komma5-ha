@@ -224,7 +224,9 @@ def _find_window(
             best_start = window_start
             best_end = window_end
 
-    if best_avg is None:
+    # best_start / best_end are set in lockstep with best_avg, so this also
+    # narrows them to non-None for the return below.
+    if best_avg is None or best_start is None or best_end is None:
         return None
 
     return {

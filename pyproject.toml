@@ -27,6 +27,13 @@ test-integration = [
     "onekommafive>=0.1.23,<0.2",
 ]
 
+# Static type-checking (H3 hardening). Run: mypy custom_components/onekommafive
+# Install alongside the integration extras so HA's own type hints are present.
+typecheck = [
+    "mypy>=1.11",
+    "onekommafive>=0.1.23,<0.2",
+]
+
 [tool.setuptools]
 # This is a Home Assistant custom component, not a normal pip-installable package.
 # Tell setuptools that the project ships zero Python packages so the editable
@@ -43,6 +50,15 @@ addopts = "-ra --strict-markers"
 # pytest-homeassistant-custom-component ships pytest-asyncio; auto-mode lets
 # `async def test_…` functions run without an explicit @pytest.mark.asyncio.
 asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.13"
+# The 1KOMMA5° SDK ships no type hints; its objects flow through the
+# integration as `Any` by design. We type-check our own logic, not the SDK.
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
+files = ["custom_components/onekommafive"]
 
 [tool.ruff]
 target-version = "py313"

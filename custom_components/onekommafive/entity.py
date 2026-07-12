@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_time_change
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
 from .const import DOMAIN
 from .coordinator import (
@@ -73,7 +73,7 @@ def asset_device_info(
     )
 
 
-class _BaseSystemEntity[C](CoordinatorEntity[C]):
+class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
     """Generic base for all entities tied to a 1KOMMA5° system device.
 
     The five typed `OneKomma5*Entity` aliases below just bind the coordinator
@@ -188,7 +188,7 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
             via_device=(DOMAIN, system_id),
         )
 
-    def _get_ev(self) -> object | None:
+    def _get_ev(self) -> Any | None:
         """Return the current EV charger object from coordinator data."""
         if self.coordinator.data is None:
             return None
