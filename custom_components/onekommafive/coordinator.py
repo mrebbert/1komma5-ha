@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import logging
 from dataclasses import dataclass
@@ -106,6 +107,11 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
     _data_label: str = "data"
     _coordinator_name: str = "1KOMMA5°"
     _interval_seconds: int = 60
+    # Hard ceiling on a single fetch. All SDK calls are synchronous HTTP run in
+    # the executor; without this a hung request would keep the coordinator
+    # (and one executor thread) stuck indefinitely, since DataUpdateCoordinator
+    # imposes no timeout of its own.
+    _fetch_timeout_seconds: float = 30.0
 
     def __init__(self, hass: HomeAssistant, system: Any) -> None:
         """Initialize the coordinator."""
@@ -118,9 +124,18 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
         self._system = system
 
     async def _async_update_data(self) -> T:
-        """Fetch data via the executor, wrapping errors as UpdateFailed."""
+        """Fetch data via the executor, wrapping errors and timeouts as UpdateFailed."""
         try:
-            return await self.hass.async_add_executor_job(self._fetch)
+            async with asyncio.timeout(self._fetch_timeout_seconds):
+                return await self.hass.async_add_executor_job(self._fetch)
+        except TimeoutError as err:
+            # The executor thread running _fetch keeps going until the SDK call
+            # returns (threads can't be cancelled), but the coordinator itself
+            # no longer hangs — it fails this cycle and retries on the next
+            # interval instead of pinning forever on a stuck request.
+            raise UpdateFailed(
+                f"Timeout after {self._fetch_timeout_seconds:g}s fetching {self._data_label}"
+            ) from err
         except Exception as err:
             from onekommafive.errors import ApiError
 

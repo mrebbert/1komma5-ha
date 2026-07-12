@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.49] - 2026-07-19
+
+### Changed
+- Pin the `onekommafive` SDK to `>=0.1.23,<0.2`. Home Assistant installs the requirement automatically on every install, so an upper bound stops a breaking SDK release from shipping untested to all users. Raise the cap deliberately when adopting a new SDK minor.
+
+### Fixed
+- Hardening: every coordinator fetch is now wrapped in a 30 s timeout (`OneKomma5BaseCoordinator._fetch_timeout_seconds`). Previously a hung SDK HTTP call could pin a coordinator (and an executor thread) indefinitely, since `DataUpdateCoordinator` imposes no timeout of its own. A timeout now surfaces as a normal failed update — the entity goes unavailable and the next interval retries.
+
 ## [0.1.48] - 2026-07-12
 
 ### Added
