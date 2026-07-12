@@ -34,7 +34,7 @@ from .entity import (
     QuarterHourUpdateMixin,
     system_device_info,
 )
-from .helpers import find_cheapest_window, trapezoidal_delta_kwh
+from .helpers import find_cheapest_window, get_current_price, trapezoidal_delta_kwh
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
     OneKomma5OptimizationSensorDescription,
@@ -127,7 +127,7 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose the price forecast on the current-price sensor."""
+        """Expose the forecast + grid-cost breakdown on the current-price sensor."""
         if self.entity_description.key != "current_electricity_price":
             return None
         if self.coordinator.data is None:
@@ -138,7 +138,40 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
             cheapest = min(forecast, key=lambda s: s["price"])
             attrs["cheapest_future_hour"] = cheapest["start"]
             attrs["cheapest_future_price"] = cheapest["price"]
+        attrs.update(self._price_breakdown(self.coordinator.data))
         return attrs
+
+    def _price_breakdown(self, data: Any) -> dict[str, Any]:
+        """Decompose the current all-in price into spot + net grid costs + VAT.
+
+        Per-slot layering is exact:
+        ``all_in = (spot + Σ net grid components) × (1 + vat)``.
+        The grid components are net (ex-VAT) daily constants — only the spot
+        part varies per slot. The SDK's scalar ``grid_costs_total`` is the
+        VAT-inclusive figure and is intentionally NOT surfaced here; we expose
+        the net adder so ``spot + grid_costs`` reconciles to the pre-VAT price.
+        """
+        mp = getattr(data, "market_prices", None)
+        if mp is None:
+            return {}
+        spot = get_current_price(getattr(mp, "prices", None) or {})
+        components = {
+            "energy_tax": getattr(mp, "grid_cost_energy_tax", None),
+            "purchasing": getattr(mp, "grid_cost_purchasing", None),
+            "fixed_tariff": getattr(mp, "grid_cost_fixed_tariff", None),
+            "dynamic_markup": getattr(mp, "grid_cost_dynamic_markup", None),
+            "feed_in_remuneration_adjustment": getattr(
+                mp, "grid_cost_feed_in_remuneration_adj", None
+            ),
+        }
+        present = {k: v for k, v in components.items() if v is not None}
+        return {
+            "spot_price": round(spot, 6) if spot is not None else None,
+            "grid_costs": round(sum(present.values()), 6) if present else None,
+            "grid_cost_components": present,
+            "vat_rate": getattr(mp, "vat", None),
+            "uses_fallback_grid_costs": getattr(mp, "uses_fallback_grid_costs", None),
+        }
 
 
 class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor):

@@ -220,6 +220,13 @@ The **Current Electricity Price** sensor carries several attributes updated ever
 | `forecast` | Rolling 24-hour price forecast (list, see below) |
 | `cheapest_future_hour` | ISO-8601 start timestamp of the cheapest upcoming slot |
 | `cheapest_future_price` | Price (EUR/kWh) of that slot |
+| `spot_price` | Raw market/exchange price of the active slot (net, ex grid costs & VAT) |
+| `grid_costs` | Net grid-cost adder (energy tax + purchasing + fixed tariff + dynamic markup + feed-in adjustment) |
+| `grid_cost_components` | The above broken out per component (all net / ex-VAT) |
+| `vat_rate` | VAT rate applied on top (e.g. `0.19`) |
+| `uses_fallback_grid_costs` | `true` when the grid costs are estimated rather than contract-exact |
+
+The price decomposes exactly as `all_in = (spot_price + grid_costs) × (1 + vat_rate)` — so these attributes answer "why is my kWh this price?". Note that `spot_price` varies per 15-min slot while the grid-cost components are flat daily constants.
 
 The sensor value always reflects the **active 15-minute slot** (smallest slot end > now), not just the price at the top of the hour. The `forecast` list covers up to **30 hours** ahead (today + all of tomorrow) and is compatible with [`apexcharts-card`](https://github.com/RomRider/apexcharts-card) and other custom cards that follow the Tibber/ENTSO-E format:
 
