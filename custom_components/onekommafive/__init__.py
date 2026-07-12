@@ -116,33 +116,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 
     await live_coordinator.async_config_entry_first_refresh()
 
-    # Price, optimization, weather and system-status data is non-critical —
-    # don't block setup if the API rate-limits or is temporarily unavailable.
-    # Data will be fetched on the next scheduled interval.
-    try:
-        await price_coordinator.async_refresh()
-    except Exception:
-        _LOGGER.warning("Initial price fetch failed, will retry on next interval")
-
-    try:
-        await optimization_coordinator.async_refresh()
-    except Exception:
-        _LOGGER.warning("Initial optimization fetch failed, will retry on next interval")
-
-    try:
-        await weather_coordinator.async_refresh()
-    except Exception:
-        _LOGGER.warning("Initial weather fetch failed, will retry on next interval")
-
-    try:
-        await system_status_coordinator.async_refresh()
-    except Exception:
-        _LOGGER.warning("Initial system-status fetch failed, will retry on next interval")
-
-    try:
-        await energy_coordinator.async_refresh()
-    except Exception:
-        _LOGGER.warning("Initial energy fetch failed, will retry on next interval")
+    # Only the live coordinator is critical for setup. The rest are non-critical:
+    # async_refresh() logs failures and never raises here, so a rate-limited or
+    # temporarily-unavailable first fetch just leaves those entities unavailable
+    # until the next scheduled interval — setup proceeds regardless.
+    for coordinator in (
+        price_coordinator,
+        optimization_coordinator,
+        weather_coordinator,
+        system_status_coordinator,
+        energy_coordinator,
+    ):
+        await coordinator.async_refresh()
 
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,
