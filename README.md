@@ -362,8 +362,10 @@ One set of entities is created per connected EV charger.
 
 | Entity | Key | Description | Unit | Update |
 |--------|-----|-------------|------|--------|
-| Target SoC | `ev_target_soc` | Current target SoC | % | 30 s |
+| Target SoC | `ev_target_soc` | Current target SoC (manual override) | % | 30 s |
 | Charging Mode (Sensor) | `ev_charging_mode` | Active charging mode | — | 30 s |
+| Battery Capacity | `ev_battery_capacity` | Nominal battery capacity of the vehicle | kWh | 30 s |
+| Scheduled Departure SoC | `ev_scheduled_departure_soc` | Target SoC the departure schedule charges to — distinct from the manual *Target SoC* | % | 30 s |
 
 #### Controls
 

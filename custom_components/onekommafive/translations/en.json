@@ -346,6 +346,12 @@
       },
       "diag_energy_update": {
         "name": "Last energy update"
+      },
+      "ev_battery_capacity": {
+        "name": "Battery capacity"
+      },
+      "ev_scheduled_departure_soc": {
+        "name": "Scheduled departure SoC"
       }
     },
     "switch": {

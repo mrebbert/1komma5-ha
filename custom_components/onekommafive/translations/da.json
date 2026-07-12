@@ -346,6 +346,12 @@
       },
       "diag_energy_update": {
         "name": "Seneste energiopdatering"
+      },
+      "ev_battery_capacity": {
+        "name": "Batterikapacitet"
+      },
+      "ev_scheduled_departure_soc": {
+        "name": "Planlagt afgangs-SoC"
       }
     },
     "switch": {

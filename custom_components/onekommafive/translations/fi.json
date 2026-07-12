@@ -346,6 +346,12 @@
       },
       "diag_energy_update": {
         "name": "Viimeisin energiapäivitys"
+      },
+      "ev_battery_capacity": {
+        "name": "Akun kapasiteetti"
+      },
+      "ev_scheduled_departure_soc": {
+        "name": "Ajoitettu lähtö-SoC"
       }
     },
     "switch": {

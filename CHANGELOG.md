@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `sensor.<sys>_daily_savings` — today's cloud-computed energy savings (€), read from the previously-unused `get_energy_today()` endpoint (`EnergyData.savings_eur`). Daily running total that resets at local midnight (`state_class=total`, `last_reset` = start of local day), so Long-Term Statistics records one cycle per day. New `OneKomma5EnergyCoordinator` (15-min interval) backs it, with a matching `diag_energy_update` diagnostic timestamp. Currency follows the resolved account currency.
-- Translations for the two new entities across all seven shipped locales.
+- `sensor.<sys>_ev_battery_capacity` — the vehicle's nominal battery capacity (kWh), from the EV profile's `capacity_wh`.
+- `sensor.<sys>_ev_scheduled_departure_soc` — the departure schedule's target SoC (%), distinct from the manual `ev_target_soc`. Read-only.
+- Translations for all new entities across all seven shipped locales.
 
 ## [0.1.47] - 2026-07-05
 

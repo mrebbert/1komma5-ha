@@ -346,6 +346,12 @@
       },
       "diag_energy_update": {
         "name": "Laatste energie-update"
+      },
+      "ev_battery_capacity": {
+        "name": "Batterijcapaciteit"
+      },
+      "ev_scheduled_departure_soc": {
+        "name": "Geplande vertrek-SoC"
       }
     },
     "switch": {

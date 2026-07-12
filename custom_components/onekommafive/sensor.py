@@ -320,6 +320,27 @@ EV_SENSORS: tuple[OneKomma5EVSensorDescription, ...] = (
         translation_key="ev_charging_mode",
         value_fn=lambda ev: ev.charging_mode().value,
     ),
+    # Static vehicle spec — nominal battery capacity (Wh → kWh). No state_class:
+    # a near-constant value would only draw a flat line in Long-Term Statistics.
+    OneKomma5EVSensorDescription(
+        key="ev_battery_capacity",
+        translation_key="ev_battery_capacity",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=1,
+        icon="mdi:car-battery",
+        value_fn=lambda ev: ev.capacity_wh() / 1000 if ev.capacity_wh() is not None else None,
+    ),
+    # Scheduled departure SoC target — distinct from `target_soc` (the manual
+    # override). Read-only in the SDK, so a sensor rather than a number.
+    OneKomma5EVSensorDescription(
+        key="ev_scheduled_departure_soc",
+        translation_key="ev_scheduled_departure_soc",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+        icon="mdi:battery-clock",
+        value_fn=lambda ev: ev.primary_schedule_departure_soc(),
+    ),
 )
 
 OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
