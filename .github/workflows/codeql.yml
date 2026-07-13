@@ -25,7 +25,16 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: python
-          queries: security-and-quality
+          # queries + filters live together so the exclude reliably applies.
+          # py/unused-import: false-positives on PEP 695 generic subscripts in
+          # class bases (e.g. `CoordinatorEntity[C]`); ruff F401 covers unused
+          # imports accurately in the lint job, so this quality query is dropped.
+          config: |
+            queries:
+              - uses: security-and-quality
+            query-filters:
+              - exclude:
+                  id: py/unused-import
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
