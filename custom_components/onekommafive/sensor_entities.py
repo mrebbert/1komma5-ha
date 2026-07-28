@@ -21,6 +21,7 @@ from homeassistant.const import EntityCategory, UnitOfEnergy
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
+from homeassistant.util import slugify
 
 from .coordinator import LiveData
 from .entity import (
@@ -817,6 +818,10 @@ class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"{system_id}_{key}"
         self._attr_translation_key = key
         self._attr_device_info = system_device_info(system_id, system_name)
+        # Stable object_id — see _BaseSystemEntity docs. Kept in sync manually
+        # since this class inherits CoordinatorEntity directly (needs to work
+        # with any coordinator type).
+        self._stable_object_id = f"{slugify(system_name)}_{key}"
         self._last_success: datetime | None = None
 
     @callback

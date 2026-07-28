@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5Entity
+from .entity import OneKomma5Entity, apply_stable_entity_ids
 
 
 async def async_setup_entry(
@@ -24,7 +25,9 @@ async def async_setup_entry(
     system_id = system.id()
     system_name = data.system_name
 
-    async_add_entities([OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)])
+    entities = [OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)]
+    apply_stable_entity_ids(entities, f"{SWITCH_DOMAIN}.{{}}")
+    async_add_entities(entities)
 
 
 class OneKomma5EMSSwitch(OneKomma5Entity, SwitchEntity):

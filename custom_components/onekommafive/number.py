@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.number import (
+    DOMAIN as NUMBER_DOMAIN,
+)
+from homeassistant.components.number import (
     NumberDeviceClass,
     NumberEntity,
     NumberEntityDescription,
@@ -18,7 +21,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5EVEntity
+from .entity import OneKomma5EVEntity, apply_stable_entity_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -98,6 +101,7 @@ async def async_setup_entry(
                 for desc in EV_NUMBERS
             )
 
+    apply_stable_entity_ids(entities, f"{NUMBER_DOMAIN}.{{}}")
     async_add_entities(entities)
 
 

@@ -5,7 +5,13 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    DOMAIN as BINARY_SENSOR_DOMAIN,
+)
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -16,6 +22,7 @@ from .entity import (
     OneKomma5PriceEntity,
     OneKomma5SystemStatusEntity,
     QuarterHourUpdateMixin,
+    apply_stable_entity_ids,
 )
 from .helpers import active_optimization_event
 
@@ -114,6 +121,7 @@ async def async_setup_entry(
         ]
     )
 
+    apply_stable_entity_ids(entities, f"{BINARY_SENSOR_DOMAIN}.{{}}")
     async_add_entities(entities)
 
 

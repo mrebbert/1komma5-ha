@@ -13,6 +13,9 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.sensor import (
+    DOMAIN as SENSOR_DOMAIN,
+)
+from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
@@ -28,7 +31,7 @@ from .const import (
     DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
     DEFAULT_FEED_IN_TARIFF,
 )
-from .entity import ASSET_TYPE_BY_DEVICE_KEY
+from .entity import ASSET_TYPE_BY_DEVICE_KEY, apply_stable_entity_ids
 from .helpers import get_current_price
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -656,4 +659,5 @@ async def async_setup_entry(
         )
     )
 
+    apply_stable_entity_ids(entities, f"{SENSOR_DOMAIN}.{{}}")
     async_add_entities(entities)

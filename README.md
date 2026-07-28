@@ -293,7 +293,7 @@ series:
 trigger:
   - platform: template
     value_template: >
-      {{ now().isoformat() >= state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour') }}
+      {{ now().isoformat() >= state_attr('sensor.SYSTEM_NAME_current_electricity_price', 'cheapest_future_hour') }}
 ```
 
 ### Energy Sensors

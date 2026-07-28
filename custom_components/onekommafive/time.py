@@ -6,12 +6,13 @@ import datetime
 import logging
 from typing import Any
 
+from homeassistant.components.time import DOMAIN as TIME_DOMAIN
 from homeassistant.components.time import TimeEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5EVEntity
+from .entity import OneKomma5EVEntity, apply_stable_entity_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ async def async_setup_entry(
                 )
             )
 
+    apply_stable_entity_ids(entities, f"{TIME_DOMAIN}.{{}}")
     async_add_entities(entities)
 
 

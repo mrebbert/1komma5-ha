@@ -95,7 +95,7 @@ The three new views beyond the original `dashboard.yaml`:
 | Weather | The `weather.SYSTEM_NAME` entity rendered as a full forecast card, plus the sunshine duration sensors for today and tomorrow. |
 | System | Site + per-asset connectivity binaries, the three "active feature" binaries (dynamic tariff / time-of-use / smart charging), all five diagnostic update-timestamp sensors, and the EMS auto-mode switch (diagnostic-categorised since v0.1.46). |
 
-In every existing view the Showcase adds badges (e.g. AI status, cheap-now indicator) and expanded sections (tomorrow's price extremes, negative-price slot counters, battery charge/discharge split). It also replaces the helper template sensors `cheapest_future_hour` / `cheapest_future_price` with `sensor.SYSTEM_NAME_gunstigstes_ladefenster_heute` (lock-in via `RestoreSensor` since v0.1.42 — no flickering on flat-price days).
+In every existing view the Showcase adds badges (e.g. AI status, cheap-now indicator) and expanded sections (tomorrow's price extremes, negative-price slot counters, battery charge/discharge split). It also replaces the helper template sensors `cheapest_future_hour` / `cheapest_future_price` with `sensor.SYSTEM_NAME_cheapest_charging_window_today` (lock-in via `RestoreSensor` since v0.1.42 — no flickering on flat-price days).
 
 ## Usage
 
@@ -111,6 +111,8 @@ In every existing view the Showcase adds badges (e.g. AI status, cheap-now indic
 
    If your 1KOMMA5° device is assigned to a Home Assistant *area*, HA may prefix new entity_ids with the area slug (e.g. `garage_SYSTEM_NAME_…`). Use whatever your install actually generates — Settings → Devices & Services → 1KOMMA5° → click an entity to see its ID.
 
+   **Upgrading from an older install?** Before v0.1.50 the suffix after `SYSTEM_NAME_` was the HA-language-translated entity name (e.g. `..._pv_leistung` in German, `..._pv_power` in English), and sub-device entities carried the translated sub-device name instead of `SYSTEM_NAME`. The dashboards now use the stable English code suffix (`_pv_power`, `_heat_pumps_power`, `_electricity_cost`, `_feed_in_revenue`, …) for every entity — Home Assistant preserves your existing entity_ids across upgrades, so on a pre-v0.1.50 install you either rename the sensors under **Settings → Devices & Services → 1KOMMA5° → Entities** to match the dashboard, or sed-replace the code suffix in the YAML back to whatever your registry actually holds.
+
 5. Make sure the two custom cards (`apexcharts-card`, `button-card`) and the `input_select.stromkosten_zeitspanne` helper described above exist.
 6. (Showcase only) The gauge `min` / `max` values default to a typical 6 kW PV / 7 kWh battery / 11 kW wallbox setup — tune them to your hardware. See the comment block at the top of `dashboard-showcase.yaml` for the full list.
 
@@ -125,9 +127,9 @@ template:
         unique_id: cheapest_future_hour
         icon: mdi:clock-outline
         availability: >
-          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour') is not none }}
+          {{ state_attr('sensor.SYSTEM_NAME_current_electricity_price', 'cheapest_future_hour') is not none }}
         state: >
-          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_hour')
+          {{ state_attr('sensor.SYSTEM_NAME_current_electricity_price', 'cheapest_future_hour')
             | as_datetime | as_timestamp | timestamp_custom('%d.%m. %H:%M') }}
 
       - name: "Cheapest future price"
@@ -135,9 +137,9 @@ template:
         icon: mdi:currency-eur
         unit_of_measurement: EUR/kWh
         availability: >
-          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_price') is not none }}
+          {{ state_attr('sensor.SYSTEM_NAME_current_electricity_price', 'cheapest_future_price') is not none }}
         state: >
-          {{ state_attr('sensor.SYSTEM_NAME_aktueller_strompreis', 'cheapest_future_price')
+          {{ state_attr('sensor.SYSTEM_NAME_current_electricity_price', 'cheapest_future_price')
             | round(4) }}
 ```
 

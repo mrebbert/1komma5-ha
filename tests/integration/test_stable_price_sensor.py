@@ -49,7 +49,7 @@ def _market_prices_with(price: float | None) -> MagicMock:
 
 def _stable_price_state(hass: HomeAssistant) -> str:
     for state in hass.states.async_all("sensor"):
-        if state.entity_id.endswith("_last_valid_electricity_price"):
+        if state.entity_id.endswith("_stable_electricity_price"):
             return state.state
     raise AssertionError("stable price sensor not registered")
 

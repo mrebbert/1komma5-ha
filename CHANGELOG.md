@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **Fresh-install entity_ids are now stable** — every entity in the integration exposes `sensor.<system>_<code_suffix>` / `binary_sensor.<system>_<code_suffix>` / etc. on new installs regardless of Home Assistant's language and regardless of whether the entity is parented on the system parent or on a per-asset sub-device (inverter / heat_pump / meter / wallbox / vehicle). Before this fix HA composed sub-device entity_ids as `<device_slug>_<entity_slug>` from the translated device name, so a German fresh install landed on `binary_sensor.wechselrichter_verbunden` while an English install landed on `binary_sensor.inverter_connected` — the shipped `dashboard/dashboard.yaml` `SYSTEM_NAME` placeholder covered neither case. Achieved via a small `apply_stable_entity_ids` shim called from each platform's `async_setup_entry`; existing entity_ids in the registry are preserved (HA registry looks up by `unique_id` first). Fixes issue #8.
+
+### Changed
+- `dashboard/dashboard.yaml` and `dashboard/dashboard-showcase.yaml` now reference the stable English code suffixes (`_pv_power`, `_heat_pumps_power`, `_electricity_cost`, `_feed_in_revenue`, `_diag_live_update`, `_cheap_electricity`, …) instead of the previous DE-translated slugs. The `SYSTEM_NAME` placeholder alone is enough for any HA language on a fresh install. Upgrading users whose registry still carries pre-fix DE-translated entity_ids should either rename their entities under Settings → Devices & Services → 1KOMMA5° → Entities, or sed the code suffix back to whatever their registry actually holds — see `dashboard/README.md` for the migration note.
+
 ## [0.1.49] - 2026-07-19
 
 ### Changed

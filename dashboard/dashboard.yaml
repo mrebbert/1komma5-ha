@@ -9,7 +9,7 @@ views:
             heading_style: title
             icon: mdi:transmission-tower
           - type: gauge
-            entity: sensor.SYSTEM_NAME_netzleistung
+            entity: sensor.SYSTEM_NAME_grid_power
             max: 13000
             needle: true
             severity:
@@ -21,14 +21,14 @@ views:
               columns: 6
               rows: auto
           - type: gauge
-            entity: sensor.SYSTEM_NAME_pv_leistung
+            entity: sensor.SYSTEM_NAME_pv_power
             grid_options:
               columns: 6
               rows: auto
             needle: true
             max: 6880
           - type: gauge
-            entity: sensor.SYSTEM_NAME_batterieleistung
+            entity: sensor.SYSTEM_NAME_battery_power
             min: -7200
             max: 7200
             severity:
@@ -40,7 +40,7 @@ views:
               rows: auto
             needle: true
           - type: gauge
-            entity: sensor.SYSTEM_NAME_batterieladung
+            entity: sensor.SYSTEM_NAME_battery_soc
             needle: true
             severity:
               green: 75
@@ -56,7 +56,7 @@ views:
             heading_style: title
             icon: mdi:home-lightning-bolt-outline
           - type: gauge
-            entity: sensor.SYSTEM_NAME_gesamtverbrauch
+            entity: sensor.SYSTEM_NAME_consumption_power
             max: 15000
             grid_options:
               columns: 12
@@ -67,28 +67,28 @@ views:
               yellow: 1000
               red: 5000
           - type: gauge
-            entity: sensor.SYSTEM_NAME_haushaltsverbrauch
+            entity: sensor.SYSTEM_NAME_household_power
             grid_options:
               columns: 3
               rows: auto
             max: 3600
             name: Haushalt
           - type: gauge
-            entity: sensor.SYSTEM_NAME_warmepumpenleistung
+            entity: sensor.SYSTEM_NAME_heat_pumps_power
             grid_options:
               columns: 3
               rows: auto
             name: Wärmepumpe
             max: 3500
           - type: gauge
-            entity: sensor.SYSTEM_NAME_ladeleistung_fahrzeuge
+            entity: sensor.SYSTEM_NAME_ev_chargers_power
             max: 11000
             grid_options:
               columns: 3
               rows: auto
             name: Wallbox
           - type: gauge
-            entity: sensor.SYSTEM_NAME_klimaanlagenleistung
+            entity: sensor.SYSTEM_NAME_acs_power
             name: Klimaanlage
             grid_options:
               columns: 3
@@ -103,11 +103,11 @@ views:
             period: day
             type: statistics-graph
             entities:
-              - entity: sensor.SYSTEM_NAME_pv_energie
+              - entity: sensor.SYSTEM_NAME_pv_power_energy
                 name: PV
-              - entity: sensor.SYSTEM_NAME_netzbezug_energie
+              - entity: sensor.SYSTEM_NAME_grid_consumption_power_energy
                 name: Netzbezug
-              - entity: sensor.SYSTEM_NAME_eingespeiste_energie
+              - entity: sensor.SYSTEM_NAME_grid_feed_in_power_energy
                 name: Einspeisung
             stat_types:
               - change
@@ -120,7 +120,7 @@ views:
             heading: Energiebezug und -einspeisung - Heute
             heading_style: title
           - type: statistic
-            entity: sensor.SYSTEM_NAME_netzbezug_energie
+            entity: sensor.SYSTEM_NAME_grid_consumption_power_energy
             period:
               calendar:
                 period: day
@@ -130,14 +130,14 @@ views:
               rows: 2
             name: Netzbezug
           - type: statistic
-            entity: sensor.SYSTEM_NAME_pv_energie
+            entity: sensor.SYSTEM_NAME_pv_power_energy
             period:
               calendar:
                 period: day
             stat_type: change
             name: PV
           - type: statistic
-            entity: sensor.SYSTEM_NAME_eingespeiste_energie
+            entity: sensor.SYSTEM_NAME_grid_feed_in_power_energy
             period:
               calendar:
                 period: day
@@ -153,13 +153,13 @@ views:
             period: day
             type: statistics-graph
             entities:
-              - entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+              - entity: sensor.SYSTEM_NAME_consumption_power_energy
                 name: Gesamt
-              - entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+              - entity: sensor.SYSTEM_NAME_household_power_energy
                 name: Haushalt
-              - entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+              - entity: sensor.SYSTEM_NAME_ev_chargers_power_energy
                 name: Wallbox
-              - entity: sensor.SYSTEM_NAME_warmepumpenenergie
+              - entity: sensor.SYSTEM_NAME_heat_pumps_power_energy
                 name: Wärmepumpe
             stat_types:
               - change
@@ -174,28 +174,28 @@ views:
             heading: Energieverbrauch - Heute
             heading_style: title
           - type: statistic
-            entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+            entity: sensor.SYSTEM_NAME_consumption_power_energy
             period:
               calendar:
                 period: day
             stat_type: change
             name: Gesamt
           - type: statistic
-            entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+            entity: sensor.SYSTEM_NAME_household_power_energy
             period:
               calendar:
                 period: day
             stat_type: change
             name: Haushalt
           - type: statistic
-            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            entity: sensor.SYSTEM_NAME_ev_chargers_power_energy
             period:
               calendar:
                 period: day
             stat_type: change
             name: Wallbox
           - type: statistic
-            entity: sensor.SYSTEM_NAME_warmepumpenenergie
+            entity: sensor.SYSTEM_NAME_heat_pumps_power_energy
             period:
               calendar:
                 period: day
@@ -212,11 +212,11 @@ views:
             period: month
             type: statistics-graph
             entities:
-              - entity: sensor.SYSTEM_NAME_pv_energie
+              - entity: sensor.SYSTEM_NAME_pv_power_energy
                 name: PV
-              - entity: sensor.SYSTEM_NAME_netzbezug_energie
+              - entity: sensor.SYSTEM_NAME_grid_consumption_power_energy
                 name: Netzbezug
-              - entity: sensor.SYSTEM_NAME_eingespeiste_energie
+              - entity: sensor.SYSTEM_NAME_grid_feed_in_power_energy
                 name: Einspeisung
             stat_types:
               - change
@@ -228,7 +228,7 @@ views:
             heading: Energiebezug und -einspeisung - Monat
             heading_style: title
           - type: statistic
-            entity: sensor.SYSTEM_NAME_netzbezug_energie
+            entity: sensor.SYSTEM_NAME_grid_consumption_power_energy
             period:
               calendar:
                 period: month
@@ -238,14 +238,14 @@ views:
               rows: 2
             name: Netzbezug
           - type: statistic
-            entity: sensor.SYSTEM_NAME_pv_energie
+            entity: sensor.SYSTEM_NAME_pv_power_energy
             period:
               calendar:
                 period: month
             stat_type: change
             name: PV
           - type: statistic
-            entity: sensor.SYSTEM_NAME_eingespeiste_energie
+            entity: sensor.SYSTEM_NAME_grid_feed_in_power_energy
             period:
               calendar:
                 period: month
@@ -261,10 +261,10 @@ views:
             period: 5minute
             type: statistics-graph
             entities:
-              - sensor.SYSTEM_NAME_netzleistung
-              - sensor.SYSTEM_NAME_batterieleistung
-              - sensor.SYSTEM_NAME_pv_leistung
-              - sensor.SYSTEM_NAME_gesamtverbrauch
+              - sensor.SYSTEM_NAME_grid_power
+              - sensor.SYSTEM_NAME_battery_power
+              - sensor.SYSTEM_NAME_pv_power
+              - sensor.SYSTEM_NAME_consumption_power
             stat_types:
               - mean
             days_to_show: 1
@@ -284,13 +284,13 @@ views:
             period: month
             type: statistics-graph
             entities:
-              - entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+              - entity: sensor.SYSTEM_NAME_consumption_power_energy
                 name: Gesamt
-              - entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+              - entity: sensor.SYSTEM_NAME_household_power_energy
                 name: Haushalt
-              - entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+              - entity: sensor.SYSTEM_NAME_ev_chargers_power_energy
                 name: Wallbox
-              - entity: sensor.SYSTEM_NAME_warmepumpenenergie
+              - entity: sensor.SYSTEM_NAME_heat_pumps_power_energy
                 name: Wärmepumpe
             stat_types:
               - change
@@ -304,28 +304,28 @@ views:
             heading: Energieverbrauch - Monat
             heading_style: title
           - type: statistic
-            entity: sensor.SYSTEM_NAME_gesamtverbrauch_energie
+            entity: sensor.SYSTEM_NAME_consumption_power_energy
             period:
               calendar:
                 period: month
             stat_type: change
             name: Gesamt
           - type: statistic
-            entity: sensor.SYSTEM_NAME_haushaltsverbrauch_energie
+            entity: sensor.SYSTEM_NAME_household_power_energy
             period:
               calendar:
                 period: month
             stat_type: change
             name: Haushalt
           - type: statistic
-            entity: sensor.SYSTEM_NAME_ladeenergie_fahrzeuge
+            entity: sensor.SYSTEM_NAME_ev_chargers_power_energy
             period:
               calendar:
                 period: month
             stat_type: change
             name: Wallbox
           - type: statistic
-            entity: sensor.SYSTEM_NAME_warmepumpenenergie
+            entity: sensor.SYSTEM_NAME_heat_pumps_power_energy
             period:
               calendar:
                 period: month
@@ -339,27 +339,27 @@ views:
         show_name: true
         show_state: true
         show_icon: true
-        entity: switch.SYSTEM_NAME_ems_automatikmodus
+        entity: switch.SYSTEM_NAME_ems_auto_mode
         name: EMS Automatik
         show_entity_picture: false
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
-        entity: sensor.SYSTEM_NAME_autarkiegrad
+        entity: sensor.SYSTEM_NAME_self_sufficiency
         icon: mdi:sun-clock
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
-        entity: binary_sensor.SYSTEM_NAME_gunstiger_strom
+        entity: binary_sensor.SYSTEM_NAME_cheap_electricity
         name:
           type: entity
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
-        entity: sensor.SYSTEM_NAME_aktueller_strompreis
+        entity: sensor.SYSTEM_NAME_current_electricity_price
         show_entity_picture: false
     max_columns: 2
     dense_section_placement: true
@@ -406,22 +406,22 @@ views:
             name: Günstigster Preis
           - graph: line
             type: sensor
-            entity: sensor.SYSTEM_NAME_aktueller_strompreis
+            entity: sensor.SYSTEM_NAME_current_electricity_price
             detail: 1
             name: Aktuell
           - graph: line
             type: sensor
-            entity: sensor.SYSTEM_NAME_durchschnittlicher_strompreis
+            entity: sensor.SYSTEM_NAME_average_electricity_price
             detail: 1
             name: Durchschnitt
           - graph: line
             type: sensor
-            entity: sensor.SYSTEM_NAME_niedrigster_strompreis
+            entity: sensor.SYSTEM_NAME_lowest_electricity_price
             detail: 1
             name: Niedrigster
           - graph: line
             type: sensor
-            entity: sensor.SYSTEM_NAME_hochster_strompreis
+            entity: sensor.SYSTEM_NAME_highest_electricity_price
             detail: 1
             name: Höchster
       - type: grid
@@ -445,7 +445,7 @@ views:
               - min: auto
                 decimals: 4
             series:
-              - entity: sensor.SYSTEM_NAME_aktueller_strompreis
+              - entity: sensor.SYSTEM_NAME_current_electricity_price
                 name: Strompreis
                 unit: EUR/kWh
                 float_precision: 4
@@ -466,7 +466,7 @@ views:
                   in_header: false
                   legend_value: false
                   name_in_header: false
-              - entity: sensor.SYSTEM_NAME_aktueller_strompreis
+              - entity: sensor.SYSTEM_NAME_current_electricity_price
                 name: Aktuell
                 unit: EUR/kWh
                 float_precision: 4
@@ -493,7 +493,7 @@ views:
               columns: 6
               rows: 1
           - type: statistic
-            entity: sensor.SYSTEM_NAME_stromkosten
+            entity: sensor.SYSTEM_NAME_electricity_cost
             period:
               calendar:
                 period: day
@@ -501,14 +501,14 @@ views:
             name: Heute
             icon: mdi:transmission-tower-import
           - type: statistic
-            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            entity: sensor.SYSTEM_NAME_feed_in_revenue
             period:
               calendar:
                 period: day
             stat_type: change
             name: Heute
           - type: statistic
-            entity: sensor.SYSTEM_NAME_stromkosten
+            entity: sensor.SYSTEM_NAME_electricity_cost
             period:
               calendar:
                 period: month
@@ -516,14 +516,14 @@ views:
             name: Dieser Monat
             icon: mdi:transmission-tower-import
           - type: statistic
-            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            entity: sensor.SYSTEM_NAME_feed_in_revenue
             period:
               calendar:
                 period: month
             stat_type: change
             name: Dieser Monat
           - type: statistic
-            entity: sensor.SYSTEM_NAME_stromkosten
+            entity: sensor.SYSTEM_NAME_electricity_cost
             period:
               calendar:
                 period: year
@@ -531,7 +531,7 @@ views:
             name: Dieses Jahr
             icon: mdi:transmission-tower-import
           - type: statistic
-            entity: sensor.SYSTEM_NAME_einspeisevergutung
+            entity: sensor.SYSTEM_NAME_feed_in_revenue
             period:
               calendar:
                 period: year
@@ -623,9 +623,9 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten
+                    - entity: sensor.SYSTEM_NAME_electricity_cost
                       name: Stromkosten
-                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                    - entity: sensor.SYSTEM_NAME_feed_in_revenue
                       name: Einspeisevergütung
               - type: conditional
                 conditions:
@@ -640,9 +640,9 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten
+                    - entity: sensor.SYSTEM_NAME_electricity_cost
                       name: Stromkosten
-                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                    - entity: sensor.SYSTEM_NAME_feed_in_revenue
                       name: Einspeisevergütung
               - type: conditional
                 conditions:
@@ -657,9 +657,9 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten
+                    - entity: sensor.SYSTEM_NAME_electricity_cost
                       name: Stromkosten
-                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                    - entity: sensor.SYSTEM_NAME_feed_in_revenue
                       name: Einspeisevergütung
               - type: conditional
                 conditions:
@@ -674,9 +674,9 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten
+                    - entity: sensor.SYSTEM_NAME_electricity_cost
                       name: Stromkosten
-                    - entity: sensor.SYSTEM_NAME_einspeisevergutung
+                    - entity: sensor.SYSTEM_NAME_feed_in_revenue
                       name: Einspeisevergütung
 
               # Per-consumer cost breakdown — reacts to the same input_select
@@ -695,13 +695,13 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                    - entity: sensor.SYSTEM_NAME_heat_pump_cost
                       name: Wärmepumpe
-                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                    - entity: sensor.SYSTEM_NAME_ev_charger_cost
                       name: Wallbox
-                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                    - entity: sensor.SYSTEM_NAME_household_cost
                       name: Haushalt
-                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                    - entity: sensor.SYSTEM_NAME_ac_cost
                       name: Klimaanlage
               - type: conditional
                 conditions:
@@ -716,13 +716,13 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                    - entity: sensor.SYSTEM_NAME_heat_pump_cost
                       name: Wärmepumpe
-                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                    - entity: sensor.SYSTEM_NAME_ev_charger_cost
                       name: Wallbox
-                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                    - entity: sensor.SYSTEM_NAME_household_cost
                       name: Haushalt
-                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                    - entity: sensor.SYSTEM_NAME_ac_cost
                       name: Klimaanlage
               - type: conditional
                 conditions:
@@ -737,13 +737,13 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                    - entity: sensor.SYSTEM_NAME_heat_pump_cost
                       name: Wärmepumpe
-                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                    - entity: sensor.SYSTEM_NAME_ev_charger_cost
                       name: Wallbox
-                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                    - entity: sensor.SYSTEM_NAME_household_cost
                       name: Haushalt
-                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                    - entity: sensor.SYSTEM_NAME_ac_cost
                       name: Klimaanlage
               - type: conditional
                 conditions:
@@ -758,11 +758,11 @@ views:
                   stat_types:
                     - change
                   entities:
-                    - entity: sensor.SYSTEM_NAME_stromkosten_warmepumpe
+                    - entity: sensor.SYSTEM_NAME_heat_pump_cost
                       name: Wärmepumpe
-                    - entity: sensor.SYSTEM_NAME_stromkosten_wallbox
+                    - entity: sensor.SYSTEM_NAME_ev_charger_cost
                       name: Wallbox
-                    - entity: sensor.SYSTEM_NAME_stromkosten_haushalt
+                    - entity: sensor.SYSTEM_NAME_household_cost
                       name: Haushalt
-                    - entity: sensor.SYSTEM_NAME_stromkosten_klimaanlage
+                    - entity: sensor.SYSTEM_NAME_ac_cost
                       name: Klimaanlage

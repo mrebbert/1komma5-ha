@@ -65,7 +65,7 @@ async def test_charging_mode_select_translates_lowercase_option_to_enum(
         select_entity_id = next(
             state.entity_id
             for state in hass.states.async_all("select")
-            if state.entity_id.endswith("_charging_mode")
+            if state.entity_id.endswith("_charging_mode_select")
         )
 
         await hass.services.async_call(

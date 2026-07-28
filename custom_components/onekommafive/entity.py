@@ -9,6 +9,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
+from homeassistant.util import slugify
 
 from .const import DOMAIN
 from .coordinator import (
@@ -103,6 +104,15 @@ class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
+        # Stable object_id, applied by each platform's async_setup_entry so
+        # fresh-install entity_ids are `<platform>.<system_slug>_<suffix>`
+        # regardless of sub-device translation or HA language. See issue #8:
+        # without this, sub-device entities land on
+        # e.g. `binary_sensor.wechselrichter_...` (DE) / `..._inverter_...`
+        # (EN), breaking the dashboard.yaml `SYSTEM_NAME` placeholder.
+        # Existing registry entries are preserved (registry lookup by
+        # unique_id wins over any object_id hint at add-time).
+        self._stable_object_id = f"{slugify(system_name)}_{unique_id_suffix}"
         key = device_key if device_key is not None else self._device_key
         # Only re-parent to a sub-device when the matching asset is actually
         # present in the cloud's status_and_assets response. Otherwise fall
@@ -180,6 +190,9 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         self._system_id = system_id
         self._ev_id = ev_id
         self._attr_unique_id = f"{system_id}_{ev_id}_{unique_id_suffix}"
+        # See _BaseSystemEntity — same rationale, plus ev_id embedded so
+        # multi-vehicle installs don't collide.
+        self._stable_object_id = f"{slugify(system_name)}_{slugify(ev_id)}_{unique_id_suffix}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{system_id}_{ev_id}")},
             translation_key="vehicle",
@@ -196,6 +209,23 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
             if ev.id() == self._ev_id:
                 return ev
         return None
+
+
+def apply_stable_entity_ids(entities: Any, entity_id_format: str) -> None:
+    """Force each entity's ``entity_id`` to ``<platform>.<stable_object_id>``.
+
+    Called from every platform's ``async_setup_entry`` just before
+    ``async_add_entities``. HA's entity_registry looks up existing entries by
+    ``unique_id`` first, so already-registered entities keep their entity_id
+    — this only affects fresh registrations.
+
+    Skips entities that don't carry a ``_stable_object_id`` (raw
+    ``CoordinatorEntity`` subclasses like ``OneKomma5DiagnosticSensor``).
+    """
+    for entity in entities:
+        object_id = getattr(entity, "_stable_object_id", None)
+        if object_id is not None:
+            entity.entity_id = entity_id_format.format(object_id)
 
 
 class QuarterHourUpdateMixin:
