@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.50] - 2026-07-28
+
 ### Fixed
 - **Fresh-install entity_ids are now stable** — every entity in the integration exposes `sensor.<system>_<code_suffix>` / `binary_sensor.<system>_<code_suffix>` / etc. on new installs regardless of Home Assistant's language and regardless of whether the entity is parented on the system parent or on a per-asset sub-device (inverter / heat_pump / meter / wallbox / vehicle). Before this fix HA composed sub-device entity_ids as `<device_slug>_<entity_slug>` from the translated device name, so a German fresh install landed on `binary_sensor.wechselrichter_verbunden` while an English install landed on `binary_sensor.inverter_connected` — the shipped `dashboard/dashboard.yaml` `SYSTEM_NAME` placeholder covered neither case. Achieved via a small `apply_stable_entity_ids` shim called from each platform's `async_setup_entry`; existing entity_ids in the registry are preserved (HA registry looks up by `unique_id` first). Fixes issue #8.
 
