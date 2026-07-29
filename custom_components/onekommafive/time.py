@@ -44,7 +44,7 @@ async def async_setup_entry(
                 )
             )
 
-    apply_stable_entity_ids(entities, f"{TIME_DOMAIN}.{{}}")
+    apply_stable_entity_ids(entities, TIME_DOMAIN)
     async_add_entities(entities)
 
 

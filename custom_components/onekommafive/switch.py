@@ -26,7 +26,7 @@ async def async_setup_entry(
     system_name = data.system_name
 
     entities = [OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)]
-    apply_stable_entity_ids(entities, f"{SWITCH_DOMAIN}.{{}}")
+    apply_stable_entity_ids(entities, SWITCH_DOMAIN)
     async_add_entities(entities)
 
 

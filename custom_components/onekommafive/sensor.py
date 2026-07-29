@@ -659,5 +659,5 @@ async def async_setup_entry(
         )
     )
 
-    apply_stable_entity_ids(entities, f"{SENSOR_DOMAIN}.{{}}")
+    apply_stable_entity_ids(entities, SENSOR_DOMAIN)
     async_add_entities(entities)

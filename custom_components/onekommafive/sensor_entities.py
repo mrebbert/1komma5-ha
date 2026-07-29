@@ -19,9 +19,8 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory, UnitOfEnergy
 from homeassistant.core import callback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
-from homeassistant.util import slugify
 
 from .coordinator import LiveData
 from .entity import (
@@ -33,7 +32,7 @@ from .entity import (
     OneKomma5SystemStatusEntity,
     OneKomma5WeatherEntity,
     QuarterHourUpdateMixin,
-    system_device_info,
+    _BaseSystemEntity,
 )
 from .helpers import find_cheapest_window, get_current_price, trapezoidal_delta_kwh
 from .sensor_descriptions import (
@@ -794,34 +793,27 @@ class OneKomma5WeatherSensor(OneKomma5WeatherEntity, SensorEntity):
         return self.entity_description.value_fn(self.coordinator.data)
 
 
-class OneKomma5DiagnosticSensor(CoordinatorEntity, SensorEntity):
+class OneKomma5DiagnosticSensor(_BaseSystemEntity[DataUpdateCoordinator[Any]], SensorEntity):
     """Diagnostic sensor tracking the last successful coordinator update.
 
-    This is the only entity that needs to work with any of the three
-    coordinator types, so it inherits ``CoordinatorEntity`` directly and
-    builds the device info via ``system_device_info``.
+    Bound to the abstract ``DataUpdateCoordinator[Any]`` so one instance can
+    be constructed per coordinator type (live / price / optimization /
+    weather / system_status / energy) without a per-type subclass.
     """
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator: Any,
+        coordinator: DataUpdateCoordinator[Any],
         system_id: str,
         system_name: str,
         key: str,
     ) -> None:
         """Initialize the diagnostic sensor. ``key`` doubles as the translation key."""
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{system_id}_{key}"
+        super().__init__(coordinator, system_id, system_name, key)
         self._attr_translation_key = key
-        self._attr_device_info = system_device_info(system_id, system_name)
-        # Stable object_id — see _BaseSystemEntity docs. Kept in sync manually
-        # since this class inherits CoordinatorEntity directly (needs to work
-        # with any coordinator type).
-        self._stable_object_id = f"{slugify(system_name)}_{key}"
         self._last_success: datetime | None = None
 
     @callback

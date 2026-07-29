@@ -26,9 +26,6 @@ from .entity import (
 )
 from .helpers import active_optimization_event
 
-# Inverse of ASSET_TYPE_BY_DEVICE_KEY for resolving an Asset.type back to a sub-device key.
-_DEVICE_KEY_BY_ASSET_TYPE = {v: k for k, v in ASSET_TYPE_BY_DEVICE_KEY.items()}
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -80,9 +77,9 @@ async def async_setup_entry(
     observed_types: set[str] = (
         {a.type for a in status_data.assets} if status_data and status_data.assets else set()
     )
-    for asset_type, translation_key in ASSET_CONNECTIVITY_SENSORS:
+    for device_key, translation_key in ASSET_CONNECTIVITY_SENSORS:
+        asset_type = ASSET_TYPE_BY_DEVICE_KEY[device_key]
         if asset_type in observed_types:
-            device_key = _DEVICE_KEY_BY_ASSET_TYPE.get(asset_type)
             entities.append(
                 OneKomma5AssetTypeConnectivitySensor(
                     data.system_status_coordinator,
@@ -121,7 +118,7 @@ async def async_setup_entry(
         ]
     )
 
-    apply_stable_entity_ids(entities, f"{BINARY_SENSOR_DOMAIN}.{{}}")
+    apply_stable_entity_ids(entities, BINARY_SENSOR_DOMAIN)
     async_add_entities(entities)
 
 
@@ -460,10 +457,10 @@ class OneKomma5AssetTypeConnectivitySensor(OneKomma5SystemStatusEntity, BinarySe
 
 
 ASSET_CONNECTIVITY_SENSORS = (
-    ("HYBRID", "inverter_connected"),
-    ("HEAT_PUMP", "heat_pump_connected"),
-    ("METER", "meter_connected"),
-    ("EV_CHARGER", "wallbox_connected"),
+    ("inverter", "inverter_connected"),
+    ("heat_pump", "heat_pump_connected"),
+    ("meter", "meter_connected"),
+    ("wallbox", "wallbox_connected"),
 )
 
 

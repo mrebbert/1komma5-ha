@@ -101,7 +101,7 @@ async def async_setup_entry(
                 for desc in EV_NUMBERS
             )
 
-    apply_stable_entity_ids(entities, f"{NUMBER_DOMAIN}.{{}}")
+    apply_stable_entity_ids(entities, NUMBER_DOMAIN)
     async_add_entities(entities)
 
 

@@ -104,29 +104,14 @@ class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_{unique_id_suffix}"
-        # Stable object_id, applied by each platform's async_setup_entry so
-        # fresh-install entity_ids are `<platform>.<system_slug>_<suffix>`
-        # regardless of sub-device translation or HA language. See issue #8:
-        # without this, sub-device entities land on
-        # e.g. `binary_sensor.wechselrichter_...` (DE) / `..._inverter_...`
-        # (EN), breaking the dashboard.yaml `SYSTEM_NAME` placeholder.
-        # Existing registry entries are preserved (registry lookup by
-        # unique_id wins over any object_id hint at add-time).
         self._stable_object_id = f"{slugify(system_name)}_{unique_id_suffix}"
         key = device_key if device_key is not None else self._device_key
-        # Only re-parent to a sub-device when the matching asset is actually
-        # present in the cloud's status_and_assets response. Otherwise fall
-        # back to the system parent so we don't litter the device list with
-        # empty placeholder sub-devices.
         if key is not None and asset is not None:
             self._attr_device_info = asset_device_info(system_id, key, asset)
         else:
             self._attr_device_info = system_device_info(system_id, system_name)
-            # Entity asked for a sub-device but no matching asset was found
-            # → install probably doesn't have that hardware. Hide by default
-            # so the device list isn't cluttered with permanently-zero
-            # sensors. User can re-enable manually from the entity registry
-            # (registry preserves the user's choice across reloads).
+            # Asked for a sub-device but the hardware isn't reported by the
+            # cloud → hide by default so the device list stays clean.
             if key is not None:
                 self._attr_entity_registry_enabled_default = False
 
@@ -190,8 +175,7 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         self._system_id = system_id
         self._ev_id = ev_id
         self._attr_unique_id = f"{system_id}_{ev_id}_{unique_id_suffix}"
-        # See _BaseSystemEntity — same rationale, plus ev_id embedded so
-        # multi-vehicle installs don't collide.
+        # ev_id in the object_id so multi-vehicle installs don't collide.
         self._stable_object_id = f"{slugify(system_name)}_{slugify(ev_id)}_{unique_id_suffix}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{system_id}_{ev_id}")},
@@ -211,21 +195,18 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         return None
 
 
-def apply_stable_entity_ids(entities: Any, entity_id_format: str) -> None:
+def apply_stable_entity_ids(entities: Any, platform: str) -> None:
     """Force each entity's ``entity_id`` to ``<platform>.<stable_object_id>``.
 
     Called from every platform's ``async_setup_entry`` just before
-    ``async_add_entities``. HA's entity_registry looks up existing entries by
-    ``unique_id`` first, so already-registered entities keep their entity_id
-    — this only affects fresh registrations.
-
-    Skips entities that don't carry a ``_stable_object_id`` (raw
-    ``CoordinatorEntity`` subclasses like ``OneKomma5DiagnosticSensor``).
+    ``async_add_entities`` so fresh-install entity_ids stay
+    ``<platform>.<system_slug>_<code_suffix>`` regardless of HA language or
+    sub-device parenting (see issue #8). Existing entries are preserved —
+    HA's entity_registry looks up by ``unique_id`` first, and the object_id
+    passed at add-time is only a hint used for fresh registrations.
     """
     for entity in entities:
-        object_id = getattr(entity, "_stable_object_id", None)
-        if object_id is not None:
-            entity.entity_id = entity_id_format.format(object_id)
+        entity.entity_id = f"{platform}.{entity._stable_object_id}"
 
 
 class QuarterHourUpdateMixin:
