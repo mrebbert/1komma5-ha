@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Internal refactor across `entity.py` and `binary_sensor.py`: `apply_stable_entity_ids` helper now takes the platform domain string directly (call sites go from `f"{DOMAIN}.{{}}"` to `DOMAIN`); `OneKomma5DiagnosticSensor` hangs off the generic `_BaseSystemEntity` instead of duplicating `CoordinatorEntity` boilerplate; the four near-clone binary sensors (Optimization Battery/HeatPump decision, EnergyTrader/DynamicPulse details flags) collapse into two spec-driven classes (`OneKomma5OptimizationDecisionSensor`, `OneKomma5DetailsFlagSensor`); shared plumbing of the today/tomorrow cheapest-window sensors extracted into `_ChargingWindowBase`. No unique_id or translation-key changes — existing entities keep their state, statistics and dashboards untouched. Net -66 lines across the two files.
+
 ## [0.1.50] - 2026-07-28
 
 ### Fixed
