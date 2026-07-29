@@ -174,7 +174,7 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
         }
 
 
-class _ChargingWindowBase(OneKomma5PriceEntity):
+class _ChargingWindowBase(OneKomma5PriceEntity, SensorEntity):
     """Shared plumbing for the today/tomorrow cheapest-window sensors.
 
     Subclasses set ``_attr_translation_key`` and implement ``_refresh_window``
@@ -322,7 +322,7 @@ class OneKomma5CheapestChargingWindowSensor(_ChargingWindowBase, RestoreSensor):
         )
 
 
-class OneKomma5CheapestChargingWindowTomorrowSensor(_ChargingWindowBase, SensorEntity):
+class OneKomma5CheapestChargingWindowTomorrowSensor(_ChargingWindowBase):
     """Cheapest N-min charging window in tomorrow's forecast (HA-local time, no lock-in)."""
 
     _attr_translation_key = "cheapest_charging_window_tomorrow"
