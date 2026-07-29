@@ -174,7 +174,57 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
         }
 
 
-class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor):
+class _ChargingWindowBase(OneKomma5PriceEntity):
+    """Shared plumbing for the today/tomorrow cheapest-window sensors.
+
+    Subclasses set ``_attr_translation_key`` and implement ``_refresh_window``
+    to populate ``self._window``.
+    """
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:ev-station"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        unique_id_suffix: str,
+        duration_minutes: int,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, unique_id_suffix)
+        self._duration_minutes = duration_minutes
+        self._slot_count = duration_minutes // 15
+        self._window: dict[str, Any] | None = None
+
+    def _refresh_window(self) -> None:
+        raise NotImplementedError
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._refresh_window()
+        super()._handle_coordinator_update()
+
+    @property
+    def native_value(self) -> datetime | None:
+        if self._window is None:
+            return None
+        return datetime.fromisoformat(self._window["start"])
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self._window is None:
+            return None
+        return {
+            "start": self._window["start"],
+            "end": self._window["end"],
+            "average_price": self._window["average_price"],
+            "duration_minutes": self._duration_minutes,
+            "slot_count": self._window["slot_count"],
+        }
+
+
+class OneKomma5CheapestChargingWindowSensor(_ChargingWindowBase, RestoreSensor):
     """Cheapest N-min charging window that still ends today (local time).
 
     Duration is set via the options flow (default 60 min, must be a multiple
@@ -186,8 +236,6 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
     """
 
     _attr_translation_key = "cheapest_charging_window_today"
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:ev-station"
 
     def __init__(
         self,
@@ -196,11 +244,9 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
         system_name: str,
         duration_minutes: int,
     ) -> None:
-        """Initialize the cheapest-window sensor with the configured duration."""
-        super().__init__(coordinator, system_id, system_name, "cheapest_charging_window_today")
-        self._duration_minutes = duration_minutes
-        self._slot_count = duration_minutes // 15
-        self._window: dict[str, Any] | None = None
+        super().__init__(
+            coordinator, system_id, system_name, "cheapest_charging_window_today", duration_minutes
+        )
 
     async def async_added_to_hass(self) -> None:
         """Restore the previous window (if still valid), then evaluate."""
@@ -258,12 +304,6 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
             return None
         return window
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """On fresh coordinator data, re-evaluate the locked window."""
-        self._refresh_window()
-        super()._handle_coordinator_update()
-
     def _refresh_window(self) -> None:
         """Discard expired/wrong-day windows and lock in a fresh one if missing."""
         if self._window is not None:
@@ -281,33 +321,11 @@ class OneKomma5CheapestChargingWindowSensor(OneKomma5PriceEntity, RestoreSensor)
             latest_end=dt_util.as_utc(end_of_today_local),
         )
 
-    @property
-    def native_value(self) -> datetime | None:
-        """Return the start of the locked-in cheapest window."""
-        if self._window is None:
-            return None
-        return datetime.fromisoformat(self._window["start"])
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose start/end/avg-price/duration on the sensor."""
-        if self._window is None:
-            return None
-        return {
-            "start": self._window["start"],
-            "end": self._window["end"],
-            "average_price": self._window["average_price"],
-            "duration_minutes": self._duration_minutes,
-            "slot_count": self._window["slot_count"],
-        }
-
-
-class OneKomma5CheapestChargingWindowTomorrowSensor(OneKomma5PriceEntity, SensorEntity):
+class OneKomma5CheapestChargingWindowTomorrowSensor(_ChargingWindowBase, SensorEntity):
     """Cheapest N-min charging window in tomorrow's forecast (HA-local time, no lock-in)."""
 
     _attr_translation_key = "cheapest_charging_window_tomorrow"
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:ev-station"
 
     def __init__(
         self,
@@ -316,15 +334,17 @@ class OneKomma5CheapestChargingWindowTomorrowSensor(OneKomma5PriceEntity, Sensor
         system_name: str,
         duration_minutes: int,
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, "cheapest_charging_window_tomorrow")
-        self._duration_minutes = duration_minutes
-        self._slot_count = duration_minutes // 15
-        self._window: dict[str, Any] | None = None
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "cheapest_charging_window_tomorrow",
+            duration_minutes,
+        )
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
         self._refresh_window()
-        super()._handle_coordinator_update()
 
     def _refresh_window(self) -> None:
         self._window = None
@@ -350,28 +370,6 @@ class OneKomma5CheapestChargingWindowTomorrowSensor(OneKomma5PriceEntity, Sensor
             earliest_start=dt_util.as_utc(start_of_tomorrow),
             latest_end=dt_util.as_utc(end_of_tomorrow),
         )
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        self._refresh_window()
-
-    @property
-    def native_value(self) -> datetime | None:
-        if self._window is None:
-            return None
-        return datetime.fromisoformat(self._window["start"])
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        if self._window is None:
-            return None
-        return {
-            "start": self._window["start"],
-            "end": self._window["end"],
-            "average_price": self._window["average_price"],
-            "duration_minutes": self._duration_minutes,
-            "slot_count": self._window["slot_count"],
-        }
 
 
 class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
