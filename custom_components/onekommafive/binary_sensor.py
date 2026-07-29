@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
@@ -51,18 +52,6 @@ async def async_setup_entry(
             system_id,
             data.system_name,
         ),
-        OneKomma5OptimizationBatteryGridChargeSensor(
-            data.optimization_coordinator,
-            system_id,
-            data.system_name,
-            asset=assets_by_type.get(ASSET_TYPE_BY_DEVICE_KEY["inverter"]),
-        ),
-        OneKomma5OptimizationHeatPumpRecommendedSensor(
-            data.optimization_coordinator,
-            system_id,
-            data.system_name,
-            asset=assets_by_type.get(ASSET_TYPE_BY_DEVICE_KEY["heat_pump"]),
-        ),
         OneKomma5SiteConnectivitySensor(
             data.system_status_coordinator,
             system_id,
@@ -92,6 +81,17 @@ async def async_setup_entry(
                 )
             )
 
+    entities.extend(
+        OneKomma5OptimizationDecisionSensor(
+            data.optimization_coordinator,
+            system_id,
+            data.system_name,
+            spec,
+            asset=assets_by_type.get(ASSET_TYPE_BY_DEVICE_KEY[spec.device_key]),
+        )
+        for spec in OPTIMIZATION_DECISION_SENSORS
+    )
+
     # Per-feature binary sensors — one Boolean per known feature flag in the
     # SystemStatusCoordinator's active_features list. Lets automations gate
     # on `condition: state binary_sensor.<sys>_dynamic_tariff_active is on`
@@ -108,14 +108,16 @@ async def async_setup_entry(
     )
 
     entities.extend(
-        [
-            OneKomma5EnergyTraderActiveSensor(
-                data.system_status_coordinator, system_id, data.system_name, data.details
-            ),
-            OneKomma5DynamicPulseCompatibleSensor(
-                data.system_status_coordinator, system_id, data.system_name, data.details
-            ),
-        ]
+        OneKomma5DetailsFlagSensor(
+            data.system_status_coordinator,
+            system_id,
+            data.system_name,
+            data.details,
+            attr,
+            translation_key,
+            icon,
+        )
+        for attr, translation_key, icon in DETAILS_FLAG_SENSORS
     )
 
     apply_stable_entity_ids(entities, BINARY_SENSOR_DOMAIN)
@@ -222,22 +224,57 @@ class OneKomma5CheapestHourNowSensor(
         }
 
 
-class OneKomma5OptimizationBatteryGridChargeSensor(
-    QuarterHourUpdateMixin, OneKomma5OptimizationEntity, BinarySensorEntity
-):
-    """Binary sensor that is ON when the AI's currently active BATTERY decision
-    is ``BATTERY_CHARGE_FROM_GRID`` — i.e. the HEMS has decided to pull from the
-    grid right now to bridge upcoming high-price periods.
+@dataclass(frozen=True)
+class OptimizationDecisionSpec:
+    """Spec for one ``OneKomma5OptimizationDecisionSensor``.
+
+    ``asset`` is the SDK optimization-event asset string ("BATTERY" / "HEATPUMP");
+    ``decision`` is the exact decision-string that flips this sensor ON. ``key``
+    doubles as translation key and unique_id suffix.
     """
 
-    _attr_translation_key = "optimization_battery_grid_charge"
-    _device_key = "inverter"
+    key: str
+    asset: str
+    decision: str
+    device_key: str
+    icon_on: str
+    icon_off: str
+    include_soc: bool = False
+
+
+OPTIMIZATION_DECISION_SENSORS: tuple[OptimizationDecisionSpec, ...] = (
+    OptimizationDecisionSpec(
+        key="optimization_battery_grid_charge",
+        asset="BATTERY",
+        decision="BATTERY_CHARGE_FROM_GRID",
+        device_key="inverter",
+        icon_on="mdi:battery-arrow-up",
+        icon_off="mdi:battery-arrow-up-outline",
+        include_soc=True,
+    ),
+    OptimizationDecisionSpec(
+        key="optimization_heat_pump_recommended",
+        asset="HEATPUMP",
+        decision="HEATPUMP_RECOMMEND_ON",
+        device_key="heat_pump",
+        icon_on="mdi:heat-pump",
+        icon_off="mdi:heat-pump-outline",
+    ),
+)
+
+
+class OneKomma5OptimizationDecisionSensor(
+    QuarterHourUpdateMixin, OneKomma5OptimizationEntity, BinarySensorEntity
+):
+    """ON when the currently active optimization event for the configured
+    asset (BATTERY / HEATPUMP) matches the configured decision string."""
 
     def __init__(
         self,
         coordinator: Any,
         system_id: str,
         system_name: str,
+        spec: OptimizationDecisionSpec,
         *,
         asset: Any | None = None,
     ) -> None:
@@ -246,123 +283,57 @@ class OneKomma5OptimizationBatteryGridChargeSensor(
             coordinator,
             system_id,
             system_name,
-            "optimization_battery_grid_charge",
+            spec.key,
+            device_key=spec.device_key,
             asset=asset,
         )
-
-    async def async_added_to_hass(self) -> None:
-        """Register quarter-hour update so the sensor flips off at slot ends."""
-        await super().async_added_to_hass()
-        self._async_register_quarter_hour_update()
-
-    def _active_battery_event(self) -> Any | None:
-        if self.coordinator.data is None:
-            return None
-        return active_optimization_event(
-            self.coordinator.data.events,
-            asset="BATTERY",
-            now=datetime.datetime.now(tz=datetime.UTC),
-        )
-
-    @property
-    def is_on(self) -> bool | None:
-        """Return True only when an active BATTERY_CHARGE_FROM_GRID slot exists."""
-        if self.coordinator.data is None:
-            return None
-        event = self._active_battery_event()
-        if event is None:
-            return False
-        return event.decision == "BATTERY_CHARGE_FROM_GRID"
-
-    @property
-    def icon(self) -> str:
-        """Return icon reflecting state."""
-        return "mdi:battery-arrow-up" if self.is_on else "mdi:battery-arrow-up-outline"
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose the active BATTERY decision details, if any."""
-        event = self._active_battery_event()
-        if event is None:
-            return None
-        return {
-            "decision": event.decision,
-            "from": event.from_time,
-            "to": event.to_time,
-            "market_price": event.market_price,
-            "state_of_charge": event.state_of_charge,
-        }
-
-
-class OneKomma5OptimizationHeatPumpRecommendedSensor(
-    QuarterHourUpdateMixin, OneKomma5OptimizationEntity, BinarySensorEntity
-):
-    """Binary sensor that is ON when the AI's currently active HEATPUMP decision
-    is ``HEATPUMP_RECOMMEND_ON`` — i.e. the HEMS suggests running the heat pump
-    in the current slot to exploit favourable electricity prices.
-    """
-
-    _attr_translation_key = "optimization_heat_pump_recommended"
-    _device_key = "heat_pump"
-
-    def __init__(
-        self,
-        coordinator: Any,
-        system_id: str,
-        system_name: str,
-        *,
-        asset: Any | None = None,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(
-            coordinator,
-            system_id,
-            system_name,
-            "optimization_heat_pump_recommended",
-            asset=asset,
-        )
+        self._spec = spec
+        self._attr_translation_key = spec.key
 
     async def async_added_to_hass(self) -> None:
         """Register quarter-hour update so the sensor flips at slot ends."""
         await super().async_added_to_hass()
         self._async_register_quarter_hour_update()
 
-    def _active_heat_pump_event(self) -> Any | None:
+    def _active_event(self) -> Any | None:
         if self.coordinator.data is None:
             return None
         return active_optimization_event(
             self.coordinator.data.events,
-            asset="HEATPUMP",
+            asset=self._spec.asset,
             now=datetime.datetime.now(tz=datetime.UTC),
         )
 
     @property
     def is_on(self) -> bool | None:
-        """Return True only when an active HEATPUMP_RECOMMEND_ON slot exists."""
+        """Return True only when the configured decision is currently active."""
         if self.coordinator.data is None:
             return None
-        event = self._active_heat_pump_event()
+        event = self._active_event()
         if event is None:
             return False
-        return event.decision == "HEATPUMP_RECOMMEND_ON"
+        return event.decision == self._spec.decision
 
     @property
     def icon(self) -> str:
         """Return icon reflecting state."""
-        return "mdi:heat-pump" if self.is_on else "mdi:heat-pump-outline"
+        return self._spec.icon_on if self.is_on else self._spec.icon_off
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose the active HEATPUMP decision details, if any."""
-        event = self._active_heat_pump_event()
+        """Expose the active decision details, if any."""
+        event = self._active_event()
         if event is None:
             return None
-        return {
+        attrs: dict[str, Any] = {
             "decision": event.decision,
             "from": event.from_time,
             "to": event.to_time,
             "market_price": event.market_price,
         }
+        if self._spec.include_soc:
+            attrs["state_of_charge"] = event.state_of_charge
+        return attrs
 
 
 def _redact_asset(asset: Any) -> dict[str, Any]:
@@ -500,41 +471,36 @@ ACTIVE_FEATURE_BINARY_SENSORS = (
 )
 
 
-class OneKomma5EnergyTraderActiveSensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
-    """ON when the site is enrolled in 1KOMMA5°'s VPP. Reads `SystemDetails.energy_trader_active`."""
+# (SystemDetails attribute, translation key, icon). Both flags surface as
+# ``binary_sensor.<system>_<translation_key>``; key doubles as the unique_id
+# suffix so registry entries stay stable.
+DETAILS_FLAG_SENSORS: tuple[tuple[str, str, str], ...] = (
+    ("energy_trader_active", "energy_trader_active", "mdi:transmission-tower"),
+    ("dynamic_pulse_compatible", "dynamic_pulse_compatible", "mdi:flash"),
+)
 
-    _attr_translation_key = "energy_trader_active"
-    _attr_icon = "mdi:transmission-tower"
+
+class OneKomma5DetailsFlagSensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+    """Binary sensor exposing one Boolean attribute of ``SystemDetails``."""
 
     def __init__(
-        self, coordinator: Any, system_id: str, system_name: str, details: Any | None
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        details: Any | None,
+        attr: str,
+        translation_key: str,
+        icon: str,
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, "energy_trader_active")
+        super().__init__(coordinator, system_id, system_name, translation_key)
         self._details = details
+        self._details_attr = attr
+        self._attr_translation_key = translation_key
+        self._attr_icon = icon
 
     @property
     def is_on(self) -> bool | None:
-        return (
-            None if self._details is None else getattr(self._details, "energy_trader_active", None)
-        )
-
-
-class OneKomma5DynamicPulseCompatibleSensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
-    """ON when the site qualifies for Dynamic Pulse. Reads `SystemDetails.dynamic_pulse_compatible`."""
-
-    _attr_translation_key = "dynamic_pulse_compatible"
-    _attr_icon = "mdi:flash"
-
-    def __init__(
-        self, coordinator: Any, system_id: str, system_name: str, details: Any | None
-    ) -> None:
-        super().__init__(coordinator, system_id, system_name, "dynamic_pulse_compatible")
-        self._details = details
-
-    @property
-    def is_on(self) -> bool | None:
-        return (
-            None
-            if self._details is None
-            else getattr(self._details, "dynamic_pulse_compatible", None)
-        )
+        if self._details is None:
+            return None
+        return getattr(self._details, self._details_attr, None)
