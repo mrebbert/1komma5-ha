@@ -111,7 +111,7 @@
       "fields": {
         "coordinator": {
           "name": "Coordinator",
-          "description": "Welchen Coordinator aktualisieren — oder 'all' für alle fünf."
+          "description": "Welchen Coordinator aktualisieren — oder 'all' für alle sechs."
         },
         "config_entry_id": {
           "name": "Integration",
