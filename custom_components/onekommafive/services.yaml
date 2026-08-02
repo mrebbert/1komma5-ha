@@ -62,6 +62,7 @@ refresh_now:
             - weather
             - system_status
             - energy
+            - notifications
             - all
     config_entry_id:
       selector:

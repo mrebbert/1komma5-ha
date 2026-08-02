@@ -9,14 +9,18 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    DOMAIN,
     ENERGY_UPDATE_INTERVAL_SECONDS,
     EVENT_NEGATIVE_PRICE_ENDED,
     EVENT_NEGATIVE_PRICE_STARTED,
+    EVENT_NOTIFICATION,
     EVENT_OPTIMIZATION_DECISION,
     LIVE_UPDATE_INTERVAL_SECONDS,
+    NOTIFICATION_UPDATE_INTERVAL_SECONDS,
     OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
     PRICE_UPDATE_INTERVAL_SECONDS,
     SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS,
@@ -80,6 +84,13 @@ class SystemStatusData:
     assets: list[Any]  # list[onekommafive.models.sites.Asset]
     active_features: list[str]  # [] when customer_id unknown or fetch failed
     assets_by_type: dict[str, Any]  # {asset.type: Asset} — first wins on duplicates
+
+
+@dataclass
+class NotificationsData:
+    """Container for the latest batch of cloud notifications."""
+
+    notifications: list[Any]  # list[onekommafive.models.notifications.Notification]
 
 
 @dataclass
@@ -470,3 +481,90 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
             active_features=features,
             assets_by_type=assets_by_type,
         )
+
+
+class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsData]):
+    """Coordinator for 1KOMMA5° cloud notifications.
+
+    Polls ``system.get_notifications()`` every 5 minutes. For each notification
+    with ``created_at`` strictly greater than the last-persisted timestamp,
+    fires an ``EVENT_NOTIFICATION`` bus event and updates the sentinel.
+
+    First refresh after a fresh install primes silently (no replay of history)
+    — same rationale as ``EVENT_NEGATIVE_PRICE_*``. Sentinel persists across
+    HA restarts via ``homeassistant.helpers.storage.Store`` under
+    ``.storage/onekommafive.notifications.<entry_id>``.
+    """
+
+    _data_label = "notifications data"
+    _coordinator_name = "1KOMMA5° Notifications"
+    _interval_seconds = NOTIFICATION_UPDATE_INTERVAL_SECONDS
+
+    _STORAGE_VERSION = 1
+    _STORAGE_KEY_FIELD = "last_seen_created_at"
+
+    def __init__(self, hass: HomeAssistant, system: Any, entry_id: str) -> None:
+        super().__init__(hass, system)
+        self._store: Store[dict[str, Any]] = Store(
+            hass, self._STORAGE_VERSION, f"{DOMAIN}.notifications.{entry_id}"
+        )
+        self._last_seen_created_at: str | None = None
+        self._hydrated = False
+
+    def _fetch(self) -> NotificationsData:
+        """Fetch the latest notifications batch synchronously."""
+        result = self._system.get_notifications()
+        return NotificationsData(notifications=list(result.notifications))
+
+    async def _async_update_data(self) -> NotificationsData:
+        """Wrap the base fetch with lazy Store hydration + event fire + persist."""
+        data = await super()._async_update_data()
+        await self._fire_and_persist(data.notifications)
+        return data
+
+    async def _fire_and_persist(self, notifications: list[Any]) -> None:
+        """Fire one bus event per newly-observed notification, then persist state.
+
+        First-ever run (Store empty): compute max(created_at) over the current
+        batch, save it, fire nothing. Prevents a "welcome to HA" flood.
+        """
+        if not self._hydrated:
+            stored = await self._store.async_load() or {}
+            self._last_seen_created_at = stored.get(self._STORAGE_KEY_FIELD)
+            self._hydrated = True
+
+        valid = [n for n in notifications if getattr(n, "created_at", None)]
+        if not valid:
+            return
+
+        max_seen = max(n.created_at for n in valid)
+
+        if self._last_seen_created_at is None:
+            # Prime silently on first run — save the horizon, emit nothing.
+            self._last_seen_created_at = max_seen
+            await self._store.async_save({self._STORAGE_KEY_FIELD: max_seen})
+            _LOGGER.debug("Notifications coordinator primed at %s (no events fired)", max_seen)
+            return
+
+        cutoff = self._last_seen_created_at
+        new_items = [n for n in valid if n.created_at > cutoff]
+        if not new_items:
+            return
+
+        # Fire oldest-first so listeners see notifications in temporal order.
+        for n in sorted(new_items, key=lambda x: x.created_at):
+            payload = {
+                "system_id": self._system.id(),
+                "notification_id": n.id,
+                "type": n.type,
+                "title": n.title,
+                "body": n.body,
+                "locale": n.locale,
+                "created_at": n.created_at,
+                "meta": n.meta,
+            }
+            _LOGGER.debug("Firing %s: %s", EVENT_NOTIFICATION, payload)
+            self.hass.bus.async_fire(EVENT_NOTIFICATION, payload)
+
+        self._last_seen_created_at = max_seen
+        await self._store.async_save({self._STORAGE_KEY_FIELD: max_seen})

@@ -347,6 +347,9 @@
       "diag_energy_update": {
         "name": "Última actualización de energía"
       },
+      "diag_notification_update": {
+        "name": "Última actualización de notificaciones"
+      },
       "ev_battery_capacity": {
         "name": "Capacidad de batería"
       },

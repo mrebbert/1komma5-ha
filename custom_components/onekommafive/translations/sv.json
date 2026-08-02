@@ -347,6 +347,9 @@
       "diag_energy_update": {
         "name": "Senaste energiuppdatering"
       },
+      "diag_notification_update": {
+        "name": "Senaste notifikationsuppdatering"
+      },
       "ev_battery_capacity": {
         "name": "Batterikapacitet"
       },

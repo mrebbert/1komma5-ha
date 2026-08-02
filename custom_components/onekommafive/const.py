@@ -12,6 +12,7 @@ OPTIMIZATION_UPDATE_INTERVAL_SECONDS = 900  # 15 minutes
 WEATHER_UPDATE_INTERVAL_SECONDS = 3600  # 1 hour
 SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS = 300  # 5 minutes
 ENERGY_UPDATE_INTERVAL_SECONDS = 900  # 15 minutes (API updates ~hourly)
+NOTIFICATION_UPDATE_INTERVAL_SECONDS = 300  # 5 minutes (bridge to HA event bus)
 
 ATTR_SYSTEM_ID = "system_id"
 ATTR_SYSTEM_NAME = "system_name"
@@ -30,3 +31,8 @@ EVENT_OPTIMIZATION_DECISION = "onekommafive_optimization_decision"
 # `_ended`    → previous active slot had price ≤ 0, new slot has price > 0.
 EVENT_NEGATIVE_PRICE_STARTED = "onekommafive_negative_price_started"
 EVENT_NEGATIVE_PRICE_ENDED = "onekommafive_negative_price_ended"
+
+# Bus event fired for each newly-observed 1KOMMA5° cloud notification. Dedup
+# state persists across HA restarts via .storage/onekommafive.notifications.<entry_id>;
+# first refresh after a fresh install primes silently (no replay of history).
+EVENT_NOTIFICATION = "onekommafive_notification"

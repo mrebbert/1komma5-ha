@@ -58,6 +58,7 @@ def mock_system_factory():
         site_status: str | None = "CONNECTED",
         assets: list | None = None,
         active_features: list[str] | None = None,
+        notifications: list | None = None,
     ) -> MagicMock:
         system = MagicMock()
         system.id.return_value = system_id
@@ -166,6 +167,11 @@ def mock_system_factory():
         system.get_status_and_assets.return_value = site
 
         system.get_active_features.return_value = list(active_features or [])
+
+        # Notifications bridge (v0.1.52) — SDK returns NotificationsList with
+        # a `.notifications: list[Notification]` attribute. Empty by default so
+        # tests that don't care about notifications don't need to stub anything.
+        system.get_notifications.return_value = MagicMock(notifications=list(notifications or []))
 
         return system
 
