@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.52] - 2026-08-09
+
+### Added
+- **Notifications event bridge.** New bus event `onekommafive_notification` fires for each newly-observed 1KOMMA5° cloud notification (energy market thresholds, system health alerts, dynamic-pulse events, …). Payload is a flat dict with `system_id`, `notification_id`, `type`, `title`, `body` (both already localized to the account language), `locale`, `created_at`, and `meta` (e.g. `meta.price.value`). Enables automations that react to the same push notifications the 1KOMMA5° mobile app receives. Dedup state persists across HA restarts via `homeassistant.helpers.storage.Store` under `.storage/onekommafive.notifications.<entry_id>`; the first refresh after a fresh install primes silently (no replay of history).
+- New diagnostic timestamp `sensor.<sys>_diag_notification_update` (`entity_category=diagnostic`) tracks the notifications coordinator's last successful refresh.
+- `onekommafive.refresh_now` service now accepts `coordinator: notifications` (and `coordinator: all` includes it).
+
 ## [0.1.51] - 2026-08-02
 
 ### Fixed
