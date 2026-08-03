@@ -15,6 +15,7 @@ from .const import DOMAIN
 from .coordinator import (
     OneKomma5EnergyCoordinator,
     OneKomma5LiveCoordinator,
+    OneKomma5NotificationsCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
     OneKomma5SystemStatusCoordinator,
@@ -148,6 +149,15 @@ class OneKomma5WeatherEntity(_BaseSystemEntity[OneKomma5WeatherCoordinator]):
 
 class OneKomma5EnergyEntity(_BaseSystemEntity[OneKomma5EnergyCoordinator]):
     """Base entity for sensors backed by the energy (today) coordinator."""
+
+
+class OneKomma5NotificationsEntity(_BaseSystemEntity[OneKomma5NotificationsCoordinator]):
+    """Base entity for sensors backed by the notifications coordinator.
+
+    Currently only used by the ``diag_notification_update`` diagnostic
+    timestamp — the notifications coordinator has no user-facing sensors,
+    it emits ``EVENT_NOTIFICATION`` bus events instead.
+    """
 
 
 class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):

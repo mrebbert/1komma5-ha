@@ -639,6 +639,7 @@ async def async_setup_entry(
             (weather_coordinator, "diag_weather_update"),
             (data.system_status_coordinator, "diag_system_status_update"),
             (data.energy_coordinator, "diag_energy_update"),
+            (data.notifications_coordinator, "diag_notification_update"),
         )
     )
 

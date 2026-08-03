@@ -15,6 +15,7 @@ from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME
 from .coordinator import (
     OneKomma5EnergyCoordinator,
     OneKomma5LiveCoordinator,
+    OneKomma5NotificationsCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
     OneKomma5SystemStatusCoordinator,
@@ -45,6 +46,7 @@ class OneKomma5Data:
     weather_coordinator: OneKomma5WeatherCoordinator
     system_status_coordinator: OneKomma5SystemStatusCoordinator
     energy_coordinator: OneKomma5EnergyCoordinator
+    notifications_coordinator: OneKomma5NotificationsCoordinator
     system: Any  # onekommafive.system.System (SDK ships no type hints → Any)
     system_name: str  # pre-fetched in executor to avoid blocking calls in async context
     # Full SystemDetails captured once at setup. Used only for diagnostics —
@@ -113,6 +115,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     weather_coordinator = OneKomma5WeatherCoordinator(hass, system)
     system_status_coordinator = OneKomma5SystemStatusCoordinator(hass, system, customer_id)
     energy_coordinator = OneKomma5EnergyCoordinator(hass, system)
+    notifications_coordinator = OneKomma5NotificationsCoordinator(hass, system, entry.entry_id)
 
     await live_coordinator.async_config_entry_first_refresh()
 
@@ -126,6 +129,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         weather_coordinator,
         system_status_coordinator,
         energy_coordinator,
+        notifications_coordinator,
     ):
         await coordinator.async_refresh()
 
@@ -136,6 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         weather_coordinator=weather_coordinator,
         system_status_coordinator=system_status_coordinator,
         energy_coordinator=energy_coordinator,
+        notifications_coordinator=notifications_coordinator,
         system=system,
         system_name=system_name,
         details=details,

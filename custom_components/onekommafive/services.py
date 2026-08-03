@@ -27,6 +27,7 @@ REFRESH_COORDINATORS: tuple[str, ...] = (
     "weather",
     "system_status",
     "energy",
+    "notifications",
     "all",
 )
 
@@ -170,6 +171,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             "weather": entry.runtime_data.weather_coordinator,
             "system_status": entry.runtime_data.system_status_coordinator,
             "energy": entry.runtime_data.energy_coordinator,
+            "notifications": entry.runtime_data.notifications_coordinator,
         }
         selected = all_coords if target == "all" else {target: all_coords[target]}
 

@@ -111,7 +111,7 @@
       "fields": {
         "coordinator": {
           "name": "Coordinator",
-          "description": "Welchen Coordinator aktualisieren — oder 'all' für alle sechs."
+          "description": "Welchen Coordinator aktualisieren — oder 'all' für alle sieben."
         },
         "config_entry_id": {
           "name": "Integration",
@@ -346,6 +346,9 @@
       },
       "diag_energy_update": {
         "name": "Letztes Energie-Update"
+      },
+      "diag_notification_update": {
+        "name": "Letztes Notifications-Update"
       },
       "ev_battery_capacity": {
         "name": "Batteriekapazität"

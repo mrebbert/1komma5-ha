@@ -88,6 +88,7 @@ async def test_all_refreshes_every_coordinator(hass: HomeAssistant, integration)
         "weather": rd.weather_coordinator,
         "system_status": rd.system_status_coordinator,
         "energy": rd.energy_coordinator,
+        "notifications": rd.notifications_coordinator,
     }
     mocks = {name: AsyncMock() for name in all_coords}
     for name, coord in all_coords.items():
