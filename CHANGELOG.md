@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - New diagnostic timestamp `sensor.<sys>_diag_notification_update` (`entity_category=diagnostic`) tracks the notifications coordinator's last successful refresh.
 - `onekommafive.refresh_now` service now accepts `coordinator: notifications` (and `coordinator: all` includes it).
 
+### Changed
+- Bump the `onekommafive` SDK pin to `>=0.1.44,<0.2` (from `>=0.1.43,<0.2`). Upstream `0.1.44` adds two additive read-only endpoints: `system.get_heartbeat_prices()` (aggregated PV/grid/consumption metrics across day/week/month/half-year/year windows) and `system.get_subscriptions(customer_id)` (contract inventory with monthly price, notice period, and DYNAMIC_PULSE price-guarantee details). Neither is consumed by the integration yet; zero-risk bump.
+
 ## [0.1.51] - 2026-08-02
 
 ### Fixed
