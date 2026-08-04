@@ -163,12 +163,8 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
     def _price_breakdown(self, data: Any) -> dict[str, Any]:
         """Decompose the current all-in price into spot + net grid costs + VAT.
 
-        Per-slot layering is exact:
-        ``all_in = (spot + Σ net grid components) × (1 + vat)``.
-        The grid components are net (ex-VAT) daily constants — only the spot
-        part varies per slot. The SDK's scalar ``grid_costs_total`` is the
-        VAT-inclusive figure and is intentionally NOT surfaced here; we expose
-        the net adder so ``spot + grid_costs`` reconciles to the pre-VAT price.
+        SDK's scalar ``grid_costs_total`` is VAT-inclusive; we expose the net
+        adder so ``spot + grid_costs`` reconciles to the pre-VAT price.
         """
         mp = getattr(data, "market_prices", None)
         if mp is None:
@@ -369,20 +365,8 @@ class OneKomma5CheapestChargingWindowTomorrowSensor(_ChargingWindowBase):
         self._window = None
         if self.coordinator.data is None or not self.coordinator.data.forecast:
             return
-        now_local = dt_util.now()
-        tomorrow_local = now_local.date() + _dt.timedelta(days=1)
-        start_of_tomorrow = now_local.replace(
-            year=tomorrow_local.year,
-            month=tomorrow_local.month,
-            day=tomorrow_local.day,
-            hour=0,
-            minute=0,
-            second=0,
-            microsecond=0,
-        )
-        end_of_tomorrow = start_of_tomorrow.replace(
-            hour=23, minute=59, second=59, microsecond=999999
-        )
+        start_of_tomorrow = dt_util.start_of_local_day() + _dt.timedelta(days=1)
+        end_of_tomorrow = start_of_tomorrow + _dt.timedelta(days=1, microseconds=-1)
         self._window = find_cheapest_window(
             self.coordinator.data.forecast,
             self._slot_count,
