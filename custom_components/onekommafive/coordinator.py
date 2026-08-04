@@ -51,10 +51,8 @@ class PriceData:
 
     market_prices: Any  # onekommafive.models.MarketPrices
     current_price: float | None
-    current_price_with_grid_costs: float | None
     forecast: list[dict[str, Any]]  # sorted list of {start, end, price} dicts
     all_in_prices: dict[str, float] | None = None  # full price dict for dynamic lookups
-    grid_prices: dict[str, float] | None = None  # full grid-cost price dict
     negative_price_slots_today: int = 0
     negative_price_slots_tomorrow: int | None = None
     tomorrow_average_price: float | None = None
@@ -249,7 +247,6 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
 
         market_prices = self._system.get_prices(today_start, today_end, resolution="15m")
         all_in_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs_and_vat)
-        grid_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs)
 
         # Always try to fetch tomorrow's prices to maximise the forecast horizon
         if window_end.date() > now.date():
@@ -262,12 +259,10 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
                     tomorrow_start, tomorrow_end, resolution="15m"
                 )
                 all_in_prices.update(tomorrow_prices.prices_with_grid_costs_and_vat)
-                grid_prices.update(tomorrow_prices.prices_with_grid_costs)
             except Exception:
                 _LOGGER.debug("Tomorrow's prices not yet available")
 
         current_price = get_current_price(all_in_prices)
-        current_price_with_grid_costs = get_current_price(grid_prices)
         forecast = build_forecast(all_in_prices, horizon_hours=30)
 
         # Price statistics: split by date
@@ -290,10 +285,8 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         return PriceData(
             market_prices=market_prices,
             current_price=current_price,
-            current_price_with_grid_costs=current_price_with_grid_costs,
             forecast=forecast,
             all_in_prices=all_in_prices,
-            grid_prices=grid_prices,
             negative_price_slots_today=negative_price_slots_today,
             negative_price_slots_tomorrow=negative_slots_tomorrow,
             tomorrow_average_price=tomorrow_average,

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 from collections.abc import Callable
+from dataclasses import asdict
 from typing import Any, cast
 
 import voluptuous as vol
@@ -115,20 +116,7 @@ def _resolve_window_inputs(
     if latest_end is not None:
         latest_end = _ensure_aware(latest_end)
 
-    config_entry_id = call.data.get("config_entry_id")
-    entries = hass.config_entries.async_entries(DOMAIN)
-    if not entries:
-        raise HomeAssistantError("No 1KOMMA5° integration configured")
-
-    if config_entry_id is not None:
-        entry = next((e for e in entries if e.entry_id == config_entry_id), None)
-        if entry is None:
-            raise HomeAssistantError(f"Config entry '{config_entry_id}' not found")
-    elif len(entries) == 1:
-        entry = entries[0]
-    else:
-        raise HomeAssistantError("Multiple 1KOMMA5° entries configured — specify config_entry_id")
-
+    entry = _resolve_config_entry(hass, call)
     coordinator = entry.runtime_data.price_coordinator
     if coordinator.data is None or not coordinator.data.forecast:
         raise HomeAssistantError("No price forecast available yet")
@@ -226,28 +214,16 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def _get_heartbeat_metrics(call: ServiceCall) -> ServiceResponse:
         """Return the requested HeartbeatPrices window as a flat dict.
 
-        On-demand fetch — one API call per invocation. When the SDK returns
-        ``None`` for the requested window, responds with
-        ``{"available": false, "window": <name>}`` so callers can branch on it
-        instead of tripping over missing fields. Field set follows the
-        ``HeartbeatPriceWindow`` model exactly (see the SDK model source);
-        ``raw`` is stripped since it duplicates the flat surface.
+        Absent windows respond ``{"available": false, "window": <name>}`` so
+        callers can branch on it instead of tripping over missing fields.
         """
         entry = _resolve_config_entry(hass, call)
         window = call.data["window"]
-        system = entry.runtime_data.system
-        prices = await hass.async_add_executor_job(system.get_heartbeat_prices)
+        prices = await hass.async_add_executor_job(entry.runtime_data.system.get_heartbeat_prices)
         win = getattr(prices, window, None)
         if win is None:
             return cast(ServiceResponse, {"window": window, "available": False})
-        fields: dict[str, Any] = {}
-        for attr in dir(win):
-            if attr.startswith("_") or attr == "raw":
-                continue
-            value = getattr(win, attr, None)
-            if callable(value):
-                continue
-            fields[attr] = value
+        fields = {k: v for k, v in asdict(win).items() if k != "raw"}
         return cast(ServiceResponse, {"window": window, "available": True, **fields})
 
     hass.services.async_register(

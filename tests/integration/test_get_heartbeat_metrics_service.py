@@ -7,11 +7,14 @@ alongside a `window` label and `available` flag.
 
 from __future__ import annotations
 
+from dataclasses import fields
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
+from onekommafive.models import HeartbeatPriceWindow
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.onekommafive.const import (
@@ -22,31 +25,30 @@ from custom_components.onekommafive.const import (
 )
 
 
-def _mock_window(**fields: object) -> MagicMock:
-    """Build a mock HeartbeatPriceWindow with the given attributes plus a
-    default set of the audited fields so callable-detection tests work.
-    """
-    defaults = {
-        "pv_produced_kwh": 331.24,
-        "grid_feed_in_kwh": 378.75,
-        "grid_feed_in_compensation_eur": 30.41,
-        "grid_consumed_kwh": 152.3,
-        "grid_consumption_cost_eur": 45.20,
-        "total_consumption_kwh": 195.28,
-        "vat": 0.19,
-    }
-    return MagicMock(spec_set=list(defaults) + list(fields), **{**defaults, **fields})
+def _win(**overrides: Any) -> HeartbeatPriceWindow:
+    """Build a real HeartbeatPriceWindow — required by dataclasses.asdict()."""
+    defaults: dict[str, Any] = {}
+    for f in fields(HeartbeatPriceWindow):
+        if f.type is bool:
+            defaults[f.name] = False
+        elif f.name == "raw":
+            defaults[f.name] = {}
+        elif f.name == "vat":
+            defaults[f.name] = 0.19
+        else:
+            defaults[f.name] = None
+    return HeartbeatPriceWindow(**{**defaults, **overrides})
 
 
 @pytest.fixture
 async def integration(hass: HomeAssistant, mock_system_factory):
     """Set up the integration with a heartbeat-prices mock covering all 5 windows."""
     hb = MagicMock(
-        day=_mock_window(pv_produced_kwh=34.93),
-        week=_mock_window(pv_produced_kwh=241.88),
-        month=_mock_window(pv_produced_kwh=990.26),
-        half_year=_mock_window(pv_produced_kwh=5432.10),
-        year=_mock_window(pv_produced_kwh=10864.50),
+        day=_win(pv_produced_kwh=34.93),
+        week=_win(pv_produced_kwh=241.88),
+        month=_win(pv_produced_kwh=990.26, grid_feed_in_compensation_eur=30.41),
+        half_year=_win(pv_produced_kwh=5432.10),
+        year=_win(pv_produced_kwh=10864.50),
     )
     system = mock_system_factory(system_id="sys-1", heartbeat_prices=hb)
     entry = MockConfigEntry(

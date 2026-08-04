@@ -38,16 +38,10 @@ PLATFORMS: list[Platform] = [
 
 @dataclass(frozen=True)
 class PriceGuarantee:
-    """1KOMMA5° Dynamic-Pulse price-guarantee snapshot, captured once at setup.
-
-    ``value_eur_per_kwh`` is normalized to EUR/kWh regardless of the unit the
-    SDK returns (``ct/kWh`` is divided by 100). Interpretation of the guarantee
-    is undocumented — empirically the magnitude matches the flat grid-cost
-    portion of the all-in price, not a max total price.
-    """
+    """DP price-guarantee snapshot; value normalized to EUR/kWh."""
 
     value_eur_per_kwh: float | None
-    version: str | None  # e.g. "DE_PRICE_GUARANTEE_V2"
+    version: str | None
 
 
 @dataclass
@@ -68,9 +62,6 @@ class OneKomma5Data:
     details: object | None
     customer_id: str | None  # sliced off details for the system-status coordinator
     currency: str  # ISO 4217 code derived from details.address_country (default EUR)
-    # Dynamic-Pulse price-guarantee, captured once at setup. None when the user
-    # has no DYNAMIC_PULSE subscription, when the guarantee field is empty, or
-    # when the subscriptions endpoint failed / customer_id is unknown.
     price_guarantee: PriceGuarantee | None
 
 
@@ -78,20 +69,12 @@ type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
 
 
 def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuarantee | None:
-    """Fetch subscriptions and pull the DYNAMIC_PULSE price-guarantee.
-
-    Returns None on any failure path — no DP contract, no customer_id, empty
-    guarantee field, or the endpoint raising. Non-fatal by design; the sensor
-    is only instantiated when this returns a populated value.
-
-    Normalizes ``ct/kWh`` → ``EUR/kWh`` (÷100) so the sensor unit lines up
-    with the existing electricity-price sensors.
-    """
+    """Return DP price-guarantee (ct/kWh → EUR/kWh) or None on any failure."""
     if customer_id is None:
         return None
     try:
         subs = system.get_subscriptions(customer_id)
-    except Exception as err:  # pragma: no cover - defensive
+    except Exception as err:
         _LOGGER.warning("Subscriptions fetch failed: %s", err)
         return None
     for sub in getattr(subs, "subscriptions", []) or []:
@@ -144,12 +127,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             # is skipped (customer_id is required for that call).
             try:
                 details = system.get_details()
-            except Exception as err:  # pragma: no cover - defensive
+            except Exception as err:
                 _LOGGER.warning("System details fetch failed: %s", err)
                 details = None
-            # Subscriptions inventory — captured once for the DYNAMIC_PULSE
-            # price-guarantee sensor. Non-fatal: no DP contract, no customer_id,
-            # or an API failure all mean the sensor isn't created.
             cust_id = getattr(details, "customer_id", None) if details else None
             price_guarantee = _extract_price_guarantee(system, cust_id)
             return system, name, details, price_guarantee

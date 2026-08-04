@@ -56,7 +56,34 @@ def currency_per_kwh(currency: str) -> str:
     return f"{currency}/kWh"
 
 
-class OneKomma5LiveSensor(OneKomma5Entity, SensorEntity):
+class _DescriptionValueSensor:
+    """Mixin: read native_value (and optional extra attrs) from the description.
+
+    Coordinators that ship a `value_fn`-carrying SensorEntityDescription can
+    reuse this instead of hand-rolling the same null-guard + call. Descriptions
+    that also carry `attr_fn` (see Optimization) get extra_state_attributes for
+    free; descriptions without one return None from that property.
+    """
+
+    entity_description: Any  # SensorEntityDescription subclass with value_fn
+
+    @property
+    def native_value(self) -> Any:
+        data = self.coordinator.data  # type: ignore[attr-defined]
+        if data is None:
+            return None
+        return self.entity_description.value_fn(data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        attr_fn = getattr(self.entity_description, "attr_fn", None)
+        data = self.coordinator.data  # type: ignore[attr-defined]
+        if attr_fn is None or data is None:
+            return None
+        return attr_fn(data)
+
+
+class OneKomma5LiveSensor(_DescriptionValueSensor, OneKomma5Entity, SensorEntity):
     """Sensor for live energy data."""
 
     entity_description: OneKomma5SensorDescription
@@ -70,7 +97,6 @@ class OneKomma5LiveSensor(OneKomma5Entity, SensorEntity):
         *,
         asset: Any | None = None,
     ) -> None:
-        """Initialize the sensor."""
         super().__init__(
             coordinator,
             system_id,
@@ -80,13 +106,6 @@ class OneKomma5LiveSensor(OneKomma5Entity, SensorEntity):
             asset=asset,
         )
         self.entity_description = description
-
-    @property
-    def native_value(self) -> Any:
-        """Return the sensor value."""
-        if self.coordinator.data is None:
-            return None
-        return self.entity_description.value_fn(self.coordinator.data)
 
 
 class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity):
@@ -732,7 +751,9 @@ class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
         return self._feed_in_tariff if self._feed_in_tariff > 0 else None
 
 
-class OneKomma5OptimizationSensor(OneKomma5OptimizationEntity, SensorEntity):
+class OneKomma5OptimizationSensor(
+    _DescriptionValueSensor, OneKomma5OptimizationEntity, SensorEntity
+):
     """Sensor for optimization event data."""
 
     entity_description: OneKomma5OptimizationSensorDescription
@@ -746,28 +767,13 @@ class OneKomma5OptimizationSensor(OneKomma5OptimizationEntity, SensorEntity):
         *,
         currency: str = "EUR",
     ) -> None:
-        """Initialize the sensor."""
         super().__init__(coordinator, system_id, system_name, description.key)
         self.entity_description = description
         if description.device_class == SensorDeviceClass.MONETARY:
             self._attr_native_unit_of_measurement = currency
 
-    @property
-    def native_value(self) -> Any:
-        """Return the sensor value."""
-        if self.coordinator.data is None:
-            return None
-        return self.entity_description.value_fn(self.coordinator.data)
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return extra state attributes."""
-        if self.coordinator.data is None:
-            return None
-        return self.entity_description.attr_fn(self.coordinator.data)
-
-
-class OneKomma5WeatherSensor(OneKomma5WeatherEntity, SensorEntity):
+class OneKomma5WeatherSensor(_DescriptionValueSensor, OneKomma5WeatherEntity, SensorEntity):
     """Sensor for weather coordinator data."""
 
     entity_description: OneKomma5WeatherSensorDescription
@@ -779,16 +785,8 @@ class OneKomma5WeatherSensor(OneKomma5WeatherEntity, SensorEntity):
         system_name: str,
         description: OneKomma5WeatherSensorDescription,
     ) -> None:
-        """Initialize the sensor."""
         super().__init__(coordinator, system_id, system_name, description.key)
         self.entity_description = description
-
-    @property
-    def native_value(self) -> Any:
-        """Return the sensor value."""
-        if self.coordinator.data is None:
-            return None
-        return self.entity_description.value_fn(self.coordinator.data)
 
 
 class OneKomma5DiagnosticSensor(_BaseSystemEntity[DataUpdateCoordinator[Any]], SensorEntity):
@@ -938,23 +936,11 @@ class OneKomma5DailySavingsSensor(OneKomma5EnergyEntity, SensorEntity):
 
 
 class OneKomma5DynamicPulsePriceGuaranteeSensor(OneKomma5SystemStatusEntity, SensorEntity):
-    """1KOMMA5° Dynamic-Pulse price-guarantee (currency/kWh).
+    """DP price-guarantee (currency/kWh) — static value from get_subscriptions.
 
-    Static value captured once at setup from ``get_subscriptions(customer_id)``
-    — the guarantee changes with contract renewal (annual at most), not with
-    live data, so no coordinator refresh is needed. We bind to the
-    system-status coordinator only so the entity's availability tracks the
-    system's cloud connectivity.
-
-    **Interpretation caveat**: the 1KOMMA5° API does not document what the
-    guarantee bounds. Empirically the magnitude matches the flat grid-cost
-    component of the all-in price (compare against the ``grid_costs`` /
-    ``spot_price`` attributes on ``current_electricity_price``), not a max
-    total price — so it's probably a grid-cost-side guarantee, but treat as
-    "compare, then wire" before building automations on it.
-
-    Version string (e.g. ``DE_PRICE_GUARANTEE_V2``) is exposed as an attribute
-    so users can key automations on the guarantee scheme they're subscribed to.
+    Interpretation is undocumented by the SDK: magnitude empirically matches
+    the flat grid-cost component of the all-in price, not a max total price.
+    Compare with current_electricity_price attributes before wiring automations.
     """
 
     _attr_translation_key = "dynamic_pulse_price_guarantee"
