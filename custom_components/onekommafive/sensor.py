@@ -49,6 +49,7 @@ from .sensor_entities import (
     OneKomma5CostSensor,
     OneKomma5DailySavingsSensor,
     OneKomma5DiagnosticSensor,
+    OneKomma5DynamicPulsePriceGuaranteeSensor,
     OneKomma5EnergySensor,
     OneKomma5EVSensor,
     OneKomma5FeedInRevenueSensor,
@@ -628,6 +629,21 @@ async def async_setup_entry(
             data.energy_coordinator, system_id, system_name, currency=currency
         )
     )
+
+    # Dynamic-Pulse price-guarantee sensor. Only created when the account has
+    # a DYNAMIC_PULSE subscription AND the guarantee field is populated —
+    # accounts without DP get no unavailable sensor to worry about.
+    if data.price_guarantee is not None and data.price_guarantee.value_eur_per_kwh is not None:
+        entities.append(
+            OneKomma5DynamicPulsePriceGuaranteeSensor(
+                data.system_status_coordinator,
+                system_id,
+                system_name,
+                data.price_guarantee.value_eur_per_kwh,
+                data.price_guarantee.version,
+                currency=currency,
+            )
+        )
 
     # Diagnostic sensors (last successful update per coordinator)
     entities.extend(

@@ -118,6 +118,20 @@
           "description": "Kun käytössä on useita 1KOMMA5°-järjestelmiä: valitse kohdejärjestelmä."
         }
       }
+    },
+    "get_heartbeat_metrics": {
+      "name": "Hae Heartbeat-mittarit",
+      "description": "Hakee 1KOMMA5° Heartbeat -aggregoidut mittarit (PV, verkkoon/verkosta, kustannukset, tulot) valitulle ajanjaksolle.",
+      "fields": {
+        "window": {
+          "name": "Ajanjakso",
+          "description": "Ajanjakso: päivä, viikko, kuukausi, puoli vuotta tai vuosi."
+        },
+        "config_entry_id": {
+          "name": "Integraatio",
+          "description": "Kun käytössä on useita 1KOMMA5°-järjestelmiä: valitse kohdejärjestelmä."
+        }
+      }
     }
   },
   "entity": {
@@ -349,6 +363,9 @@
       },
       "diag_notification_update": {
         "name": "Viimeisin ilmoituspäivitys"
+      },
+      "dynamic_pulse_price_guarantee": {
+        "name": "DP-hintatakuu"
       },
       "ev_battery_capacity": {
         "name": "Akun kapasiteetti"

@@ -118,6 +118,20 @@
           "description": "When multiple 1KOMMA5° systems are configured: select the target system."
         }
       }
+    },
+    "get_heartbeat_metrics": {
+      "name": "Get Heartbeat metrics",
+      "description": "Fetch aggregated 1KOMMA5° Heartbeat metrics (PV, grid consumption / feed-in, costs, revenue) for a time window.",
+      "fields": {
+        "window": {
+          "name": "Time window",
+          "description": "Which time window: day, week, month, half-year, or year."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "When multiple 1KOMMA5° systems are configured: select the target system."
+        }
+      }
     }
   },
   "entity": {
@@ -349,6 +363,9 @@
       },
       "diag_notification_update": {
         "name": "Last notifications update"
+      },
+      "dynamic_pulse_price_guarantee": {
+        "name": "DP price guarantee"
       },
       "ev_battery_capacity": {
         "name": "Battery capacity"

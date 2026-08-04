@@ -935,3 +935,54 @@ class OneKomma5DailySavingsSensor(OneKomma5EnergyEntity, SensorEntity):
         if savings is None:
             return None
         return round(savings, 2)
+
+
+class OneKomma5DynamicPulsePriceGuaranteeSensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """1KOMMA5° Dynamic-Pulse price-guarantee (currency/kWh).
+
+    Static value captured once at setup from ``get_subscriptions(customer_id)``
+    — the guarantee changes with contract renewal (annual at most), not with
+    live data, so no coordinator refresh is needed. We bind to the
+    system-status coordinator only so the entity's availability tracks the
+    system's cloud connectivity.
+
+    **Interpretation caveat**: the 1KOMMA5° API does not document what the
+    guarantee bounds. Empirically the magnitude matches the flat grid-cost
+    component of the all-in price (compare against the ``grid_costs`` /
+    ``spot_price`` attributes on ``current_electricity_price``), not a max
+    total price — so it's probably a grid-cost-side guarantee, but treat as
+    "compare, then wire" before building automations on it.
+
+    Version string (e.g. ``DE_PRICE_GUARANTEE_V2``) is exposed as an attribute
+    so users can key automations on the guarantee scheme they're subscribed to.
+    """
+
+    _attr_translation_key = "dynamic_pulse_price_guarantee"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 4
+    _attr_icon = "mdi:shield-check-outline"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        value_eur_per_kwh: float,
+        version: str | None,
+        *,
+        currency: str = "EUR",
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, "dynamic_pulse_price_guarantee")
+        self._attr_native_unit_of_measurement = currency_per_kwh(currency)
+        self._value = value_eur_per_kwh
+        self._version = version
+
+    @property
+    def native_value(self) -> float:
+        return self._value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self._version is None:
+            return None
+        return {"version": self._version}

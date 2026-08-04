@@ -18,6 +18,7 @@ from .helpers import find_cheapest_window, find_most_expensive_window
 SERVICE_GET_CHEAPEST_WINDOW = "get_cheapest_window"
 SERVICE_GET_MOST_EXPENSIVE_WINDOW = "get_most_expensive_window"
 SERVICE_REFRESH_NOW = "refresh_now"
+SERVICE_GET_HEARTBEAT_METRICS = "get_heartbeat_metrics"
 
 # Keep in sync with services.yaml and the translations.
 REFRESH_COORDINATORS: tuple[str, ...] = (
@@ -31,9 +32,26 @@ REFRESH_COORDINATORS: tuple[str, ...] = (
     "all",
 )
 
+# Keep in sync with services.yaml and the translations. Windows correspond to
+# the fields on `onekommafive.models.HeartbeatPrices`.
+HEARTBEAT_METRICS_WINDOWS: tuple[str, ...] = (
+    "day",
+    "week",
+    "month",
+    "half_year",
+    "year",
+)
+
 REFRESH_SERVICE_SCHEMA = vol.Schema(
     {
         vol.Optional("coordinator", default="live"): vol.In(REFRESH_COORDINATORS),
+        vol.Optional("config_entry_id"): cv.string,
+    }
+)
+
+HEARTBEAT_METRICS_SCHEMA = vol.Schema(
+    {
+        vol.Required("window"): vol.In(HEARTBEAT_METRICS_WINDOWS),
         vol.Optional("config_entry_id"): cv.string,
     }
 )
@@ -46,6 +64,28 @@ WINDOW_SERVICE_SCHEMA = vol.Schema(
         vol.Optional("config_entry_id"): cv.string,
     }
 )
+
+
+def _resolve_config_entry(hass: HomeAssistant, call: ServiceCall) -> Any:
+    """Pick the target config entry for a service call.
+
+    Multi-system installs must specify ``config_entry_id`` explicitly; single-
+    system installs auto-pick their only entry. Raises ``HomeAssistantError``
+    with user-facing messages for the four failure paths (no entry, unknown
+    entry, ambiguous). Shared by ``refresh_now`` and ``get_heartbeat_metrics``.
+    """
+    config_entry_id = call.data.get("config_entry_id")
+    entries = hass.config_entries.async_entries(DOMAIN)
+    if not entries:
+        raise HomeAssistantError("No 1KOMMA5° integration configured")
+    if config_entry_id is not None:
+        entry = next((e for e in entries if e.entry_id == config_entry_id), None)
+        if entry is None:
+            raise HomeAssistantError(f"Config entry '{config_entry_id}' not found")
+        return entry
+    if len(entries) == 1:
+        return entries[0]
+    raise HomeAssistantError("Multiple 1KOMMA5° entries configured — specify config_entry_id")
 
 
 def _ensure_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -148,21 +188,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         gate on success — picked OPTIONAL so callers without
         ``response_variable:`` get fire-and-forget semantics.
         """
-        config_entry_id = call.data.get("config_entry_id")
-        entries = hass.config_entries.async_entries(DOMAIN)
-        if not entries:
-            raise HomeAssistantError("No 1KOMMA5° integration configured")
-        if config_entry_id is not None:
-            entry = next((e for e in entries if e.entry_id == config_entry_id), None)
-            if entry is None:
-                raise HomeAssistantError(f"Config entry '{config_entry_id}' not found")
-        elif len(entries) == 1:
-            entry = entries[0]
-        else:
-            raise HomeAssistantError(
-                "Multiple 1KOMMA5° entries configured — specify config_entry_id"
-            )
-
+        entry = _resolve_config_entry(hass, call)
         target = call.data["coordinator"]
         all_coords: dict[str, Any] = {
             "live": entry.runtime_data.live_coordinator,
@@ -195,4 +221,39 @@ def async_setup_services(hass: HomeAssistant) -> None:
         _refresh_now,
         schema=REFRESH_SERVICE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    async def _get_heartbeat_metrics(call: ServiceCall) -> ServiceResponse:
+        """Return the requested HeartbeatPrices window as a flat dict.
+
+        On-demand fetch — one API call per invocation. When the SDK returns
+        ``None`` for the requested window, responds with
+        ``{"available": false, "window": <name>}`` so callers can branch on it
+        instead of tripping over missing fields. Field set follows the
+        ``HeartbeatPriceWindow`` model exactly (see the SDK model source);
+        ``raw`` is stripped since it duplicates the flat surface.
+        """
+        entry = _resolve_config_entry(hass, call)
+        window = call.data["window"]
+        system = entry.runtime_data.system
+        prices = await hass.async_add_executor_job(system.get_heartbeat_prices)
+        win = getattr(prices, window, None)
+        if win is None:
+            return cast(ServiceResponse, {"window": window, "available": False})
+        fields: dict[str, Any] = {}
+        for attr in dir(win):
+            if attr.startswith("_") or attr == "raw":
+                continue
+            value = getattr(win, attr, None)
+            if callable(value):
+                continue
+            fields[attr] = value
+        return cast(ServiceResponse, {"window": window, "available": True, **fields})
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_GET_HEARTBEAT_METRICS,
+        _get_heartbeat_metrics,
+        schema=HEARTBEAT_METRICS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
