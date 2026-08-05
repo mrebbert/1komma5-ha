@@ -118,6 +118,20 @@
           "description": "Bij meerdere 1KOMMA5°-systemen: kies het doelsysteem."
         }
       }
+    },
+    "get_heartbeat_metrics": {
+      "name": "Heartbeat-statistieken ophalen",
+      "description": "Haalt geaggregeerde 1KOMMA5° Heartbeat-statistieken (PV, netverbruik / teruglevering, kosten, opbrengsten) op voor een tijdvenster.",
+      "fields": {
+        "window": {
+          "name": "Tijdvenster",
+          "description": "Welk tijdvenster: dag, week, maand, halfjaar of jaar."
+        },
+        "config_entry_id": {
+          "name": "Integratie",
+          "description": "Bij meerdere 1KOMMA5°-systemen: kies het doelsysteem."
+        }
+      }
     }
   },
   "entity": {
@@ -349,6 +363,9 @@
       },
       "diag_notification_update": {
         "name": "Laatste notificatie-update"
+      },
+      "dynamic_pulse_price_guarantee": {
+        "name": "DP-prijsgarantie"
       },
       "ev_battery_capacity": {
         "name": "Batterijcapaciteit"

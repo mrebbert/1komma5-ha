@@ -9,8 +9,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from onekommafive.errors import ApiError
 
 from .const import (
     DOMAIN,
@@ -51,10 +54,8 @@ class PriceData:
 
     market_prices: Any  # onekommafive.models.MarketPrices
     current_price: float | None
-    current_price_with_grid_costs: float | None
     forecast: list[dict[str, Any]]  # sorted list of {start, end, price} dicts
     all_in_prices: dict[str, float] | None = None  # full price dict for dynamic lookups
-    grid_prices: dict[str, float] | None = None  # full grid-cost price dict
     negative_price_slots_today: int = 0
     negative_price_slots_tomorrow: int | None = None
     tomorrow_average_price: float | None = None
@@ -147,11 +148,9 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
             raise UpdateFailed(
                 f"Timeout after {self._fetch_timeout_seconds:g}s fetching {self._data_label}"
             ) from err
+        except ApiError as err:
+            raise UpdateFailed(f"API error fetching {self._data_label}: {err}") from err
         except Exception as err:
-            from onekommafive.errors import ApiError
-
-            if isinstance(err, ApiError):
-                raise UpdateFailed(f"API error fetching {self._data_label}: {err}") from err
             raise UpdateFailed(f"Error fetching {self._data_label}: {err}") from err
 
     def _fetch(self) -> T:
@@ -166,9 +165,8 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     _coordinator_name = "1KOMMA5° Live"
     _interval_seconds = LIVE_UPDATE_INTERVAL_SECONDS
 
-    # Number of consecutive None ems_settings results before the repair issue
-    # fires. 5 × 30 s = 2.5 min — fast enough to be useful, slow enough to
-    # avoid noise from transient API blips.
+    # Threshold picked to ride out a couple of transient API blips before
+    # bothering the user with a Repair Issue.
     _EMS_FAILURE_THRESHOLD = 5
     _EMS_ISSUE_ID = "ems_settings_unavailable"
 
@@ -200,10 +198,6 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
 
     def _update_ems_repair_issue(self, ems_available: bool) -> None:
         """Track consecutive EMS failures and create / delete the repair issue."""
-        from homeassistant.helpers import issue_registry as ir
-
-        from .const import DOMAIN
-
         if ems_available:
             self._ems_failure_count = 0
             if self._ems_issue_active:
@@ -249,7 +243,6 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
 
         market_prices = self._system.get_prices(today_start, today_end, resolution="15m")
         all_in_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs_and_vat)
-        grid_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs)
 
         # Always try to fetch tomorrow's prices to maximise the forecast horizon
         if window_end.date() > now.date():
@@ -262,12 +255,10 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
                     tomorrow_start, tomorrow_end, resolution="15m"
                 )
                 all_in_prices.update(tomorrow_prices.prices_with_grid_costs_and_vat)
-                grid_prices.update(tomorrow_prices.prices_with_grid_costs)
             except Exception:
                 _LOGGER.debug("Tomorrow's prices not yet available")
 
         current_price = get_current_price(all_in_prices)
-        current_price_with_grid_costs = get_current_price(grid_prices)
         forecast = build_forecast(all_in_prices, horizon_hours=30)
 
         # Price statistics: split by date
@@ -290,10 +281,8 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         return PriceData(
             market_prices=market_prices,
             current_price=current_price,
-            current_price_with_grid_costs=current_price_with_grid_costs,
             forecast=forecast,
             all_in_prices=all_in_prices,
-            grid_prices=grid_prices,
             negative_price_slots_today=negative_price_slots_today,
             negative_price_slots_tomorrow=negative_slots_tomorrow,
             tomorrow_average_price=tomorrow_average,
@@ -335,9 +324,7 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
     _coordinator_name = "1KOMMA5° Optimizations"
     _interval_seconds = OPTIMIZATION_UPDATE_INTERVAL_SECONDS
 
-    # Highest from_time we have already fired an event for. None on first
-    # run — we initialise from the first fetch without firing to avoid
-    # spamming N events at startup.
+    # None on the first refresh primes without firing (no N-event replay at startup).
     _last_fired_from_time: str | None = None
 
     def _fetch(self) -> OptimizationData:

@@ -68,3 +68,21 @@ refresh_now:
       selector:
         config_entry:
           integration: onekommafive
+
+get_heartbeat_metrics:
+  fields:
+    window:
+      required: true
+      example: month
+      selector:
+        select:
+          options:
+            - day
+            - week
+            - month
+            - half_year
+            - year
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: onekommafive

@@ -59,6 +59,8 @@ def mock_system_factory():
         assets: list | None = None,
         active_features: list[str] | None = None,
         notifications: list | None = None,
+        subscriptions: list | None = None,
+        heartbeat_prices: MagicMock | None = None,
     ) -> MagicMock:
         system = MagicMock()
         system.id.return_value = system_id
@@ -172,6 +174,21 @@ def mock_system_factory():
         # a `.notifications: list[Notification]` attribute. Empty by default so
         # tests that don't care about notifications don't need to stub anything.
         system.get_notifications.return_value = MagicMock(notifications=list(notifications or []))
+
+        # Subscriptions inventory (v0.1.53) — SDK returns SubscriptionsList with
+        # a `.subscriptions: list[Subscription]` attribute. Empty by default so
+        # tests that don't care get no DP price-guarantee sensor.
+        system.get_subscriptions.return_value = MagicMock(
+            subscriptions=list(subscriptions or []),
+            total_items=len(subscriptions or []),
+        )
+
+        # HeartbeatPrices (v0.1.53) — SDK returns HeartbeatPrices with 5 named
+        # window attributes; default to all-None so absent windows return
+        # gracefully. Tests that need populated data pass an explicit stub.
+        if heartbeat_prices is None:
+            heartbeat_prices = MagicMock(day=None, week=None, month=None, half_year=None, year=None)
+        system.get_heartbeat_prices.return_value = heartbeat_prices
 
         return system
 

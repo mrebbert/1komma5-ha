@@ -118,6 +118,20 @@
           "description": "Vid flera konfigurerade 1KOMMA5°-system: välj målsystemet."
         }
       }
+    },
+    "get_heartbeat_metrics": {
+      "name": "Hämta Heartbeat-mätvärden",
+      "description": "Hämtar aggregerade 1KOMMA5° Heartbeat-mätvärden (PV, nätköp / -inmatning, kostnader, intäkter) för en tidsperiod.",
+      "fields": {
+        "window": {
+          "name": "Tidsperiod",
+          "description": "Vilken tidsperiod: dag, vecka, månad, halvår eller år."
+        },
+        "config_entry_id": {
+          "name": "Integration",
+          "description": "Vid flera konfigurerade 1KOMMA5°-system: välj målsystemet."
+        }
+      }
     }
   },
   "entity": {
@@ -349,6 +363,9 @@
       },
       "diag_notification_update": {
         "name": "Senaste notifikationsuppdatering"
+      },
+      "dynamic_pulse_price_guarantee": {
+        "name": "DP-prisgaranti"
       },
       "ev_battery_capacity": {
         "name": "Batterikapacitet"

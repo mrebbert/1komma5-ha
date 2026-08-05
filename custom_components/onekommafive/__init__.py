@@ -36,6 +36,14 @@ PLATFORMS: list[Platform] = [
 ]
 
 
+@dataclass(frozen=True)
+class PriceGuarantee:
+    """DP price-guarantee snapshot; value normalized to EUR/kWh."""
+
+    value_eur_per_kwh: float | None
+    version: str | None
+
+
 @dataclass
 class OneKomma5Data:
     """Runtime data stored in the config entry."""
@@ -54,9 +62,35 @@ class OneKomma5Data:
     details: object | None
     customer_id: str | None  # sliced off details for the system-status coordinator
     currency: str  # ISO 4217 code derived from details.address_country (default EUR)
+    price_guarantee: PriceGuarantee | None
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
+
+
+def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuarantee | None:
+    """Return DP price-guarantee (ct/kWh → EUR/kWh) or None on any failure."""
+    if customer_id is None:
+        return None
+    try:
+        subs = system.get_subscriptions(customer_id)
+    except Exception as err:
+        _LOGGER.warning("Subscriptions fetch failed: %s", err)
+        return None
+    for sub in getattr(subs, "subscriptions", []) or []:
+        if getattr(sub, "type", None) != "DYNAMIC_PULSE":
+            continue
+        raw_value = getattr(sub, "price_guarantee_value", None)
+        if raw_value is None:
+            return None
+        unit = (getattr(sub, "price_guarantee_unit", None) or "").lower()
+        version = getattr(sub, "price_guarantee_version", None)
+        try:
+            value_eur_per_kwh = float(raw_value) / 100 if "ct" in unit else float(raw_value)
+        except (TypeError, ValueError):
+            return None
+        return PriceGuarantee(value_eur_per_kwh=value_eur_per_kwh, version=version)
+    return None
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -77,7 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 
     try:
 
-        def _fetch_system() -> tuple[object, str, object | None]:
+        def _fetch_system() -> tuple[object, str, object | None, PriceGuarantee | None]:
             client = Client(username, password)
             system = Systems(client).get_system(system_id)
             # system.info() makes a blocking HTTP call — keep it in the executor
@@ -93,12 +127,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             # is skipped (customer_id is required for that call).
             try:
                 details = system.get_details()
-            except Exception as err:  # pragma: no cover - defensive
+            except Exception as err:
                 _LOGGER.warning("System details fetch failed: %s", err)
                 details = None
-            return system, name, details
+            cust_id = getattr(details, "customer_id", None) if details else None
+            price_guarantee = _extract_price_guarantee(system, cust_id)
+            return system, name, details, price_guarantee
 
-        system, system_name, details = await hass.async_add_executor_job(_fetch_system)
+        system, system_name, details, price_guarantee = await hass.async_add_executor_job(
+            _fetch_system
+        )
     except AuthenticationError as err:
         raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
     except RequestError as err:
@@ -146,6 +184,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         details=details,
         customer_id=customer_id,
         currency=currency,
+        price_guarantee=price_guarantee,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

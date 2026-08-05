@@ -234,6 +234,8 @@ series:
 Replace `SYSTEMNAME` with your actual entity ID (find it under **Settings → Devices & Services → 1KOMMA5°**).
 </details>
 
+**Dynamic-Pulse price guarantee** (DP contract only) — `sensor.<sys>_dynamic_pulse_price_guarantee` exposes the raw `price_guarantee_value` from your DP subscription in `EUR/kWh`. The guarantee comes with terms and conditions on the 1KOMMA5° side that this integration doesn't (and can't) model, so treat the value as informational — see the FAQ.
+
 ### Energy accounting
 
 For every unidirectional power sensor an energy counterpart (kWh) is auto-created via trapezoidal integration of the 30 s power samples. All use `state_class: total_increasing` — direct **Energy Dashboard** compatibility.
@@ -422,6 +424,42 @@ Force an immediate refresh of one (or all) data coordinators. Useful after a pow
 
 Response: `{"refreshed": [...], "failed": [...]}`. `all` runs every coordinator in parallel; per-coordinator failures land in `failed` but don't raise.
 
+### `onekommafive.get_heartbeat_metrics`
+
+On-demand fetch of aggregated 1KOMMA5° Heartbeat metrics for a chosen time window — PV production, grid consumption/feed-in, tariffs, costs, revenue. Cloud-computed, so the numbers reflect what 1KOMMA5° itself sees, useful for comparing against your locally-integrated `*_energy` / `electricity_cost` / `feed_in_revenue` Long-Term Statistics.
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| `window` | `day` \| `week` \| `month` \| `half_year` \| `year` | Aggregation window (required) |
+| `config_entry_id` | — | Only required with multiple systems configured |
+
+Response is a flat dict with all populated `HeartbeatPriceWindow` fields (~22 fields per window: `pv_produced_kwh`, `grid_feed_in_kwh`, `grid_feed_in_compensation_eur`, `grid_consumed_kwh`, `grid_consumption_cost_eur`, `total_consumption_kwh`, `total_energy_cost_eur`, `vat`, plus a couple of composite/marketing metrics you can choose to ignore). Absent windows respond `{"window": ..., "available": false}` so callers can branch on it.
+
+<details>
+<summary>Example: compare cloud vs local monthly grid-import figure</summary>
+
+```yaml
+alias: 1KOMMA5° cloud vs local monthly grid check
+trigger:
+  - platform: time
+    at: "03:00:00"
+action:
+  - service: onekommafive.get_heartbeat_metrics
+    data:
+      window: month
+    response_variable: cloud
+  - service: notify.persistent_notification
+    data:
+      title: Grid import — cloud vs local
+      message: >
+        Cloud month: {{ cloud.grid_consumed_kwh | round(1) }} kWh /
+        {{ cloud.grid_consumption_cost_eur | round(2) }} EUR.
+        Compare against `sensor.<sys>_grid_consumption_power_energy` Long-Term
+        Statistics for the same window in the History panel.
+```
+
+</details>
+
 ### Bus event: `onekommafive_notification` (v0.1.52)
 
 Fires once per newly-observed 1KOMMA5° cloud notification (energy market thresholds, system health alerts, dynamic-pulse events, …). Enables automations that react to the same push notifications the mobile app receives — no email/webhook/tap-detection needed.
@@ -598,6 +636,10 @@ Diagnostic timestamps only advance after the coordinator's first *post-add* refr
 ### Which notification types reach HA via `onekommafive_notification`?
 
 Whatever the 1KOMMA5° cloud returns — which honours your per-type subscription settings in the 1KOMMA5° app (Settings → Notifications). Types you have disabled in the app don't produce HA events. There is no HA-side subscription control.
+
+### Is `dynamic_pulse_price_guarantee` the max price I'll pay per kWh?
+
+**No.** The guarantee is bound to terms and conditions on the 1KOMMA5° side that this integration doesn't model. Treat the sensor as informational; don't wire automations that assume "current price ≤ guarantee" semantics.
 
 ### My entity names look wrong ("1k5 …" prefix vs. plain name)
 

@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`sensor.<sys>_dynamic_pulse_price_guarantee`** — raw `price_guarantee_value` from a DYNAMIC_PULSE subscription (via SDK 0.1.44's `get_subscriptions`), exposed in `EUR/kWh`. Informational only — the guarantee is bound to 1KOMMA5°-side terms this integration doesn't model. Sensor is only created when a DP contract is present.
+- **`onekommafive.get_heartbeat_metrics(window)` service** — on-demand fetch of aggregated Heartbeat metrics for one of `day` / `week` / `month` / `half_year` / `year` (via SDK 0.1.44's `get_heartbeat_prices`). Returns a flat dict with all ~22 populated fields: PV / grid kWh, tariffs, €-amounts, VAT, plus a couple of composite fields the caller can choose to ignore. Absent windows respond `{"window": ..., "available": false}` so callers can branch on it. Response order follows the SDK model — useful for sanity-checking cloud-side aggregates against locally-integrated Long-Term Statistics.
+
+### Changed
+- Internal refactor sweep: `_resolve_config_entry` helper deduplicated across the four services that resolve a config entry, `dir(win)` reflection in the heartbeat-metrics handler replaced with `dataclasses.asdict()` (fail-loud instead of fail-silent on SDK method additions), dead `PriceData.current_price_with_grid_costs` and `PriceData.grid_prices` fields removed (zero readers repo-wide), tomorrow-window date math simplified from a 6-line `datetime.replace(...)` to `dt_util.start_of_local_day() + timedelta(days=1)`, `ApiError` and `issue_registry` late imports hoisted out of hot paths, docstring / comment bloat trimmed (net -90 lines across the coordinator + service + sensor files). Behavior unchanged; 224 tests still pass.
+- Live power / weather / optimization sensors share a new `_DescriptionValueSensor` mixin instead of hand-rolling the same `native_value = description.value_fn(coord.data)` guard three times. `OneKomma5PriceSensor` and `OneKomma5EVSensor` stay bespoke — they carry real added behavior (breakdown attributes + quarter-hour update on the price side, `_get_ev()` indirection on the EV side).
+
 ## [0.1.52] - 2026-08-09
 
 ### Added
