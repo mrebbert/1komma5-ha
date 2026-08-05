@@ -234,7 +234,7 @@ series:
 Replace `SYSTEMNAME` with your actual entity ID (find it under **Settings → Devices & Services → 1KOMMA5°**).
 </details>
 
-**Dynamic-Pulse price guarantee** (DP contract only) — `sensor.<sys>_dynamic_pulse_price_guarantee` surfaces the `price_guarantee_value` from your DP subscription, normalized to `EUR/kWh` (`ct/kWh` gets divided by 100). Version identifier (e.g. `DE_PRICE_GUARANTEE_V2`) is exposed as the `version` attribute. Sensor is only created when the account actually has a DYNAMIC_PULSE subscription with a populated guarantee. Interpretation is not documented by 1KOMMA5°; empirically the value's magnitude matches the flat grid-cost component of the all-in price, not a max total — **compare with the `grid_costs` / `spot_price` attributes on `current_electricity_price` before wiring automations on it.**
+**Dynamic-Pulse price guarantee** (DP contract only) — `sensor.<sys>_dynamic_pulse_price_guarantee` exposes the raw `price_guarantee_value` from your DP subscription in `EUR/kWh`. The guarantee comes with terms and conditions on the 1KOMMA5° side that this integration doesn't (and can't) model, so treat the value as informational — see the FAQ.
 
 ### Energy accounting
 
@@ -639,7 +639,7 @@ Whatever the 1KOMMA5° cloud returns — which honours your per-type subscriptio
 
 ### Is `dynamic_pulse_price_guarantee` the max price I'll pay per kWh?
 
-**No — and 1KOMMA5° doesn't document what it actually bounds.** Empirically the value's magnitude matches the flat grid-cost portion of the all-in price (compare with the `grid_costs` attribute on `current_electricity_price`), not the total price you're charged. Treat it as the grid-cost-side guarantee it appears to be, not an all-in-price ceiling. Cross-check against `current_electricity_price.grid_costs` before wiring automations that assume "current price ≤ guarantee" semantics.
+**No.** The guarantee is bound to terms and conditions on the 1KOMMA5° side that this integration doesn't model. Treat the sensor as informational; don't wire automations that assume "current price ≤ guarantee" semantics.
 
 ### My entity names look wrong ("1k5 …" prefix vs. plain name)
 

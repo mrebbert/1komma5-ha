@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- **`sensor.<sys>_dynamic_pulse_price_guarantee`** — surfaces the `price_guarantee_value` from your DYNAMIC_PULSE subscription (via SDK 0.1.44's `get_subscriptions`), normalized to `EUR/kWh` (`ct/kWh` gets divided by 100). Sensor is only registered when the account actually has a DP subscription with a populated guarantee — no `unavailable` clutter for non-DP accounts. Version identifier (e.g. `DE_PRICE_GUARANTEE_V2`) exposed as the `version` attribute. Interpretation is not documented by 1KOMMA5°; empirically the value's magnitude matches the flat grid-cost component of the all-in price (compare with `current_electricity_price` attributes `grid_costs` / `spot_price` before wiring automations).
+- **`sensor.<sys>_dynamic_pulse_price_guarantee`** — raw `price_guarantee_value` from a DYNAMIC_PULSE subscription (via SDK 0.1.44's `get_subscriptions`), exposed in `EUR/kWh`. Informational only — the guarantee is bound to 1KOMMA5°-side terms this integration doesn't model. Sensor is only created when a DP contract is present.
 - **`onekommafive.get_heartbeat_metrics(window)` service** — on-demand fetch of aggregated Heartbeat metrics for one of `day` / `week` / `month` / `half_year` / `year` (via SDK 0.1.44's `get_heartbeat_prices`). Returns a flat dict with all ~22 populated fields: PV / grid kWh, tariffs, €-amounts, VAT, plus a couple of composite fields the caller can choose to ignore. Absent windows respond `{"window": ..., "available": false}` so callers can branch on it. Response order follows the SDK model — useful for sanity-checking cloud-side aggregates against locally-integrated Long-Term Statistics.
 
 ### Changed
