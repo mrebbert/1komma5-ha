@@ -61,6 +61,7 @@ def mock_system_factory():
         notifications: list | None = None,
         subscriptions: list | None = None,
         heartbeat_prices: MagicMock | None = None,
+        impact: MagicMock | None = None,
     ) -> MagicMock:
         system = MagicMock()
         system.id.return_value = system_id
@@ -189,6 +190,12 @@ def mock_system_factory():
         if heartbeat_prices is None:
             heartbeat_prices = MagicMock(day=None, week=None, month=None, half_year=None, year=None)
         system.get_heartbeat_prices.return_value = heartbeat_prices
+
+        # ImpactOverview (v0.1.53) — SDK exposes `co2_savings_kg: float | None`.
+        # Default to a stub whose value is None so the attribute is absent.
+        if impact is None:
+            impact = MagicMock(co2_savings_kg=None)
+        system.get_impact_overview.return_value = impact
 
         return system
 

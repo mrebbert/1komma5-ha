@@ -84,6 +84,33 @@ async def test_none_savings_is_unknown(hass: HomeAssistant, mock_system_factory)
     assert state.state == "unknown"
 
 
+async def test_co2_saved_attribute_present_when_populated(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    system = mock_system_factory(
+        system_id="sys-1",
+        energy=MagicMock(savings_eur=1.23, self_sufficiency=0.5, updated_at=None),
+        impact=MagicMock(co2_savings_kg=3110.228944714019),
+    )
+    await _setup(hass, system)
+
+    state = hass.states.get(_resolve(hass))
+    assert state.attributes.get("co2_saved_kg") == 3110.228944714019
+
+
+async def test_co2_saved_attribute_absent_when_missing(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    system = mock_system_factory(
+        system_id="sys-1",
+        energy=MagicMock(savings_eur=1.23, self_sufficiency=0.5, updated_at=None),
+    )
+    await _setup(hass, system)
+
+    state = hass.states.get(_resolve(hass))
+    assert "co2_saved_kg" not in state.attributes
+
+
 async def test_last_reset_is_local_midnight(hass: HomeAssistant, mock_system_factory) -> None:
     system = mock_system_factory(
         system_id="sys-1",
