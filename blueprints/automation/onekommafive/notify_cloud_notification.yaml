@@ -1,0 +1,78 @@
+blueprint:
+  name: 1KOMMA5° — Forward cloud notifications
+  description: >
+    Fire a notification for each new `onekommafive_notification` bus event —
+    the same push notifications your 1KOMMA5° mobile app receives (energy
+    market thresholds, system health alerts, dynamic-pulse events).
+
+
+    Payload arrives pre-localized to your account language, so the default
+    title + message pass `title` and `body` straight through. Which types
+    reach HA is controlled by your 1KOMMA5° app's Settings → Notifications
+    — types disabled there don't produce events.
+
+
+    Optional `type_filter` restricts the automation to a single notification
+    type (e.g. `ENERGY_MARKET_UPPER_TARGET_REACHED`) — leave empty to react
+    to all types.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/notify_cloud_notification.yaml
+
+  input:
+    notify_target:
+      name: Notification target
+      description: >
+        The `notify` service to call (e.g. `notify.mobile_app_pixel`,
+        `notify.persistent_notification`, `notify.notify`).
+      default: notify.persistent_notification
+      selector:
+        text: {}
+    type_filter:
+      name: Type filter (optional)
+      description: >
+        Restrict to a single notification `type`, e.g.
+        `ENERGY_MARKET_UPPER_TARGET_REACHED`,
+        `ENERGY_MARKET_LOWER_TARGET_REACHED`, `SYSTEM_HEALTH`. Leave empty
+        to react to all types.
+      default: ""
+      selector:
+        text: {}
+    title:
+      name: Notification title
+      description: >
+        Supports Jinja. Available: `trigger.event.data.title`,
+        `trigger.event.data.body`, `trigger.event.data.type`,
+        `trigger.event.data.locale`, `trigger.event.data.created_at`,
+        `trigger.event.data.meta` (dict, e.g. `meta.price.value`).
+      default: "1KOMMA5°: {{ trigger.event.data.title or trigger.event.data.type }}"
+      selector:
+        text: {}
+    message:
+      name: Notification message
+      description: >
+        Supports Jinja. Same variables as the title.
+      default: "{{ trigger.event.data.body or trigger.event.data.type }}"
+      selector:
+        text:
+          multiline: true
+
+mode: parallel
+max: 20
+
+variables:
+  type_filter: !input type_filter
+
+trigger:
+  - platform: event
+    event_type: onekommafive_notification
+
+condition:
+  - condition: template
+    value_template: "{{ not type_filter or trigger.event.data.type == type_filter }}"
+
+action:
+  - service: !input notify_target
+    data:
+      title: !input title
+      message: !input message

@@ -543,7 +543,7 @@ See the `notify_negative_price_started.yaml` blueprint for a ready-made notifica
 
 **Dashboards** — [`dashboard/`](dashboard/) contains two ready-to-import Home Assistant dashboards (energy & grid + EV charger). All cards are native HA types, no extra frontend components needed. [Dashboard README with screenshots](dashboard/README.md).
 
-**Automation blueprints** — seven importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
+**Automation blueprints** — eight importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
 
 - **Run during cheapest window** — schedule a switch for the cheapest N-min window daily (dishwasher, washer, EV)
 - **Follow cheap electricity** — mirror a switch to `binary_sensor…_cheap_electricity` for opportunistic loads
@@ -552,6 +552,7 @@ See the `notify_negative_price_started.yaml` blueprint for a ready-made notifica
 - **Notify when the grid pays you** — instant alert on positive↔negative edge, built on the bus event
 - **EV charge on PV surplus** — toggle a switch ON when battery is full AND PV exceeds a threshold
 - **Notify when a device goes offline** — connectivity-based alerts with debounce
+- **Forward 1KOMMA5° cloud notifications** — passthrough for `onekommafive_notification` events with optional `type_filter`
 
 → [Blueprints README with import instructions](blueprints/automation/onekommafive/README.md)
 

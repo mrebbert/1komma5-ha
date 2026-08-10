@@ -1,6 +1,6 @@
 # 1KOMMA5° automation blueprints
 
-Seven ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
+Eight ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
 common automations on top of this integration.
 
 ## Importing
@@ -88,6 +88,22 @@ heads-up about *tomorrow's* negative slots).
 Inputs: notify service, title, message (Jinja-templatable with
 `trigger.event.data.price` and
 `trigger.event.data.negative_price_slots_remaining`).
+
+### `notify_cloud_notification.yaml` — Forward 1KOMMA5° cloud notifications
+Fires a notification for each new `onekommafive_notification` bus event
+(v0.1.52) — the same push notifications the 1KOMMA5° mobile app receives
+(energy market thresholds, system health alerts, dynamic-pulse events).
+Payload arrives pre-localized to your account language, so the default
+title + message pass `title` and `body` straight through.
+
+Optional `type_filter` restricts to a single notification type (e.g.
+`ENERGY_MARKET_UPPER_TARGET_REACHED`) — leave empty for all types. Which
+types reach HA is controlled by your 1KOMMA5° app's Settings →
+Notifications.
+
+Inputs: notify service, optional type filter, title, message
+(Jinja-templatable with `trigger.event.data.title` / `.body` / `.type` /
+`.meta`).
 
 ### `notify_connectivity_lost.yaml` — Notify when a device goes offline
 Sends a notification when one of the v0.1.38 connectivity sensors (site,
