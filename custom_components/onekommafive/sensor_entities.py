@@ -900,9 +900,11 @@ class OneKomma5DailySavingsSensor(OneKomma5EnergyEntity, SensorEntity):
         system_name: str,
         *,
         currency: str = "EUR",
+        co2_saved_kg: float | None = None,
     ) -> None:
         super().__init__(coordinator, system_id, system_name, "daily_savings")
         self._attr_native_unit_of_measurement = currency
+        self._co2_saved_kg = co2_saved_kg
 
     @property
     def last_reset(self) -> datetime | None:
@@ -917,6 +919,12 @@ class OneKomma5DailySavingsSensor(OneKomma5EnergyEntity, SensorEntity):
         if savings is None:
             return None
         return round(savings, 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self._co2_saved_kg is None:
+            return None
+        return {"co2_saved_kg": self._co2_saved_kg}
 
 
 class OneKomma5DynamicPulsePriceGuaranteeSensor(OneKomma5SystemStatusEntity, SensorEntity):

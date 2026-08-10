@@ -63,9 +63,24 @@ class OneKomma5Data:
     customer_id: str | None  # sliced off details for the system-status coordinator
     currency: str  # ISO 4217 code derived from details.address_country (default EUR)
     price_guarantee: PriceGuarantee | None
+    co2_saved_kg: float | None  # lifetime CO2 saved (kg), captured once at setup
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
+
+
+def _extract_co2_saved(system: Any) -> float | None:
+    """Return lifetime CO2 saved in kg from get_impact_overview, or None on failure."""
+    try:
+        impact = system.get_impact_overview()
+    except Exception as err:
+        _LOGGER.warning("Impact overview fetch failed: %s", err)
+        return None
+    value = getattr(impact, "co2_savings_kg", None)
+    try:
+        return float(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuarantee | None:
@@ -111,7 +126,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 
     try:
 
-        def _fetch_system() -> tuple[object, str, object | None, PriceGuarantee | None]:
+        def _fetch_system() -> tuple[
+            object, str, object | None, PriceGuarantee | None, float | None
+        ]:
             client = Client(username, password)
             system = Systems(client).get_system(system_id)
             # system.info() makes a blocking HTTP call — keep it in the executor
@@ -132,11 +149,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
                 details = None
             cust_id = getattr(details, "customer_id", None) if details else None
             price_guarantee = _extract_price_guarantee(system, cust_id)
-            return system, name, details, price_guarantee
+            co2_saved_kg = _extract_co2_saved(system)
+            return system, name, details, price_guarantee, co2_saved_kg
 
-        system, system_name, details, price_guarantee = await hass.async_add_executor_job(
-            _fetch_system
-        )
+        (
+            system,
+            system_name,
+            details,
+            price_guarantee,
+            co2_saved_kg,
+        ) = await hass.async_add_executor_job(_fetch_system)
     except AuthenticationError as err:
         raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
     except RequestError as err:
@@ -185,6 +207,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         customer_id=customer_id,
         currency=currency,
         price_guarantee=price_guarantee,
+        co2_saved_kg=co2_saved_kg,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

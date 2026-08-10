@@ -626,7 +626,11 @@ async def async_setup_entry(
     # Daily savings sensor (cloud-computed, resets at local midnight)
     entities.append(
         OneKomma5DailySavingsSensor(
-            data.energy_coordinator, system_id, system_name, currency=currency
+            data.energy_coordinator,
+            system_id,
+            system_name,
+            currency=currency,
+            co2_saved_kg=data.co2_saved_kg,
         )
     )
 
