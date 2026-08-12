@@ -175,23 +175,21 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         coordinator: OneKomma5LiveCoordinator,
         system_id: str,
         system_name: str,
-        ev_id: str,
-        ev_manufacturer: str | None,
-        ev_model: str | None,
+        ev: Any,
         unique_id_suffix: str,
     ) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
         self._system_id = system_id
-        self._ev_id = ev_id
-        self._attr_unique_id = f"{system_id}_{ev_id}_{unique_id_suffix}"
+        self._ev_id = ev.id()
+        self._attr_unique_id = f"{system_id}_{self._ev_id}_{unique_id_suffix}"
         # ev_id in the object_id so multi-vehicle installs don't collide.
-        self._stable_object_id = f"{slugify(system_name)}_{slugify(ev_id)}_{unique_id_suffix}"
+        self._stable_object_id = f"{slugify(system_name)}_{slugify(self._ev_id)}_{unique_id_suffix}"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{system_id}_{ev_id}")},
+            identifiers={(DOMAIN, f"{system_id}_{self._ev_id}")},
             translation_key="vehicle",
-            manufacturer=ev_manufacturer,
-            model=ev_model,
+            manufacturer=ev.manufacturer(),
+            model=ev.model(),
             via_device=(DOMAIN, system_id),
         )
 

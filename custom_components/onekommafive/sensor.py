@@ -607,19 +607,8 @@ async def async_setup_entry(
     # EV (vehicle) sensors — one set per vehicle, hung under the system parent.
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
-            ev_id = ev.id()
-            ev_manufacturer = ev.manufacturer()
-            ev_model = ev.model()
             entities.extend(
-                OneKomma5EVSensor(
-                    live_coordinator,
-                    system_id,
-                    system_name,
-                    ev_id,
-                    ev_manufacturer,
-                    ev_model,
-                    desc,
-                )
+                OneKomma5EVSensor(live_coordinator, system_id, system_name, ev, desc)
                 for desc in EV_SENSORS
             )
 
