@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.53] - 2026-08-16
+
 ### Added
 - `daily_savings` sensor now exposes `co2_saved_kg` as an attribute — lifetime CO2 avoided (kg) sourced from `system.get_impact_overview()` at setup.
 
