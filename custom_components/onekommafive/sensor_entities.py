@@ -108,7 +108,9 @@ class OneKomma5LiveSensor(_DescriptionValueSensor, OneKomma5Entity, SensorEntity
         self.entity_description = description
 
 
-class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity):
+class OneKomma5PriceSensor(
+    _DescriptionValueSensor, QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity
+):
     """Sensor for electricity market prices."""
 
     entity_description: OneKomma5PriceSensorDescription
@@ -136,13 +138,6 @@ class OneKomma5PriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorE
         await super().async_added_to_hass()
         if self.entity_description.key == "current_electricity_price":
             self._async_register_quarter_hour_update()
-
-    @property
-    def native_value(self) -> Any:
-        """Return the sensor value."""
-        if self.coordinator.data is None:
-            return None
-        return self.entity_description.value_fn(self.coordinator.data)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -69,12 +70,19 @@ class OneKomma5Data:
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
 
 
+def _safe_fetch[T](label: str, fn: Callable[[], T]) -> T | None:
+    """Run a setup-time SDK call; log and swallow any failure."""
+    try:
+        return fn()
+    except Exception as err:
+        _LOGGER.warning("%s fetch failed: %s", label, err)
+        return None
+
+
 def _extract_co2_saved(system: Any) -> float | None:
     """Return lifetime CO2 saved in kg from get_impact_overview, or None on failure."""
-    try:
-        impact = system.get_impact_overview()
-    except Exception as err:
-        _LOGGER.warning("Impact overview fetch failed: %s", err)
+    impact = _safe_fetch("Impact overview", system.get_impact_overview)
+    if impact is None:
         return None
     value = getattr(impact, "co2_savings_kg", None)
     try:
@@ -87,10 +95,8 @@ def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuara
     """Return DP price-guarantee (ct/kWh → EUR/kWh) or None on any failure."""
     if customer_id is None:
         return None
-    try:
-        subs = system.get_subscriptions(customer_id)
-    except Exception as err:
-        _LOGGER.warning("Subscriptions fetch failed: %s", err)
+    subs = _safe_fetch("Subscriptions", lambda: system.get_subscriptions(customer_id))
+    if subs is None:
         return None
     for sub in getattr(subs, "subscriptions", []) or []:
         if getattr(sub, "type", None) != "DYNAMIC_PULSE":
@@ -142,11 +148,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             # and cached. Failure is non-fatal: it only means the diagnostics
             # dump lacks the extra fields and the active-features endpoint
             # is skipped (customer_id is required for that call).
-            try:
-                details = system.get_details()
-            except Exception as err:
-                _LOGGER.warning("System details fetch failed: %s", err)
-                details = None
+            details = _safe_fetch("System details", system.get_details)
             cust_id = getattr(details, "customer_id", None) if details else None
             price_guarantee = _extract_price_guarantee(system, cust_id)
             co2_saved_kg = _extract_co2_saved(system)
