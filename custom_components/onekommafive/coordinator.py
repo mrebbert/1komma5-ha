@@ -139,7 +139,7 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
         """Fetch data via the executor, wrapping errors and timeouts as UpdateFailed."""
         try:
             async with asyncio.timeout(self._fetch_timeout_seconds):
-                return await self.hass.async_add_executor_job(self._fetch)
+                data = await self.hass.async_add_executor_job(self._fetch)
         except TimeoutError as err:
             # The executor thread running _fetch keeps going until the SDK call
             # returns (threads can't be cancelled), but the coordinator itself
@@ -152,10 +152,15 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
             raise UpdateFailed(f"API error fetching {self._data_label}: {err}") from err
         except Exception as err:
             raise UpdateFailed(f"Error fetching {self._data_label}: {err}") from err
+        await self._on_data(data)
+        return data
 
     def _fetch(self) -> T:
         """Synchronous fetch implementation. Override in subclasses."""
         raise NotImplementedError
+
+    async def _on_data(self, data: T) -> None:
+        """Post-fetch hook for side effects (repair issues, bus events, persistence)."""
 
 
 class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
@@ -190,11 +195,9 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             ems_settings=ems_settings,
         )
 
-    async def _async_update_data(self) -> LiveData:
-        """Wrap the base fetch with EMS-availability tracking for the repair issue."""
-        data = await super()._async_update_data()
+    async def _on_data(self, data: LiveData) -> None:
+        """Track EMS availability for the repair issue after every successful fetch."""
         self._update_ems_repair_issue(data.ems_settings is not None)
-        return data
 
     def _update_ems_repair_issue(self, ems_available: bool) -> None:
         """Track consecutive EMS failures and create / delete the repair issue."""
@@ -290,11 +293,9 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             tomorrow_highest_price=tomorrow_highest,
         )
 
-    async def _async_update_data(self) -> PriceData:
-        """Fetch + fire HA bus events for negative-price edge transitions."""
-        data = await super()._async_update_data()
+    async def _on_data(self, data: PriceData) -> None:
+        """Fire HA bus events for negative-price edge transitions."""
         self._fire_negative_price_edge_events(data)
-        return data
 
     def _fire_negative_price_edge_events(self, data: PriceData) -> None:
         """Fire negative-price edge events. Granularity = coordinator refresh interval."""
@@ -337,11 +338,9 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
         agg = aggregate_optimization_events(result.events)
         return OptimizationData(events=result.events, **agg)
 
-    async def _async_update_data(self) -> OptimizationData:
-        """Fetch + fire HA bus events for newly observed decisions."""
-        data = await super()._async_update_data()
+    async def _on_data(self, data: OptimizationData) -> None:
+        """Fire HA bus events for newly observed decisions."""
         self._fire_new_decision_events(data.events)
-        return data
 
     def _fire_new_decision_events(self, events: list[Any]) -> None:
         """Fire onekommafive_optimization_decision for each event newer than the last seen.
@@ -503,11 +502,9 @@ class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsDa
         result = self._system.get_notifications()
         return NotificationsData(notifications=list(result.notifications))
 
-    async def _async_update_data(self) -> NotificationsData:
-        """Wrap the base fetch with lazy Store hydration + event fire + persist."""
-        data = await super()._async_update_data()
+    async def _on_data(self, data: NotificationsData) -> None:
+        """Hydrate the Store on first call, then fire events + persist state."""
         await self._fire_and_persist(data.notifications)
-        return data
 
     async def _fire_and_persist(self, notifications: list[Any]) -> None:
         """Fire one bus event per newly-observed notification, then persist state.
