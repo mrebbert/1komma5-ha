@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `daily_savings` sensor now exposes `co2_saved_kg` as an attribute — lifetime CO2 avoided (kg) sourced from `system.get_impact_overview()` at setup.
 
 ### Changed
+- Bump the `onekommafive` SDK pin to `>=0.1.46,<0.2` (from `>=0.1.45,<0.2`). Upstream 0.1.46 migrates the `sites/{id}/details` and `sites/{id}/status-and-assets` endpoints from v2 to v3; payloads are byte-identical (SHA-256 verified) and no model fields changed. Proactive future-proofing against a v2 retirement.
 - Internal refactor sweep: setup-time SDK fetches share a `_safe_fetch(label, fn)` helper (was three copies of the try/except-log-None pattern); base coordinator gains an `_on_data(data)` post-fetch hook so Live/Price/Optimization/Notifications drop their duplicated `_async_update_data` overrides; EV entity constructors take the `ev` object directly instead of unpacking `id/manufacturer/model` at every call site (also drops two dead `_ev_charger` fields). Behavior unchanged; unique-ids and entity-ids stable; 226 tests pass.
 
 ## [0.1.52] - 2026-08-09
