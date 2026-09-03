@@ -287,7 +287,9 @@ Bus event `onekommafive_optimization_decision` fires per new decision — see [S
 
 ### EV charger / wallbox
 
-One set of entities per connected EV charger.
+One set of entities per **vehicle profile** registered in the 1KOMMA5° app.
+
+> **Requires a vehicle profile.** These entities model the car (`SMART_CHARGE` target, SoC, departure time), not the wallbox — they come from the SDK's `/v1/devices/evs` endpoint, which returns the vehicles configured under *Settings → Vehicles* in the 1KOMMA5° app. Without a vehicle profile the endpoint returns an empty list and no charging-mode / SoC / departure-time entities are created (the wallbox device itself still appears, backed by connectivity + aggregate `ev_chargers_power` / `ev_charger_cost` sensors from other endpoints).
 
 **Sensors:** `ev_target_soc` (%), `ev_charging_mode` (mode enum), `ev_battery_capacity` (kWh), `ev_scheduled_departure_soc` (%)
 
