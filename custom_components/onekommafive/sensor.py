@@ -495,6 +495,7 @@ async def async_setup_entry(
             system_name,
             desc,
             asset=_resolve_asset(desc.device_key),
+            parent_device_id=data.system_device_id,
         )
         for desc in LIVE_SENSORS
     )
@@ -507,6 +508,7 @@ async def async_setup_entry(
             system_name,
             desc,
             asset=_resolve_asset(desc.device_key),
+            parent_device_id=data.system_device_id,
         )
         for desc in LIVE_SENSORS
         if desc.key in ENERGY_SENSOR_KEYS
@@ -520,6 +522,7 @@ async def async_setup_entry(
             system_name,
             desc,
             asset=_resolve_asset(desc.device_key),
+            parent_device_id=data.system_device_id,
         )
         for desc in BATTERY_SPLIT_DESCRIPTORS
     )
@@ -573,6 +576,7 @@ async def async_setup_entry(
             device_key=device_key,
             asset=_resolve_asset(device_key),
             currency=currency,
+            parent_device_id=data.system_device_id,
         )
         for attr, key, device_key in CONSUMER_COST_SPECS
     )
@@ -587,6 +591,7 @@ async def async_setup_entry(
             feed_in_tariff,
             asset=_resolve_asset("meter"),
             currency=currency,
+            parent_device_id=data.system_device_id,
         )
     )
 
@@ -608,7 +613,9 @@ async def async_setup_entry(
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
             entities.extend(
-                OneKomma5EVSensor(live_coordinator, system_id, system_name, ev, desc)
+                OneKomma5EVSensor(
+                    live_coordinator, system_id, system_name, ev, desc, data.system_device_id
+                )
                 for desc in EV_SENSORS
             )
 
