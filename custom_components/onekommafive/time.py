@@ -32,7 +32,11 @@ async def async_setup_entry(
 
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
-            entities.append(OneKomma5EVDepartureTime(live_coordinator, system_id, system_name, ev))
+            entities.append(
+                OneKomma5EVDepartureTime(
+                    live_coordinator, system_id, system_name, ev, data.system_device_id
+                )
+            )
 
     apply_stable_entity_ids(entities, TIME_DOMAIN)
     async_add_entities(entities)
@@ -49,9 +53,12 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
         system_id: str,
         system_name: str,
         ev: Any,
+        parent_device_id: str,
     ) -> None:
         """Initialize the time entity."""
-        super().__init__(coordinator, system_id, system_name, ev, "departure_time")
+        super().__init__(
+            coordinator, system_id, system_name, ev, "departure_time", parent_device_id
+        )
 
     @property
     def native_value(self) -> datetime.time | None:

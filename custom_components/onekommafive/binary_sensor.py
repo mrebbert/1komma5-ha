@@ -78,6 +78,7 @@ async def async_setup_entry(
                     translation_key,
                     device_key=device_key,
                     asset=assets_by_type.get(asset_type),
+                    parent_device_id=data.system_device_id,
                 )
             )
 
@@ -88,6 +89,7 @@ async def async_setup_entry(
             data.system_name,
             spec,
             asset=assets_by_type.get(ASSET_TYPE_BY_DEVICE_KEY[spec.device_key]),
+            parent_device_id=data.system_device_id,
         )
         for spec in OPTIMIZATION_DECISION_SENSORS
     )
@@ -277,6 +279,7 @@ class OneKomma5OptimizationDecisionSensor(
         spec: OptimizationDecisionSpec,
         *,
         asset: Any | None = None,
+        parent_device_id: str | None = None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(
@@ -286,6 +289,7 @@ class OneKomma5OptimizationDecisionSensor(
             spec.key,
             device_key=spec.device_key,
             asset=asset,
+            parent_device_id=parent_device_id,
         )
         self._spec = spec
         self._attr_translation_key = spec.key
@@ -391,6 +395,7 @@ class OneKomma5AssetTypeConnectivitySensor(OneKomma5SystemStatusEntity, BinarySe
         *,
         device_key: str | None = None,
         asset: Any | None = None,
+        parent_device_id: str | None = None,
     ) -> None:
         super().__init__(
             coordinator,
@@ -399,6 +404,7 @@ class OneKomma5AssetTypeConnectivitySensor(OneKomma5SystemStatusEntity, BinarySe
             translation_key,
             device_key=device_key,
             asset=asset,
+            parent_device_id=parent_device_id,
         )
         self._asset_type = asset_type
         self._attr_translation_key = translation_key

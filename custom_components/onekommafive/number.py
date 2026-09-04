@@ -86,7 +86,9 @@ async def async_setup_entry(
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
             entities.extend(
-                OneKomma5EVNumber(live_coordinator, system_id, system_name, ev, desc)
+                OneKomma5EVNumber(
+                    live_coordinator, system_id, system_name, ev, desc, data.system_device_id
+                )
                 for desc in EV_NUMBERS
             )
 
@@ -106,9 +108,10 @@ class OneKomma5EVNumber(OneKomma5EVEntity, NumberEntity):
         system_name: str,
         ev: Any,
         description: OneKomma5EVNumberDescription,
+        parent_device_id: str,
     ) -> None:
         """Initialize the number entity."""
-        super().__init__(coordinator, system_id, system_name, ev, description.key)
+        super().__init__(coordinator, system_id, system_name, ev, description.key, parent_device_id)
         self.entity_description = description
 
     @property

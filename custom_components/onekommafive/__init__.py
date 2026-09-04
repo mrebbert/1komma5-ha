@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 
 from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME
 from .coordinator import (
@@ -65,6 +66,7 @@ class OneKomma5Data:
     currency: str  # ISO 4217 code derived from details.address_country (default EUR)
     price_guarantee: PriceGuarantee | None
     co2_saved_kg: float | None  # lifetime CO2 saved (kg), captured once at setup
+    system_device_id: str  # device_registry ID of the system parent device (via_device_id)
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -195,6 +197,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     ):
         await coordinator.async_refresh()
 
+    # Pre-create the system parent device so child DeviceInfo entries can link
+    # via `via_device_id` (device_registry id string) instead of the deprecated
+    # `via_device` (identifier tuple). Deprecation removes the tuple form in
+    # HA 2027.8; this migration keeps the log clean now.
+    from .entity import system_device_info
+
+    parent_device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        **system_device_info(system_id, system_name),
+    )
+
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,
         price_coordinator=price_coordinator,
@@ -210,6 +223,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         currency=currency,
         price_guarantee=price_guarantee,
         co2_saved_kg=co2_saved_kg,
+        system_device_id=parent_device.id,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

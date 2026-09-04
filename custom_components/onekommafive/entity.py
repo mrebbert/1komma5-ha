@@ -22,6 +22,23 @@ from .coordinator import (
     OneKomma5WeatherCoordinator,
 )
 
+# HA ≥ 2026.7 deprecates DeviceInfo.via_device (tuple) in favour of
+# via_device_id (device_registry id string). Prefer the new form when
+# available; fall back cleanly on older HA installs.
+_HAS_VIA_DEVICE_ID = "via_device_id" in DeviceInfo.__annotations__
+
+
+def _set_via(di: DeviceInfo, system_id: str, parent_device_id: str | None) -> DeviceInfo:
+    """Set the correct via_device* key on ``di`` for the installed HA version."""
+    if _HAS_VIA_DEVICE_ID and parent_device_id is not None:
+        # via_device_id exists on HA ≥ 2026.7 only; local test HA (2026.2)
+        # lacks the TypedDict key so mypy complains — runtime guard makes
+        # this safe.
+        di["via_device_id"] = parent_device_id  # type: ignore[typeddict-unknown-key]
+    else:
+        di["via_device"] = (DOMAIN, system_id)
+    return di
+
 
 def system_device_info(system_id: str, system_name: str) -> DeviceInfo:
     """Build the canonical DeviceInfo for a 1KOMMA5° system."""
@@ -49,6 +66,7 @@ def asset_device_info(
     system_id: str,
     device_key: str,
     asset: Any | None,
+    parent_device_id: str | None = None,
 ) -> DeviceInfo:
     """Build a DeviceInfo for an asset sub-device.
 
@@ -61,18 +79,23 @@ def asset_device_info(
     ``None`` (asset not yet fetched / not present), manufacturer / model /
     firmware fall back to ``None`` so HA shows only the translated label.
 
+    ``parent_device_id`` is the device_registry id of the system parent
+    device (captured at setup time on ``OneKomma5Data.system_device_id``);
+    used to set ``via_device_id`` instead of the deprecated ``via_device``
+    identifier tuple.
+
     PII contract: only ``manufacturer``, ``model`` and ``firmware`` from the
     asset payload are exposed — never ``id``, ``serial_number``,
     ``network_address`` or asset ``name``.
     """
-    return DeviceInfo(
+    di = DeviceInfo(
         identifiers={(DOMAIN, f"{system_id}_{device_key}")},
         translation_key=device_key,
         manufacturer=getattr(asset, "manufacturer", None) if asset else None,
         model=getattr(asset, "model", None) if asset else None,
         sw_version=getattr(asset, "firmware", None) if asset else None,
-        via_device=(DOMAIN, system_id),
     )
+    return _set_via(di, system_id, parent_device_id)
 
 
 class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
@@ -100,6 +123,7 @@ class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
         *,
         device_key: str | None = None,
         asset: Any | None = None,
+        parent_device_id: str | None = None,
     ) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
@@ -108,7 +132,7 @@ class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
         self._stable_object_id = f"{slugify(system_name)}_{unique_id_suffix}"
         key = device_key if device_key is not None else self._device_key
         if key is not None and asset is not None:
-            self._attr_device_info = asset_device_info(system_id, key, asset)
+            self._attr_device_info = asset_device_info(system_id, key, asset, parent_device_id)
         else:
             self._attr_device_info = system_device_info(system_id, system_name)
             # Asked for a sub-device but the hardware isn't reported by the
@@ -177,6 +201,7 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         system_name: str,
         ev: Any,
         unique_id_suffix: str,
+        parent_device_id: str | None = None,
     ) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
@@ -185,12 +210,15 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         self._attr_unique_id = f"{system_id}_{self._ev_id}_{unique_id_suffix}"
         # ev_id in the object_id so multi-vehicle installs don't collide.
         self._stable_object_id = f"{slugify(system_name)}_{slugify(self._ev_id)}_{unique_id_suffix}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{system_id}_{self._ev_id}")},
-            translation_key="vehicle",
-            manufacturer=ev.manufacturer(),
-            model=ev.model(),
-            via_device=(DOMAIN, system_id),
+        self._attr_device_info = _set_via(
+            DeviceInfo(
+                identifiers={(DOMAIN, f"{system_id}_{self._ev_id}")},
+                translation_key="vehicle",
+                manufacturer=ev.manufacturer(),
+                model=ev.model(),
+            ),
+            system_id,
+            parent_device_id,
         )
 
     def _get_ev(self) -> Any | None:

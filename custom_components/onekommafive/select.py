@@ -36,7 +36,9 @@ async def async_setup_entry(
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
             entities.append(
-                OneKomma5ChargingModeSelect(live_coordinator, system_id, system_name, ev)
+                OneKomma5ChargingModeSelect(
+                    live_coordinator, system_id, system_name, ev, data.system_device_id
+                )
             )
 
     apply_stable_entity_ids(entities, SELECT_DOMAIN)
@@ -55,9 +57,12 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         system_id: str,
         system_name: str,
         ev: Any,
+        parent_device_id: str,
     ) -> None:
         """Initialize the select entity."""
-        super().__init__(coordinator, system_id, system_name, ev, "charging_mode_select")
+        super().__init__(
+            coordinator, system_id, system_name, ev, "charging_mode_select", parent_device_id
+        )
 
     @property
     def current_option(self) -> str | None:
