@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.56] - 2026-09-04
+
+### Fixed
+- **FoxESS installs (and any install exposing a separate `BATTERY` asset):** the four battery sensors (`battery_power`, `battery_soc`, `battery_charge_power_energy`, `battery_discharge_power_energy`) now sit under the dedicated `battery` sub-device instead of the inverter sub-device. v0.1.54 added the `battery` sub-device mapping but the entities themselves still carried the historical `device_key="inverter"`, so the battery sub-device stayed empty and never materialised. Sungrow / single-`HYBRID` installs are unchanged — no empty battery device grown when the cloud reports no separate `BATTERY` asset. Unique-ids and entity-ids stable.
+
 ## [0.1.55] - 2026-09-04
 
 ### Fixed
