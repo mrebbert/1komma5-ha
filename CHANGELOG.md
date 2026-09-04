@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.55] - 2026-09-04
+
+### Fixed
+- Price coordinator no longer trips the intermittent `ApiClientForwardedException: Validation failed` (error_code 100006) from the market-prices endpoint. Upstream SDK 0.1.47 aligns the `from`/`to` timestamps to the resolution grid before the request; the v4 endpoint recently started rejecting `to=23:59:59Z` because it doesn't land on a 15-minute slot. Pin raised to `onekommafive>=0.1.47,<0.2`; no integration-side code change needed.
+
 ## [0.1.54] - 2026-09-07
 
 ### Added
