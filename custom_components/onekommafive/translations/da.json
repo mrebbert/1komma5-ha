@@ -416,6 +416,9 @@
     "wallbox": {
       "name": "Wallbox"
     },
+    "battery": {
+      "name": "Batteri"
+    },
     "vehicle": {
       "name": "Køretøj"
     }

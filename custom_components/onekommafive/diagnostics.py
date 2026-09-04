@@ -152,6 +152,29 @@ def _assets_redacted(status_data: Any) -> dict[str, Any]:
     }
 
 
+async def _wallbox_snapshot(hass: HomeAssistant, system: Any) -> list[dict[str, Any]] | None:
+    """Fetch wallbox hardware summaries for pairing diagnostics.
+
+    The EV entities (charging mode / target SoC / departure) are driven by
+    a vehicle profile (`get_ev_chargers`) paired to a wallbox via
+    ``Wallbox.assigned_ev_id``. When the vehicle list is empty but a wallbox
+    is present, the paired-vs-unpaired state is the single most useful
+    triage signal.
+    """
+    try:
+        wallboxes = await hass.async_add_executor_job(system.get_wallboxes)
+    except Exception as err:
+        return [{"error": repr(err)}]
+    return [
+        {
+            "name": getattr(w, "name", None),
+            "assigned_ev_id_present": getattr(w, "assigned_ev_id", None) is not None,
+            "gridx_hardware_id_present": getattr(w, "gridx_hardware_id", None) is not None,
+        }
+        for w in (wallboxes or [])
+    ]
+
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: OneKomma5ConfigEntry
 ) -> dict[str, Any]:
@@ -194,6 +217,7 @@ async def async_get_config_entry_diagnostics(
         "system": {
             "details": _details_redacted(data.details) if data.details else None,
             "status_and_assets": _assets_redacted(data.system_status_coordinator.data),
+            "wallboxes": await _wallbox_snapshot(hass, data.system),
         },
     }
 

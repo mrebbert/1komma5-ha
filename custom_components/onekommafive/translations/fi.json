@@ -416,6 +416,9 @@
     "wallbox": {
       "name": "Latauspiste"
     },
+    "battery": {
+      "name": "Akku"
+    },
     "vehicle": {
       "name": "Ajoneuvo"
     }
