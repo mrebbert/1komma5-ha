@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.54] - 2026-09-07
+
+### Added
+- FoxESS installs now get proper sub-devices. The inverter surface now matches either the `HYBRID` asset (Sungrow etc.) **or** the `PV_SYSTEM` asset that FoxESS-and-friends emit, and a new `battery` sub-device is created for the `BATTERY` asset (with `device.battery.name` translations in all 8 locales). Sungrow / single-`HYBRID` installs unchanged.
+- Diagnostics dump now includes a `system.wallboxes[]` section with `assigned_ev_id_present` and `gridx_hardware_id_present` flags per wallbox (no UUIDs leaked). Makes it possible to tell from a downloaded diagnostics file whether a vehicle profile is paired to the wallbox — the missing pairing is the most common reason the charging-mode / target-SoC / departure-time entities don't appear.
+
+### Changed
+- `DeviceInfo.via_device` (identifier tuple) is deprecated in HA 2026.7 and removed in HA 2027.8. All sub-device DeviceInfo objects now use `via_device_id` (device_registry id string) when running on HA ≥ 2026.7 and fall back to the tuple form on older HA. No behaviour change; unique-ids and entity-ids stable. Users on HA 2026.7+ see the `via_device` deprecation warnings for `onekommafive` disappear from their logs.
+- Documentation: the README section on the EV charger / wallbox now spells out that the charging-mode / target-SoC / departure-time entities model the **vehicle profile** (SDK's `/v1/devices/evs` endpoint), not the wallbox hardware. Without a vehicle profile registered in the 1KOMMA5° app under *Settings → Vehicles* and paired to the wallbox, no per-vehicle controls are created — the wallbox device still appears with connectivity + aggregate `ev_chargers_power` / `ev_charger_cost` sensors.
+
 ## [0.1.53] - 2026-08-16
 
 ### Added
