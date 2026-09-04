@@ -10,6 +10,7 @@ descriptions in ``sensor_descriptions.py``.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -482,6 +483,27 @@ async def async_setup_entry(
     def _resolve_asset(device_key: str | None) -> Any | None:
         return resolve_asset(assets_by_type, device_key)
 
+    # FoxESS-style installs expose the battery as its own `BATTERY` asset
+    # separate from the inverter (`PV_SYSTEM`); Sungrow-style installs report
+    # a single `HYBRID` asset with the battery integrated. Re-parent the
+    # battery-related power/energy sensors to the dedicated `battery`
+    # sub-device only when the cloud actually reports a separate `BATTERY`
+    # asset — otherwise keep the historical `inverter` grouping so
+    # single-`HYBRID` users don't grow an empty battery device.
+    _BATTERY_ENTITY_KEYS = frozenset(
+        {
+            "battery_power",
+            "battery_soc",
+            "battery_charge_power",
+            "battery_discharge_power",
+        }
+    )
+
+    def _adapt(desc: OneKomma5SensorDescription) -> OneKomma5SensorDescription:
+        if desc.key in _BATTERY_ENTITY_KEYS and "BATTERY" in assets_by_type:
+            return replace(desc, device_key="battery")
+        return desc
+
     entities: list[SensorEntity] = []
 
     # Live overview sensors
@@ -490,11 +512,12 @@ async def async_setup_entry(
             live_coordinator,
             system_id,
             system_name,
-            desc,
-            asset=_resolve_asset(desc.device_key),
+            adapted,
+            asset=_resolve_asset(adapted.device_key),
             parent_device_id=data.system_device_id,
         )
         for desc in LIVE_SENSORS
+        for adapted in (_adapt(desc),)
     )
 
     # Energy sensors (trapezoidal integration of power sensors)
@@ -503,12 +526,13 @@ async def async_setup_entry(
             live_coordinator,
             system_id,
             system_name,
-            desc,
-            asset=_resolve_asset(desc.device_key),
+            adapted,
+            asset=_resolve_asset(adapted.device_key),
             parent_device_id=data.system_device_id,
         )
         for desc in LIVE_SENSORS
         if desc.key in ENERGY_SENSOR_KEYS
+        for adapted in (_adapt(desc),)
     )
 
     # Battery split energy sensors (charge / discharge direction)
@@ -517,11 +541,12 @@ async def async_setup_entry(
             live_coordinator,
             system_id,
             system_name,
-            desc,
-            asset=_resolve_asset(desc.device_key),
+            adapted,
+            asset=_resolve_asset(adapted.device_key),
             parent_device_id=data.system_device_id,
         )
         for desc in BATTERY_SPLIT_DESCRIPTORS
+        for adapted in (_adapt(desc),)
     )
 
     # Price sensors
