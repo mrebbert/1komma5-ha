@@ -152,7 +152,9 @@ def _assets_redacted(status_data: Any) -> dict[str, Any]:
     }
 
 
-async def _wallbox_snapshot(hass: HomeAssistant, system: Any) -> list[dict[str, Any]] | None:
+async def _wallbox_snapshot(
+    hass: HomeAssistant, system: Any, details: Any
+) -> list[dict[str, Any]] | None:
     """Fetch wallbox hardware summaries for pairing diagnostics.
 
     The EV entities (charging mode / target SoC / departure) are driven by
@@ -160,11 +162,25 @@ async def _wallbox_snapshot(hass: HomeAssistant, system: Any) -> list[dict[str, 
     ``Wallbox.assigned_ev_id``. When the vehicle list is empty but a wallbox
     is present, the paired-vs-unpaired state is the single most useful
     triage signal.
+
+    Interprets the common `error_code:30401 "DeviceGateway not found"` case:
+    on installs where 1KOMMA5° is itself the EMP (``emp_type == "1K5"``) and
+    no local DeviceGateway exists (``device_gateway_count == 0``), the
+    GridX-based wallbox endpoint always fails — 1KOMMA5° routes those
+    devices via a 1k5-native backend path that isn't exposed by the SDK.
+    A hint flag is added so the next reader doesn't misread the raw error.
     """
     try:
         wallboxes = await hass.async_add_executor_job(system.get_wallboxes)
     except Exception as err:
-        return [{"error": repr(err)}]
+        entry: dict[str, Any] = {"error": repr(err)}
+        emp_type = getattr(details, "emp_type", None) if details else None
+        gateway_count = len(getattr(details, "device_gateways", []) or []) if details else None
+        if "30401" in entry["error"] and emp_type == "1K5" and gateway_count == 0:
+            entry["emp_type_1k5_native_hint"] = True
+        entry["emp_type"] = emp_type
+        entry["device_gateway_count"] = gateway_count
+        return [entry]
     return [
         {
             "name": getattr(w, "name", None),
@@ -217,7 +233,7 @@ async def async_get_config_entry_diagnostics(
         "system": {
             "details": _details_redacted(data.details) if data.details else None,
             "status_and_assets": _assets_redacted(data.system_status_coordinator.data),
-            "wallboxes": await _wallbox_snapshot(hass, data.system),
+            "wallboxes": await _wallbox_snapshot(hass, data.system, data.details),
         },
     }
 
