@@ -31,7 +31,7 @@ from .const import (
     DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
     DEFAULT_FEED_IN_TARIFF,
 )
-from .entity import ASSET_TYPE_BY_DEVICE_KEY, apply_stable_entity_ids
+from .entity import apply_stable_entity_ids, resolve_asset
 from .helpers import get_current_price
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -480,10 +480,7 @@ async def async_setup_entry(
     )
 
     def _resolve_asset(device_key: str | None) -> Any | None:
-        if device_key is None:
-            return None
-        asset_type = ASSET_TYPE_BY_DEVICE_KEY.get(device_key)
-        return assets_by_type.get(asset_type) if asset_type else None
+        return resolve_asset(assets_by_type, device_key)
 
     entities: list[SensorEntity] = []
 

@@ -52,14 +52,39 @@ def system_device_info(system_id: str, system_name: str) -> DeviceInfo:
 
 
 # Map from sub-device key (used in DeviceInfo identifier suffix and
-# translation_key) to the SDK ``Asset.type`` string. Single source of truth
-# for the entity → sub-device assignment.
-ASSET_TYPE_BY_DEVICE_KEY: dict[str, str] = {
-    "inverter": "HYBRID",
-    "heat_pump": "HEAT_PUMP",
-    "meter": "METER",
-    "wallbox": "EV_CHARGER",
+# translation_key) to the SDK ``Asset.type`` strings that resolve to it.
+# Some manufacturers (FoxESS) expose the inverter as two assets (BATTERY +
+# PV_SYSTEM) instead of a single HYBRID; both variants map to the same
+# `inverter` sub-device from an HA UX perspective. First-match wins in
+# `_resolve_asset` so a HYBRID beats a PV_SYSTEM for the same install.
+ASSET_TYPES_BY_DEVICE_KEY: dict[str, tuple[str, ...]] = {
+    "inverter": ("HYBRID", "PV_SYSTEM"),
+    "heat_pump": ("HEAT_PUMP",),
+    "meter": ("METER",),
+    "wallbox": ("EV_CHARGER",),
+    "battery": ("BATTERY",),
 }
+
+# Backward-compatible flat map used by call-sites that look up a single
+# asset_type per device_key. First entry per key wins; readers that need
+# full coverage should iterate ``ASSET_TYPES_BY_DEVICE_KEY[key]`` instead.
+ASSET_TYPE_BY_DEVICE_KEY: dict[str, str] = {
+    key: types[0] for key, types in ASSET_TYPES_BY_DEVICE_KEY.items()
+}
+
+
+def resolve_asset(assets_by_type: dict[str, Any], device_key: str | None) -> Any | None:
+    """Return the first matching asset for ``device_key`` or ``None``.
+
+    Iterates the tuple of candidate asset types (e.g. HYBRID, PV_SYSTEM
+    for the inverter sub-device) — first match wins.
+    """
+    if device_key is None:
+        return None
+    for asset_type in ASSET_TYPES_BY_DEVICE_KEY.get(device_key, ()):
+        if (asset := assets_by_type.get(asset_type)) is not None:
+            return asset
+    return None
 
 
 def asset_device_info(

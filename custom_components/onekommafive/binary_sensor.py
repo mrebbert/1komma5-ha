@@ -18,12 +18,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .entity import (
-    ASSET_TYPE_BY_DEVICE_KEY,
+    ASSET_TYPES_BY_DEVICE_KEY,
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
     OneKomma5SystemStatusEntity,
     QuarterHourUpdateMixin,
     apply_stable_entity_ids,
+    resolve_asset,
 )
 from .helpers import active_optimization_event
 
@@ -67,17 +68,18 @@ async def async_setup_entry(
         {a.type for a in status_data.assets} if status_data and status_data.assets else set()
     )
     for device_key, translation_key in ASSET_CONNECTIVITY_SENSORS:
-        asset_type = ASSET_TYPE_BY_DEVICE_KEY[device_key]
-        if asset_type in observed_types:
+        candidate_types = ASSET_TYPES_BY_DEVICE_KEY[device_key]
+        matched_type = next((t for t in candidate_types if t in observed_types), None)
+        if matched_type is not None:
             entities.append(
                 OneKomma5AssetTypeConnectivitySensor(
                     data.system_status_coordinator,
                     system_id,
                     data.system_name,
-                    asset_type,
+                    matched_type,
                     translation_key,
                     device_key=device_key,
-                    asset=assets_by_type.get(asset_type),
+                    asset=assets_by_type.get(matched_type),
                     parent_device_id=data.system_device_id,
                 )
             )
@@ -88,7 +90,7 @@ async def async_setup_entry(
             system_id,
             data.system_name,
             spec,
-            asset=assets_by_type.get(ASSET_TYPE_BY_DEVICE_KEY[spec.device_key]),
+            asset=resolve_asset(assets_by_type, spec.device_key),
             parent_device_id=data.system_device_id,
         )
         for spec in OPTIMIZATION_DECISION_SENSORS
