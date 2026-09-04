@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.57] - 2026-09-07
+
+### Changed
+- Diagnostics: the `system.wallboxes[]` block now decodes the common `error_code:30401 "DeviceGateway not found"` response. On installs where 1KOMMA5° is itself the EMP (`emp_type == "1K5"`) and no local DeviceGateway exists (`device_gateway_count == 0`), the entry gains `emp_type_1k5_native_hint: true` plus the raw `emp_type` and `device_gateway_count`. Turns a two-round diagnostic ping-pong into a one-look triage — the missing wallbox-control entities on these installs are a backend-architecture condition (SDK doesn't yet cover the 1k5-native wallbox path), not a user configuration issue.
+
 ## [0.1.56] - 2026-09-04
 
 ### Fixed
