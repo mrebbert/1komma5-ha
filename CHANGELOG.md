@@ -12,8 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Diagnostics dump now includes the notifications coordinator alongside the other six (was silently missing).
 
 ### Changed
-- Diagnostics: the `system.wallboxes[]` block reports `hardware_id_present` (from `Wallbox.id`) — the previous `gridx_hardware_id_present` flag is gone because SDK 0.2.0 dropped that field. The `emp_type_1k5_native_hint` triage flag stays as a safety net for edge cases where the site-scoped route still fails.
-- EMS auto-mode switch is no longer created on `emp_type: "1K5"` installs — the underlying GridX EMS endpoint is unreachable on that backend, so the switch would be permanently unavailable. The Repair Issue `ems_settings_unavailable` is also skipped on these installs to avoid noise.
+- Diagnostics: the `system.wallboxes[]` block drops the `gridx_hardware_id_present` flag. SDK 0.2.0 removed `Wallbox.gridx_hardware_id`, and every wallbox exposes a stable `Wallbox.id` under the new API, so a presence flag carried no signal. Pairing diagnostics rely on `assigned_ev_id_present` as before. The `emp_type_1k5_native_hint` triage flag stays as a safety net for edge cases where the site-scoped route still fails.
+- EMS auto-mode switch is no longer created on `emp_type: "1K5"` installs; the underlying GridX EMS endpoint is unreachable on that backend, so the switch would be permanently unavailable. If your setup used to run on the GridX backend and later moved to 1K5, the leftover `switch.<sys>_ems_auto_mode` entity is removed from the registry the first time you reload. The Repair Issue `ems_settings_unavailable` is also skipped on these installs (and one stale copy from a previous GRIDX run gets cleared once).
 
 ## [0.1.56] - 2026-09-04
 
