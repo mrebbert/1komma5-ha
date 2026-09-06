@@ -14,7 +14,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .const import DOMAIN
-from .entity import OneKomma5Entity, apply_stable_entity_ids
+from .entity import OneKomma5Entity, apply_stable_entity_ids, is_1k5_backend
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,8 +34,7 @@ async def async_setup_entry(
     # endpoint, so `get_ems_settings()` returns 30401 and the switch
     # would be permanently unavailable. Skip creating it entirely and
     # remove any stale registry entry left from a prior GRIDX run.
-    emp_type = getattr(data.details, "emp_type", None) if data.details else None
-    if emp_type == "1K5":
+    if is_1k5_backend(data.emp_type):
         _LOGGER.debug("Skipping EMS auto-mode switch: emp_type=1K5 has no GridX EMS endpoint")
         registry = er.async_get(hass)
         stale = registry.async_get_entity_id(SWITCH_DOMAIN, DOMAIN, f"{system_id}_ems_auto_mode")

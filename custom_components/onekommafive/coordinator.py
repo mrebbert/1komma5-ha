@@ -175,13 +175,13 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     _EMS_FAILURE_THRESHOLD = 5
     _EMS_ISSUE_ID = "ems_settings_unavailable"
 
-    def __init__(self, hass: HomeAssistant, system: Any, emp_type: str | None = None) -> None:
+    def __init__(self, hass: HomeAssistant, system: Any, is_1k5: bool = False) -> None:
         super().__init__(hass, system)
         self._ems_failure_count = 0
         self._ems_issue_active = False
         # 1K5-backend installs have no GridX EMS endpoint (permanent 30401),
         # so the fetch and the repair-issue path both skip on 1K5.
-        self._ems_repair_disabled = emp_type == "1K5"
+        self._ems_repair_disabled = is_1k5
         # One-shot flag so we clear a stale Repair from a previous GRIDX
         # run exactly once when a 1K5 install first reloads.
         self._ems_stale_cleanup_done = False

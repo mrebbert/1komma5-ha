@@ -67,6 +67,7 @@ class OneKomma5Data:
     price_guarantee: PriceGuarantee | None
     co2_saved_kg: float | None  # lifetime CO2 saved (kg), captured once at setup
     system_device_id: str  # device_registry ID of the system parent device (via_device_id)
+    emp_type: str | None  # SystemDetails.emp_type, e.g. "GRIDX" or "1K5"
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -173,8 +174,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 
     currency = resolve_currency(getattr(details, "address_country", None) if details else None)
 
-    emp_type = getattr(details, "emp_type", None) if details else None
-    live_coordinator = OneKomma5LiveCoordinator(hass, system, emp_type=emp_type)
+    from .entity import get_emp_type, is_1k5_backend
+
+    emp_type = get_emp_type(details)
+    live_coordinator = OneKomma5LiveCoordinator(hass, system, is_1k5=is_1k5_backend(emp_type))
     price_coordinator = OneKomma5PriceCoordinator(hass, system)
     optimization_coordinator = OneKomma5OptimizationCoordinator(hass, system)
     weather_coordinator = OneKomma5WeatherCoordinator(hass, system)
@@ -225,6 +228,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         price_guarantee=price_guarantee,
         co2_saved_kg=co2_saved_kg,
         system_device_id=parent_device.id,
+        emp_type=emp_type,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

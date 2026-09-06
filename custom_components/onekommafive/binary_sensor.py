@@ -24,7 +24,9 @@ from .entity import (
     OneKomma5SystemStatusEntity,
     QuarterHourUpdateMixin,
     apply_stable_entity_ids,
+    asset_redacted_dict,
     resolve_asset,
+    resolve_assets_by_type,
 )
 from .helpers import active_optimization_event
 
@@ -37,11 +39,7 @@ async def async_setup_entry(
     """Set up binary sensor entities from a config entry."""
     data = entry.runtime_data
     system_id = data.system.id()
-    assets_by_type = (
-        data.system_status_coordinator.data.assets_by_type
-        if data.system_status_coordinator.data is not None
-        else {}
-    )
+    assets_by_type = resolve_assets_by_type(data)
     entities: list = [
         OneKomma5CheapElectricitySensor(
             data.price_coordinator,
@@ -344,12 +342,7 @@ class OneKomma5OptimizationDecisionSensor(
 
 def _redact_asset(asset: Any) -> dict[str, Any]:
     """Strip asset attrs that may carry secrets (serial, IP, opaque id/name)."""
-    return {
-        "manufacturer": getattr(asset, "manufacturer", None),
-        "model": getattr(asset, "model", None),
-        "firmware": getattr(asset, "firmware", None),
-        "connection_status": getattr(asset, "connection_status", None),
-    }
+    return asset_redacted_dict(asset)
 
 
 class OneKomma5SiteConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
