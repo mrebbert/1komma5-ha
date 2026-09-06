@@ -179,20 +179,26 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         super().__init__(hass, system)
         self._ems_failure_count = 0
         self._ems_issue_active = False
-        # 1K5-backend installs have no GridX EMS endpoint — permanent 30401.
-        # Skip the repair-issue path entirely so users don't see a Repair
-        # for something that is architecturally unreachable.
+        # 1K5-backend installs have no GridX EMS endpoint (permanent 30401),
+        # so the fetch and the repair-issue path both skip on 1K5.
         self._ems_repair_disabled = emp_type == "1K5"
+        # One-shot flag so we clear a stale Repair from a previous GRIDX
+        # run exactly once when a 1K5 install first reloads.
+        self._ems_stale_cleanup_done = False
 
     def _fetch(self) -> LiveData:
         """Fetch all live data synchronously."""
         live_overview = self._system.get_live_overview()
         ev_chargers = self._system.get_ev_chargers()
-        try:
-            ems_settings = self._system.get_ems_settings()
-        except Exception:
-            _LOGGER.debug("EMS settings not available (no DeviceGateway?), skipping")
+        if self._ems_repair_disabled:
+            # Known to fail on 1K5; skip the round-trip.
             ems_settings = None
+        else:
+            try:
+                ems_settings = self._system.get_ems_settings()
+            except Exception:
+                _LOGGER.debug("EMS settings not available (no DeviceGateway?), skipping")
+                ems_settings = None
         return LiveData(
             live_overview=live_overview,
             ev_chargers=ev_chargers,
@@ -206,6 +212,12 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     def _update_ems_repair_issue(self, ems_available: bool) -> None:
         """Track consecutive EMS failures and create / delete the repair issue."""
         if self._ems_repair_disabled:
+            # Clear any stale Repair from a previous GRIDX run exactly once,
+            # then stay dormant. async_delete_issue is idempotent when the
+            # issue no longer exists.
+            if not self._ems_stale_cleanup_done:
+                ir.async_delete_issue(self.hass, DOMAIN, self._EMS_ISSUE_ID)
+                self._ems_stale_cleanup_done = True
             return
         if ems_available:
             self._ems_failure_count = 0
