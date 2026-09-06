@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.57] - 2026-09-07
 
+### Fixed
+- Diagnostics: reading the installed SDK version no longer triggers a `Detected blocking call to open` warning in the HA log. The `importlib.metadata.version("onekommafive")` call previously ran inside the diagnostics async handler and read `.dist-info/METADATA` from disk. It now runs once at setup time in the executor (alongside the other cached setup-time reads) and diagnostics just surfaces the cached value.
+
 ### Added
 - **Wallbox / EV control now works on non-GridX installs** (Enphase EVSE_IQ2 and other non-GridX wallboxes). The `onekommafive` SDK pin is raised to `>=0.2.0,<0.3`; upstream v0.2.0 migrates the wallbox and EV endpoints to the site-scoped v2 routes that work on both GridX and non-GridX backends. Previously the legacy system-scoped routes returned `error_code:30401 "DeviceGateway not found"` and no charging-mode / target-SoC / departure-time entities were created. Pair a vehicle profile to the wallbox in the 1KOMMA5° app and restart Home Assistant to pick them up.
 - Diagnostics dump now includes the notifications coordinator alongside the other six (was silently missing).

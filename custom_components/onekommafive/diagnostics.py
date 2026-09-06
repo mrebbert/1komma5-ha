@@ -240,11 +240,6 @@ async def async_get_config_entry_diagnostics(
         },
     }
 
-    try:
-        from importlib.metadata import version
-
-        diag["sdk_version"] = version("onekommafive")
-    except Exception:
-        diag["sdk_version"] = None
+    diag["sdk_version"] = data.sdk_version
 
     return diag

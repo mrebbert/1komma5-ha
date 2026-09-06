@@ -68,6 +68,7 @@ class OneKomma5Data:
     co2_saved_kg: float | None  # lifetime CO2 saved (kg), captured once at setup
     system_device_id: str  # device_registry ID of the system parent device (via_device_id)
     emp_type: str | None  # SystemDetails.emp_type, e.g. "GRIDX" or "1K5"
+    sdk_version: str | None  # installed onekommafive SDK version; cached to keep diag async-safe
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -79,6 +80,16 @@ def _safe_fetch[T](label: str, fn: Callable[[], T]) -> T | None:
         return fn()
     except Exception as err:
         _LOGGER.warning("%s fetch failed: %s", label, err)
+        return None
+
+
+def _installed_sdk_version() -> str | None:
+    """Read the installed onekommafive package version. Blocking I/O; call from executor."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("onekommafive")
+    except PackageNotFoundError:
         return None
 
 
@@ -136,7 +147,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     try:
 
         def _fetch_system() -> tuple[
-            object, str, object | None, PriceGuarantee | None, float | None
+            object, str, object | None, PriceGuarantee | None, float | None, str | None
         ]:
             client = Client(username, password)
             system = Systems(client).get_system(system_id)
@@ -155,7 +166,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             cust_id = getattr(details, "customer_id", None) if details else None
             price_guarantee = _extract_price_guarantee(system, cust_id)
             co2_saved_kg = _extract_co2_saved(system)
-            return system, name, details, price_guarantee, co2_saved_kg
+            sdk_version = _installed_sdk_version()
+            return system, name, details, price_guarantee, co2_saved_kg, sdk_version
 
         (
             system,
@@ -163,6 +175,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             details,
             price_guarantee,
             co2_saved_kg,
+            sdk_version,
         ) = await hass.async_add_executor_job(_fetch_system)
     except AuthenticationError as err:
         raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
@@ -229,6 +242,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         co2_saved_kg=co2_saved_kg,
         system_device_id=parent_device.id,
         emp_type=emp_type,
+        sdk_version=sdk_version,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
