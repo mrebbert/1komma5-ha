@@ -64,3 +64,29 @@ async def test_1k5_install_skips_switch(hass: HomeAssistant, mock_system_factory
     )
     await _setup(hass, system)
     assert _switch_entity_id(hass) is None
+
+
+async def test_1k5_install_removes_stale_gridx_switch(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """1K5 backend: a pre-existing GRIDX-era switch entity is cleaned up."""
+    # Pre-seed the registry with a stale entry that would remain unavailable
+    # forever if the setup path just returns without cleanup.
+    registry = er.async_get(hass)
+    registry.async_get_or_create(
+        "switch", DOMAIN, "sys-1_ems_auto_mode", suggested_object_id="test_home_ems_auto_mode"
+    )
+    assert _switch_entity_id(hass) is not None  # stale entry exists
+
+    system = mock_system_factory(
+        system_id="sys-1",
+        details=MagicMock(
+            emp_type="1K5",
+            customer_id="cust-uuid-1",
+            device_gateways=[],
+            address_country="DE",
+        ),
+    )
+    await _setup(hass, system)
+
+    assert _switch_entity_id(hass) is None  # cleaned up

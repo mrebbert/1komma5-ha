@@ -170,12 +170,11 @@ async def _wallbox_snapshot(
     is present, the paired-vs-unpaired state is the single most useful
     triage signal.
 
-    Interprets the common `error_code:30401 "DeviceGateway not found"` case:
-    on installs where 1KOMMA5° is itself the EMP (``emp_type == "1K5"``) and
-    no local DeviceGateway exists (``device_gateway_count == 0``), the
-    GridX-based wallbox endpoint always fails — 1KOMMA5° routes those
-    devices via a 1k5-native backend path that isn't exposed by the SDK.
-    A hint flag is added so the next reader doesn't misread the raw error.
+    Since SDK 0.2.0 the wallbox endpoint is site-scoped and works on both
+    GridX and non-GridX backends, so ``get_wallboxes()`` normally succeeds
+    for 1K5 installs too. The ``emp_type_1k5_native_hint`` flag stays as
+    a safety net for the rare case the endpoint still returns 30401 on a
+    1K5 backend (transient issue or unexpected routing).
     """
     try:
         wallboxes = await hass.async_add_executor_job(system.get_wallboxes)
@@ -192,7 +191,6 @@ async def _wallbox_snapshot(
         {
             "name": getattr(w, "name", None),
             "assigned_ev_id_present": getattr(w, "assigned_ev_id", None) is not None,
-            "hardware_id_present": getattr(w, "id", None) is not None,
         }
         for w in (wallboxes or [])
     ]
