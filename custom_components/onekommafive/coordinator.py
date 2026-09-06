@@ -175,10 +175,14 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     _EMS_FAILURE_THRESHOLD = 5
     _EMS_ISSUE_ID = "ems_settings_unavailable"
 
-    def __init__(self, hass: HomeAssistant, system: Any) -> None:
+    def __init__(self, hass: HomeAssistant, system: Any, emp_type: str | None = None) -> None:
         super().__init__(hass, system)
         self._ems_failure_count = 0
         self._ems_issue_active = False
+        # 1K5-backend installs have no GridX EMS endpoint — permanent 30401.
+        # Skip the repair-issue path entirely so users don't see a Repair
+        # for something that is architecturally unreachable.
+        self._ems_repair_disabled = emp_type == "1K5"
 
     def _fetch(self) -> LiveData:
         """Fetch all live data synchronously."""
@@ -201,6 +205,8 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
 
     def _update_ems_repair_issue(self, ems_available: bool) -> None:
         """Track consecutive EMS failures and create / delete the repair issue."""
+        if self._ems_repair_disabled:
+            return
         if ems_available:
             self._ems_failure_count = 0
             if self._ems_issue_active:

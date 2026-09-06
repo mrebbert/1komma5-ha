@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
@@ -12,6 +13,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .entity import OneKomma5Entity, apply_stable_entity_ids
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -24,6 +27,14 @@ async def async_setup_entry(
     system = data.system
     system_id = system.id()
     system_name = data.system_name
+
+    # 1K5-backend installs don't expose the GridX-scoped EMS-settings
+    # endpoint, so `get_ems_settings()` returns 30401 and the switch
+    # would be permanently unavailable. Skip creating it entirely.
+    emp_type = getattr(data.details, "emp_type", None) if data.details else None
+    if emp_type == "1K5":
+        _LOGGER.debug("Skipping EMS auto-mode switch: emp_type=1K5 has no GridX EMS endpoint")
+        return
 
     entities = [OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)]
     apply_stable_entity_ids(entities, SWITCH_DOMAIN)

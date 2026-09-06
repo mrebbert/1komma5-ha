@@ -24,14 +24,14 @@ test-integration = [
     # back-track over hundreds of older releases (some of which pull in
     # pre-Python-3.13 numpy wheels that fail to build).
     "pytest-homeassistant-custom-component==0.13.316",
-    "onekommafive>=0.1.47,<0.2",
+    "onekommafive>=0.2.0,<0.3",
 ]
 
 # Static type-checking (H3 hardening). Run: mypy custom_components/onekommafive
 # Install alongside the integration extras so HA's own type hints are present.
 typecheck = [
     "mypy>=1.11",
-    "onekommafive>=0.1.47,<0.2",
+    "onekommafive>=0.2.0,<0.3",
 ]
 
 [tool.setuptools]

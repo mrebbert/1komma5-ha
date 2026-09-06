@@ -173,7 +173,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 
     currency = resolve_currency(getattr(details, "address_country", None) if details else None)
 
-    live_coordinator = OneKomma5LiveCoordinator(hass, system)
+    emp_type = getattr(details, "emp_type", None) if details else None
+    live_coordinator = OneKomma5LiveCoordinator(hass, system, emp_type=emp_type)
     price_coordinator = OneKomma5PriceCoordinator(hass, system)
     optimization_coordinator = OneKomma5OptimizationCoordinator(hass, system)
     weather_coordinator = OneKomma5WeatherCoordinator(hass, system)

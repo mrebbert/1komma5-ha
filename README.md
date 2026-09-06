@@ -626,14 +626,14 @@ HACS refreshes each user's cache roughly every 60–90 min. To force it immediat
 
 ### Why is the EMS auto-mode switch unavailable?
 
-Your install has no DeviceGateway. The integration registers a Repair Issue in **Settings → Repairs** after a few consecutive failures. It auto-resolves the moment EMS data returns. On 1K5-backend installs (see the next FAQ) the switch is structurally not addressable and won't come back — that's not a fault in your setup.
+Your install has no DeviceGateway. The integration registers a Repair Issue in **Settings → Repairs** after a few consecutive failures. It auto-resolves the moment EMS data returns. On 1K5-backend installs (`emp_type: "1K5"` in the diagnostics), the switch is intentionally **not created** as of v0.1.58 — the EMS endpoint is not reachable on that backend, so the switch would be permanently unavailable.
 
 ### Why are the charging-mode / target-SoC / departure-time entities missing?
 
-Two independent reasons cover almost every case. Download diagnostics (**Settings → Devices & Services → 1KOMMA5° → ⋮ → Download diagnostics**) and check `data.system.details.emp_type` in the JSON:
+Since v0.1.58 (with SDK 0.2.0), the wallbox / EV endpoints use the site-scoped v2 route, which works on both `GRIDX` and `1K5` backends. If the entities are still missing, download diagnostics (**Settings → Devices & Services → 1KOMMA5° → ⋮ → Download diagnostics**) and check `data.system.wallboxes[]`:
 
-- **`emp_type: "GRIDX"`** — classic backend. If `device_gateway_count > 0`, the missing entities usually mean a vehicle profile isn't paired to the wallbox in the 1KOMMA5° app. Assign it under *Settings → Vehicles* in the app, then restart Home Assistant. If `device_gateway_count == 0`, the DeviceGateway isn't reachable — an actual setup issue.
-- **`emp_type: "1K5"`** — newer backend that the SDK currently doesn't reach for wallbox / EMS control. Live values, prices, optimizations and connectivity all keep working, but per-vehicle charging entities can't be created until the SDK gains the alternative endpoint route. Version 0.1.57+ flags this explicitly in the diagnostics as `emp_type_1k5_native_hint: true` in the `system.wallboxes[]` block.
+- **`assigned_ev_id_present: false`** — a vehicle profile isn't paired to the wallbox in the 1KOMMA5° app. Assign it under *Settings → Vehicles* in the app, then restart Home Assistant.
+- **`assigned_ev_id_present: true`** but entities still missing — open an issue with the diagnostics dump attached. The remaining `emp_type_1k5_native_hint` flag (v0.1.57+) is kept as a triage marker for edge cases.
 
 Not a Home Assistant misconfiguration in either branch.
 

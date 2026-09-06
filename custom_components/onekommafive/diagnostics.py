@@ -92,6 +92,13 @@ def _energy_summary(data: Any) -> dict[str, Any]:
     }
 
 
+def _notifications_summary(data: Any) -> dict[str, Any]:
+    if data is None:
+        return {}
+    notifications = getattr(data, "notifications", None) or []
+    return {"count": len(notifications)}
+
+
 def _system_status_summary(data: Any) -> dict[str, Any]:
     if data is None:
         return {}
@@ -185,7 +192,7 @@ async def _wallbox_snapshot(
         {
             "name": getattr(w, "name", None),
             "assigned_ev_id_present": getattr(w, "assigned_ev_id", None) is not None,
-            "gridx_hardware_id_present": getattr(w, "gridx_hardware_id", None) is not None,
+            "hardware_id_present": getattr(w, "id", None) is not None,
         }
         for w in (wallboxes or [])
     ]
@@ -228,6 +235,10 @@ async def async_get_config_entry_diagnostics(
             "energy": {
                 **_coordinator_snapshot(data.energy_coordinator),
                 "summary": _energy_summary(data.energy_coordinator.data),
+            },
+            "notifications": {
+                **_coordinator_snapshot(data.notifications_coordinator),
+                "summary": _notifications_summary(data.notifications_coordinator.data),
             },
         },
         "system": {
