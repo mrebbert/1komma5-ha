@@ -73,6 +73,50 @@ ASSET_TYPE_BY_DEVICE_KEY: dict[str, str] = {
 }
 
 
+def get_emp_type(details: Any) -> str | None:
+    """Read ``SystemDetails.emp_type`` defensively (setup may have skipped the fetch)."""
+    return getattr(details, "emp_type", None) if details else None
+
+
+def is_1k5_backend(emp_type: str | None) -> bool:
+    """True if this install runs on the 1k5-native (Heartbeat) backend.
+
+    Whitespace-tolerant and case-insensitive so a future ``"1k5"`` or
+    padded value still routes correctly.
+    """
+    return (emp_type or "").strip().upper() == "1K5"
+
+
+def resolve_assets_by_type(data: Any) -> dict[str, Any]:
+    """Return the ``assets_by_type`` map from the system-status coordinator.
+
+    Empty dict when the coordinator's first refresh is still pending
+    (rate-limit resilience). Downstream callers get a stable default so
+    they don't need their own None guard.
+    """
+    status_data = getattr(data, "system_status_coordinator", None)
+    status_data = status_data.data if status_data is not None else None
+    return getattr(status_data, "assets_by_type", None) or {}
+
+
+# Base fields that are always safe to surface from an Asset. Never includes
+# `id`, `name`, `serial_number`, or `network_address` (PII / secrets).
+_ASSET_SAFE_FIELDS: tuple[str, ...] = ("manufacturer", "model", "firmware", "connection_status")
+
+
+def asset_redacted_dict(asset: Any, *, extra_keys: tuple[str, ...] = ()) -> dict[str, Any]:
+    """Return a PII-safe dict view of ``asset`` for diagnostics / attributes.
+
+    Always exposes ``manufacturer``, ``model``, ``firmware`` and
+    ``connection_status``. Callers add non-secret extras like ``type`` or
+    ``heat_pump_meter_type`` via ``extra_keys``. Secret / stable-id fields
+    (``id``, ``name``, ``serial_number``, ``network_address``) are never
+    included.
+    """
+    keys = (*_ASSET_SAFE_FIELDS, *extra_keys)
+    return {k: getattr(asset, k, None) for k in keys}
+
+
 def resolve_asset(assets_by_type: dict[str, Any], device_key: str | None) -> Any | None:
     """Return the first matching asset for ``device_key`` or ``None``.
 

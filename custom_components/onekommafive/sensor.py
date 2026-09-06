@@ -32,7 +32,7 @@ from .const import (
     DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
     DEFAULT_FEED_IN_TARIFF,
 )
-from .entity import apply_stable_entity_ids, resolve_asset
+from .entity import apply_stable_entity_ids, resolve_asset, resolve_assets_by_type
 from .helpers import get_current_price
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -474,11 +474,7 @@ async def async_setup_entry(
     # Empty dict when SystemStatusCoordinator has no data yet (first-refresh
     # rate-limit) — entities fall back to the system parent until a later
     # reload picks the sub-devices up.
-    assets_by_type = (
-        data.system_status_coordinator.data.assets_by_type
-        if data.system_status_coordinator.data is not None
-        else {}
-    )
+    assets_by_type = resolve_assets_by_type(data)
 
     def _resolve_asset(device_key: str | None) -> Any | None:
         return resolve_asset(assets_by_type, device_key)
@@ -504,6 +500,11 @@ async def async_setup_entry(
             return replace(desc, device_key="battery")
         return desc
 
+    # Battery-split re-routing runs once per descriptor; the three loops below
+    # then reuse the adapted view instead of re-adapting on every iteration.
+    adapted_live = tuple(_adapt(d) for d in LIVE_SENSORS)
+    adapted_battery_split = tuple(_adapt(d) for d in BATTERY_SPLIT_DESCRIPTORS)
+
     entities: list[SensorEntity] = []
 
     # Live overview sensors
@@ -516,8 +517,7 @@ async def async_setup_entry(
             asset=_resolve_asset(adapted.device_key),
             parent_device_id=data.system_device_id,
         )
-        for desc in LIVE_SENSORS
-        for adapted in (_adapt(desc),)
+        for adapted in adapted_live
     )
 
     # Energy sensors (trapezoidal integration of power sensors)
@@ -530,9 +530,8 @@ async def async_setup_entry(
             asset=_resolve_asset(adapted.device_key),
             parent_device_id=data.system_device_id,
         )
-        for desc in LIVE_SENSORS
-        if desc.key in ENERGY_SENSOR_KEYS
-        for adapted in (_adapt(desc),)
+        for adapted in adapted_live
+        if adapted.key in ENERGY_SENSOR_KEYS
     )
 
     # Battery split energy sensors (charge / discharge direction)
@@ -545,8 +544,7 @@ async def async_setup_entry(
             asset=_resolve_asset(adapted.device_key),
             parent_device_id=data.system_device_id,
         )
-        for desc in BATTERY_SPLIT_DESCRIPTORS
-        for adapted in (_adapt(desc),)
+        for adapted in adapted_battery_split
     )
 
     # Price sensors

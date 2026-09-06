@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant
 
 from . import OneKomma5ConfigEntry
 from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME
+from .entity import asset_redacted_dict, get_emp_type, is_1k5_backend
 
 TO_REDACT = {CONF_USERNAME, CONF_PASSWORD, CONF_SYSTEM_ID, "system_id", "unique_id"}
 
@@ -145,14 +146,7 @@ def _assets_redacted(status_data: Any) -> dict[str, Any]:
         "site_status": status_data.site_status,
         "asset_count": len(status_data.assets) if status_data.assets else 0,
         "assets": [
-            {
-                "type": getattr(a, "type", None),
-                "manufacturer": getattr(a, "manufacturer", None),
-                "model": getattr(a, "model", None),
-                "firmware": getattr(a, "firmware", None),
-                "connection_status": getattr(a, "connection_status", None),
-                "heat_pump_meter_type": getattr(a, "heat_pump_meter_type", None),
-            }
+            asset_redacted_dict(a, extra_keys=("type", "heat_pump_meter_type"))
             for a in (status_data.assets or [])
         ],
         "active_features": list(status_data.active_features or []),
@@ -180,9 +174,9 @@ async def _wallbox_snapshot(
         wallboxes = await hass.async_add_executor_job(system.get_wallboxes)
     except Exception as err:
         entry: dict[str, Any] = {"error": repr(err)}
-        emp_type = getattr(details, "emp_type", None) if details else None
+        emp_type = get_emp_type(details)
         gateway_count = len(getattr(details, "device_gateways", []) or []) if details else None
-        if "30401" in entry["error"] and emp_type == "1K5" and gateway_count == 0:
+        if "30401" in entry["error"] and is_1k5_backend(emp_type) and gateway_count == 0:
             entry["emp_type_1k5_native_hint"] = True
         entry["emp_type"] = emp_type
         entry["device_gateway_count"] = gateway_count
