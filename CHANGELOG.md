@@ -7,8 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.57] - 2026-09-07
 
+### Added
+- **Wallbox / EV control now works on non-GridX installs** (Enphase EVSE_IQ2 and other non-GridX wallboxes). The `onekommafive` SDK pin is raised to `>=0.2.0,<0.3`; upstream v0.2.0 migrates the wallbox and EV endpoints to the site-scoped v2 routes that work on both GridX and non-GridX backends. Previously the legacy system-scoped routes returned `error_code:30401 "DeviceGateway not found"` and no charging-mode / target-SoC / departure-time entities were created. Pair a vehicle profile to the wallbox in the 1KOMMA5° app and restart Home Assistant to pick them up.
+- Diagnostics dump now includes the notifications coordinator alongside the other six (was silently missing).
+
 ### Changed
-- Diagnostics: the `system.wallboxes[]` block now decodes the common `error_code:30401 "DeviceGateway not found"` response. On installs where 1KOMMA5° is itself the EMP (`emp_type == "1K5"`) and no local DeviceGateway exists (`device_gateway_count == 0`), the entry gains `emp_type_1k5_native_hint: true` plus the raw `emp_type` and `device_gateway_count`. Turns a two-round diagnostic ping-pong into a one-look triage — the missing wallbox-control entities on these installs are a backend-architecture condition (SDK doesn't yet cover the 1k5-native wallbox path), not a user configuration issue.
+- Diagnostics: the `system.wallboxes[]` block reports `hardware_id_present` (from `Wallbox.id`) — the previous `gridx_hardware_id_present` flag is gone because SDK 0.2.0 dropped that field. The `emp_type_1k5_native_hint` triage flag stays as a safety net for edge cases where the site-scoped route still fails.
+- EMS auto-mode switch is no longer created on `emp_type: "1K5"` installs — the underlying GridX EMS endpoint is unreachable on that backend, so the switch would be permanently unavailable. The Repair Issue `ems_settings_unavailable` is also skipped on these installs to avoid noise.
 
 ## [0.1.56] - 2026-09-04
 
