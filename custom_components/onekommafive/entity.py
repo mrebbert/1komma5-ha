@@ -28,13 +28,29 @@ from .coordinator import (
 _HAS_VIA_DEVICE_ID = "via_device_id" in DeviceInfo.__annotations__
 
 
-def _set_via(di: DeviceInfo, system_id: str, parent_device_id: str | None) -> DeviceInfo:
-    """Set the correct via_device* key on ``di`` for the installed HA version."""
+def _set_via(
+    di: DeviceInfo,
+    system_id: str,
+    parent_device_id: str | None,
+    *,
+    parent_identifier: tuple[str, str] | None = None,
+) -> DeviceInfo:
+    """Set the correct via_device* key on ``di`` for the installed HA version.
+
+    ``parent_identifier`` is the ``(DOMAIN, identifier-suffix)`` tuple of
+    the parent sub-device. When HA lacks ``via_device_id`` (< 2026.7), it's
+    used as ``via_device``; when HA supports ``via_device_id``, it's a
+    fallback for the same reason. Without it the parent falls back to the
+    system device — correct for asset sub-devices but wrong for vehicle
+    sub-devices parented under a paired wallbox.
+    """
     if _HAS_VIA_DEVICE_ID and parent_device_id is not None:
         # via_device_id exists on HA ≥ 2026.7 only; local test HA (2026.2)
         # lacks the TypedDict key so mypy complains — runtime guard makes
         # this safe.
         di["via_device_id"] = parent_device_id  # type: ignore[typeddict-unknown-key]
+    elif parent_identifier is not None:
+        di["via_device"] = parent_identifier
     else:
         di["via_device"] = (DOMAIN, system_id)
     return di
@@ -136,12 +152,18 @@ def asset_device_info(
     device_key: str,
     asset: Any | None,
     parent_device_id: str | None = None,
+    *,
+    explicit_name: str | None = None,
 ) -> DeviceInfo:
     """Build a DeviceInfo for an asset sub-device.
 
-    ``device_key`` is the stable identifier suffix and translation key
-    (``inverter`` / ``heat_pump`` / ``meter`` / ``wallbox``). The translated
-    label comes from ``device.<device_key>.name`` in ``strings.json``.
+    ``device_key`` is the stable identifier suffix
+    (``inverter`` / ``heat_pump`` / ``meter`` / ``wallbox`` /
+    ``wallbox_<Wallbox.id>``). For the canonical single-instance keys the
+    translated label comes from ``device.<device_key>.name`` in
+    ``strings.json`` and ``explicit_name`` stays ``None``. For instance-
+    specific keys (multi-wallbox setups) pass ``explicit_name`` — the
+    ``Wallbox.name`` from the cloud — because no translation exists.
 
     ``asset`` is the matching :class:`onekommafive.models.sites.Asset` from
     the SystemStatusCoordinator's ``assets_by_type`` map. When the asset is
@@ -159,12 +181,72 @@ def asset_device_info(
     """
     di = DeviceInfo(
         identifiers={(DOMAIN, f"{system_id}_{device_key}")},
-        translation_key=device_key,
         manufacturer=getattr(asset, "manufacturer", None) if asset else None,
         model=getattr(asset, "model", None) if asset else None,
         sw_version=getattr(asset, "firmware", None) if asset else None,
     )
+    if explicit_name is not None:
+        di["name"] = explicit_name
+    else:
+        di["translation_key"] = device_key
     return _set_via(di, system_id, parent_device_id)
+
+
+def wallbox_sub_device_key(wallbox_id: str | None, wallbox_count: int) -> str:
+    """Return the sub-device identifier suffix for a wallbox.
+
+    Compat-frontier: single-wallbox setups (the historical case) keep the
+    static ``wallbox`` key so existing ``(DOMAIN, f"{system_id}_wallbox")``
+    device_registry entries, area assignments and downstream references stay
+    intact. Multi-wallbox setups get one instance-scoped key per hardware.
+    ``wallbox_id`` may be ``None`` (fallback), in which case the caller
+    treats it as the single-wallbox slot.
+    """
+    if wallbox_count <= 1 or wallbox_id is None:
+        return "wallbox"
+    return f"wallbox_{wallbox_id}"
+
+
+def ev_wallbox_parent(ev: Any, data: Any) -> tuple[str | None, tuple[str, str] | None]:
+    """Return the paired wallbox sub-device's ``(device_id, identifier)``.
+
+    Vehicle entities pass both to :class:`OneKomma5EVEntity` so the
+    via_device works on modern HA (via_device_id) and on HA versions
+    without that TypedDict key (via_device fallback). ``(None, None)`` is
+    returned for unpaired vehicles, missing wallbox inventory, or when
+    the wallbox has no id — every EV-platform setup falls back cleanly
+    to the system parent in that case.
+    """
+    wallboxes = getattr(data, "wallboxes", None) or []
+    wallbox_device_ids = getattr(data, "wallbox_device_ids", None) or {}
+    wallbox = resolve_wallbox_for_ev(ev, wallboxes)
+    if wallbox is None:
+        return (None, None)
+    wallbox_id = getattr(wallbox, "id", None)
+    if not wallbox_id:
+        return (None, None)
+    device_id = wallbox_device_ids.get(wallbox_id)
+    key = wallbox_sub_device_key(wallbox_id, len(wallboxes))
+    system_id = getattr(getattr(data, "system", None), "id", lambda: None)()
+    if system_id is None:
+        return (device_id, None)
+    return (device_id, (DOMAIN, f"{system_id}_{key}"))
+
+
+def resolve_wallbox_for_ev(ev: Any, wallboxes: list[Any]) -> Any | None:
+    """Match an :class:`EVCharger` (vehicle profile) to its physical wallbox.
+
+    Uses the cloud-side pairing ``EVCharger.assigned_charger_id ==
+    Wallbox.id``. Returns ``None`` when the vehicle is unpaired or the
+    wallbox inventory hasn't been fetched yet.
+    """
+    charger_id = getattr(ev, "assigned_charger_id", None)
+    if not charger_id:
+        return None
+    for wallbox in wallboxes:
+        if getattr(wallbox, "id", None) == charger_id:
+            return wallbox
+    return None
 
 
 class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
@@ -271,8 +353,19 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         ev: Any,
         unique_id_suffix: str,
         parent_device_id: str | None = None,
+        *,
+        wallbox_device_id: str | None = None,
+        wallbox_parent_identifier: tuple[str, str] | None = None,
     ) -> None:
-        """Initialize the entity."""
+        """Initialize the entity.
+
+        ``wallbox_device_id`` and ``wallbox_parent_identifier`` together
+        route the vehicle sub-device under the paired wallbox: the id
+        drives via_device_id on modern HA, the identifier is the fallback
+        via_device tuple for HA versions without the TypedDict key.
+        Unpaired vehicles pass ``(None, None)`` and fall back to the
+        system parent through the ``parent_device_id`` path.
+        """
         super().__init__(coordinator)
         self._system_id = system_id
         self._ev_id = ev.id()
@@ -287,7 +380,8 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
                 model=ev.model(),
             ),
             system_id,
-            parent_device_id,
+            wallbox_device_id if wallbox_device_id is not None else parent_device_id,
+            parent_identifier=wallbox_parent_identifier,
         )
 
     def _get_ev(self) -> Any | None:

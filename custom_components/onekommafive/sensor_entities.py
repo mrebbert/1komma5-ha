@@ -385,9 +385,21 @@ class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
         ev: Any,
         description: OneKomma5EVSensorDescription,
         parent_device_id: str,
+        *,
+        wallbox_device_id: str | None = None,
+        wallbox_parent_identifier: tuple[str, str] | None = None,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator, system_id, system_name, ev, description.key, parent_device_id)
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            ev,
+            description.key,
+            parent_device_id,
+            wallbox_device_id=wallbox_device_id,
+            wallbox_parent_identifier=wallbox_parent_identifier,
+        )
         self.entity_description = description
 
     @property

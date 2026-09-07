@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5EVEntity, apply_stable_entity_ids
+from .entity import OneKomma5EVEntity, apply_stable_entity_ids, ev_wallbox_parent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,9 +32,16 @@ async def async_setup_entry(
 
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
+            wb_device_id, wb_identifier = ev_wallbox_parent(ev, data)
             entities.append(
                 OneKomma5EVDepartureTime(
-                    live_coordinator, system_id, system_name, ev, data.system_device_id
+                    live_coordinator,
+                    system_id,
+                    system_name,
+                    ev,
+                    data.system_device_id,
+                    wallbox_device_id=wb_device_id,
+                    wallbox_parent_identifier=wb_identifier,
                 )
             )
 
@@ -54,10 +61,20 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
         system_name: str,
         ev: Any,
         parent_device_id: str,
+        *,
+        wallbox_device_id: str | None = None,
+        wallbox_parent_identifier: tuple[str, str] | None = None,
     ) -> None:
         """Initialize the time entity."""
         super().__init__(
-            coordinator, system_id, system_name, ev, "departure_time", parent_device_id
+            coordinator,
+            system_id,
+            system_name,
+            ev,
+            "departure_time",
+            parent_device_id,
+            wallbox_device_id=wallbox_device_id,
+            wallbox_parent_identifier=wallbox_parent_identifier,
         )
 
     @property

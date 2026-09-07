@@ -49,6 +49,7 @@ def mock_system_factory():
         name: str = "Test Home",
         live_overview: MagicMock | None = None,
         ev_chargers: list | None = None,
+        wallboxes: list | None = None,
         ems_settings: MagicMock | None = None,
         prices: MagicMock | None = None,
         optimizations: MagicMock | None = None,
@@ -90,6 +91,7 @@ def mock_system_factory():
         system.get_live_overview.return_value = live_overview
 
         system.get_ev_chargers.return_value = ev_chargers or []
+        system.get_wallboxes.return_value = wallboxes or []
 
         if ems_settings is None:
             ems_settings = MagicMock(auto_mode=True)
