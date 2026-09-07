@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
+from .const import DOMAIN
 from .entity import (
     ASSET_TYPES_BY_DEVICE_KEY,
     OneKomma5OptimizationEntity,
@@ -121,6 +122,29 @@ async def async_setup_entry(
         )
         for attr, translation_key, icon in DETAILS_FLAG_SENSORS
     )
+
+    # Per-wallbox connectivity sensors — only on multi-wallbox setups.
+    # Single-wallbox users have `wallbox_connected` (aggregate) which
+    # already reports the correct state; adding an identical instance
+    # sensor would be noise. Automations that need to react to a specific
+    # wallbox on a multi-wallbox site can gate on
+    # `binary_sensor.<sys>_wallbox_<id>_connected`.
+    wallboxes = list(data.wallboxes)
+    if len(wallboxes) > 1:
+        for wallbox in wallboxes:
+            wb_id = getattr(wallbox, "id", None)
+            if not wb_id:
+                continue
+            entities.append(
+                OneKomma5WallboxConnectivitySensor(
+                    data.system_status_coordinator,
+                    system_id,
+                    data.system_name,
+                    wallbox,
+                    parent_device_id=data.wallbox_device_ids.get(wb_id),
+                    parent_identifier=(DOMAIN, f"{system_id}_wallbox_{wb_id}"),
+                )
+            )
 
     apply_stable_entity_ids(entities, BINARY_SENSOR_DOMAIN)
     async_add_entities(entities)
@@ -434,6 +458,80 @@ ASSET_CONNECTIVITY_SENSORS = (
     ("meter", "meter_connected"),
     ("wallbox", "wallbox_connected"),
 )
+
+
+class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+    """Per-wallbox connectivity sensor (only on multi-wallbox setups).
+
+    Reflects the connection status of one specific physical wallbox — matched
+    to its :class:`EV_CHARGER` asset by ``Wallbox.name``. Complements the
+    aggregate ``wallbox_connected`` sensor, which is AND over all wallboxes.
+    Automations that need to react to a single wallbox going offline (e.g.
+    to notify per garage / carport) can gate on
+    ``binary_sensor.<sys>_wallbox_<id>_connected``.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_translation_key = "wallbox_connected"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        wallbox: Any,
+        *,
+        parent_device_id: str | None,
+        parent_identifier: tuple[str, str],
+    ) -> None:
+        # Bypass the parent's asset_device_info wiring: DeviceInfo for this
+        # sensor is the wallbox sub-device the __init__.py already registered,
+        # not a fresh key-driven one. Passing device_key=None + asset=None
+        # makes _BaseSystemEntity default to the system parent, which we
+        # then overwrite with the wallbox sub-device identifier.
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            f"wallbox_{wallbox.id}_connected",
+        )
+        self._wallbox_id = wallbox.id
+        # Name-based match to the EV_CHARGER Asset; kept as a plain string so
+        # `_matching_asset` can look up the current status on every state read.
+        self._wallbox_name = wallbox.name
+        # DeviceInfo targets the wallbox sub-device the setup pre-created.
+        # via_device_id links to it on HA ≥ 2026.7; the identifier tuple is
+        # the fallback for older HA versions (see _set_via in entity.py).
+        di: dict[str, Any] = {"identifiers": {parent_identifier}}
+        # We do not need to re-declare name/manufacturer/model/sw_version here
+        # — the setup-time async_get_or_create already populated them on the
+        # wallbox sub-device. Repeating them would just risk drift.
+        self._attr_device_info = di  # type: ignore[assignment]
+
+    def _matching_asset(self) -> Any | None:
+        if self.coordinator.data is None:
+            return None
+        for asset in self.coordinator.data.assets_by_type_list.get("EV_CHARGER", []):
+            if getattr(asset, "name", None) == self._wallbox_name:
+                return asset
+        return None
+
+    @property
+    def is_on(self) -> bool | None:
+        asset = self._matching_asset()
+        if asset is None:
+            return None
+        return asset.connection_status == "CONNECTED"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        asset = self._matching_asset()
+        if asset is None:
+            return None
+        return {
+            "wallbox_name": self._wallbox_name,
+            "asset": asset_redacted_dict(asset),
+        }
 
 
 class OneKomma5ActiveFeatureBinarySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
