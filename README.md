@@ -8,7 +8,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/test.yml?label=Tests&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/blob/main/LICENSE)
 
-Bring your **1KOMMA5° Heartbeat** solar + battery + heat pump + EV wallbox platform into Home Assistant. Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI optimization decisions, per-device cost allocation, cheapest-charging-window scheduling, weather forecast, and cloud push notifications — all as native HA sensors, services and bus events. Fully compatible with the **Home Assistant Energy Dashboard**.
+Bring your **1KOMMA5° Heartbeat** solar + battery + heat pump + EV wallbox platform into Home Assistant. Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI optimization decisions, per-device cost allocation, cheapest-charging-window scheduling, weather forecast, and cloud push notifications, all as native HA sensors, services and bus events.
 
 ## Highlights
 
@@ -94,12 +94,10 @@ Under **Settings → Devices & Services → 1KOMMA5° → Configure**:
 
 ### Updating credentials
 
-Two flows preserve all sensor history:
+Two flows preserve sensor history, restored states and Energy Dashboard configuration:
 
 - **Re-authentication** — When 1KOMMA5° rejects auth (e.g. password change), HA shows a *Re-authentication required* notice. Click it, enter the new password, done.
 - **Reconfigure** — Proactively via **Settings → Devices & Services → 1KOMMA5°** → ⋮ menu → **Reconfigure**.
-
-Both preserve sensor history, restored states and Energy Dashboard configuration.
 
 ---
 
@@ -266,7 +264,7 @@ Monetary sensors integrating power flow × price. `state_class: total`, `device_
 | Feed-in Revenue | `feed_in_revenue` | Grid export × configured feed-in tariff |
 | Daily Savings | `daily_savings` | Cloud-computed daily savings (`get_energy_today`), resets at local midnight |
 
-The four per-consumer cost sensors always sum to `electricity_cost`. When PV/battery cover all consumption the grid bill is zero and all five stop accumulating together. Set the feed-in tariff under **Settings → Devices & Services → 1KOMMA5° → Configure**.
+The four per-consumer cost sensors always sum to `electricity_cost`. When PV/battery cover all consumption the grid bill is zero and all five stop accumulating together.
 
 ### AI optimization
 
@@ -365,9 +363,9 @@ Hidden by default (`entity_category: diagnostic`) — useful for troubleshooting
 
 **System Information** (**Settings → System → Repairs → System Information**) reports per-coordinator update status, API reachability, SDK version and resolved currency/country. **PII-safe** — no customer/system identifiers or addresses. Use this for bug reports instead of the full diagnostics download.
 
-If your install has no DeviceGateway (no HEMS box) the EMS fields stay `unavailable`. After several consecutive failures the integration registers a **Repair Issue** in Settings → Repairs; it auto-resolves the moment EMS data returns.
+**EMS availability by backend.** GridX-backend installs (`emp_type: "GRIDX"`) that lack a DeviceGateway keep the EMS fields `unavailable` and, after several consecutive fetch failures, register a **Repair Issue** in Settings → Repairs; it auto-resolves the moment EMS data returns. 1K5-backend installs (`emp_type: "1K5"`) do not expose the GridX EMS endpoint at all, so the integration skips the fetch, the Repair Issue and the switch entirely from v0.1.57 on (a stale switch from a prior GRIDX run is cleaned up on the first reload).
 
-**EMS auto-mode switch** (`ems_auto_mode`, diagnostic section) — kept in place in case it activates on some setups, but the official 1KOMMA5° app doesn't expose an equivalent override; the toggle is likely cosmetic on the cloud side.
+**EMS auto-mode switch** (`ems_auto_mode`, diagnostic section) — created on GRIDX-backend installs only, kept in case the cloud override activates. The official 1KOMMA5° app doesn't expose an equivalent toggle, so it is likely cosmetic on the cloud side.
 
 ---
 
