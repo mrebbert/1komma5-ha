@@ -32,7 +32,12 @@ from .const import (
     DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,
     DEFAULT_FEED_IN_TARIFF,
 )
-from .entity import apply_stable_entity_ids, resolve_asset, resolve_assets_by_type
+from .entity import (
+    apply_stable_entity_ids,
+    ev_wallbox_parent,
+    resolve_asset,
+    resolve_assets_by_type,
+)
 from .helpers import get_current_price
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -629,12 +634,22 @@ async def async_setup_entry(
         for desc in WEATHER_SENSORS
     )
 
-    # EV (vehicle) sensors — one set per vehicle, hung under the system parent.
+    # EV (vehicle) sensors — one set per vehicle, hung under the paired
+    # wallbox sub-device (when the cloud reports a pairing) or the system
+    # parent (unpaired vehicle / single-wallbox setup).
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
+            wb_device_id, wb_identifier = ev_wallbox_parent(ev, data)
             entities.extend(
                 OneKomma5EVSensor(
-                    live_coordinator, system_id, system_name, ev, desc, data.system_device_id
+                    live_coordinator,
+                    system_id,
+                    system_name,
+                    ev,
+                    desc,
+                    data.system_device_id,
+                    wallbox_device_id=wb_device_id,
+                    wallbox_parent_identifier=wb_identifier,
                 )
                 for desc in EV_SENSORS
             )
