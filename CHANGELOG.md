@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.58] - 2026-09-14
+
+### Added
+- **Multi-wallbox support.** Sites with more than one physical wallbox now get one HA sub-device per wallbox, each with its own manufacturer / model / firmware. Vehicle profiles parent under the wallbox they are actually paired to (via `Wallbox.assigned_ev_id ↔ EVCharger.assigned_charger_id`), so HA's device view reads "Vehicle → Wallbox → System" for the natural relationship instead of collapsing every vehicle under the same wallbox.
+- **Per-wallbox connectivity sensors.** New `binary_sensor.<sys>_wallbox_<id>_connected` per wallbox on multi-wallbox setups. Aggregate `wallbox_connected` (AND over all wallboxes) stays for the default "all wallboxes healthy" gate. Single-wallbox setups do not get the per-instance sensor (would be identical to the aggregate).
+
+### Changed
+- System-status coordinator no longer logs `Duplicate asset of type EV_CHARGER; keeping first, dropping subsequent` when more than one wallbox is present. Multi-wallbox is a legitimate case; the full asset list is now surfaced.
+
+### Compat
+- Single-wallbox installs (historical default) keep the wallbox sub-device identifier `(onekommafive, <system_id>_wallbox)` and the translated `device.wallbox.name` label. Area assignments, dashboards and device_registry references stay intact. Unique IDs and entity IDs of vehicle-related entities are unchanged across single- and multi-wallbox installs; long-term statistics, automations and Energy-Dashboard configuration keep working.
+
 ## [0.1.57] - 2026-09-07
 
 ### Fixed
