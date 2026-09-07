@@ -289,7 +289,7 @@ Bus event `onekommafive_optimization_decision` fires per new decision — see [S
 
 One set of entities per **vehicle profile** registered in the 1KOMMA5° app.
 
-> **Requires a vehicle profile.** These entities model the car (`SMART_CHARGE` target, SoC, departure time), not the wallbox — they come from the SDK's `/v1/devices/evs` endpoint, which returns the vehicles configured under *Settings → Vehicles* in the 1KOMMA5° app. Without a vehicle profile the endpoint returns an empty list and no charging-mode / SoC / departure-time entities are created (the wallbox device itself still appears, backed by connectivity + aggregate `ev_chargers_power` / `ev_charger_cost` sensors from other endpoints).
+> **Requires a vehicle profile.** These entities model the car (`SMART_CHARGE` target, SoC, departure time), not the wallbox — they come from the SDK's `/v2/sites/{id}/assets/evs` endpoint (site-scoped since SDK v0.2.0), which returns the vehicles configured under *Settings → Vehicles* in the 1KOMMA5° app. Without a vehicle profile the endpoint returns an empty list and no charging-mode / SoC / departure-time entities are created (the wallbox device itself still appears, backed by connectivity + aggregate `ev_chargers_power` / `ev_charger_cost` sensors from other endpoints).
 
 **Sensors:** `ev_target_soc` (%), `ev_charging_mode` (mode enum), `ev_battery_capacity` (kWh), `ev_scheduled_departure_soc` (%)
 
@@ -342,6 +342,7 @@ Binary sensors summarising cloud & asset health:
 |--------|-------------|
 | `site_connected` | Aggregate — ON when the cloud reports the site as `CONNECTED` |
 | `inverter_connected`, `heat_pump_connected`, `meter_connected`, `wallbox_connected` | Per-asset-type; AND-logic over all assets of the type. Only created when the cloud actually reports an asset of that type. |
+| `wallbox_<id>_connected` | One per physical wallbox (multi-wallbox sites only, since v0.1.58). Reports the connection status of that specific wallbox — pair with the aggregate `wallbox_connected` to gate on "all healthy" vs. "this one down". |
 | `dynamic_tariff_active`, `time_of_use_active`, `smart_charging_active` | Feature-flag Booleans from the customer-features API |
 | `energy_trader_active` | ON when enrolled in 1KOMMA5°'s virtual power plant (energy trading). From `SystemDetails.energy_trader_active`, captured once at setup. |
 | `dynamic_pulse_compatible` | ON when the site's hardware/contract qualifies for Dynamic Pulse |
@@ -573,6 +574,20 @@ Entities are grouped under one system parent device plus per-asset sub-devices �
 ├── Wallbox         (go-e / HOMEfix 11kW / …)
 └── Vehicle         (Volkswagen / ID.5 / …)
 ```
+
+**Multi-wallbox sites (since v0.1.58)** get one sub-device per physical wallbox, each with its own manufacturer / model / firmware, and vehicles parent under the wallbox they are actually paired to (via `Wallbox.assigned_ev_id ↔ EVCharger.assigned_charger_id`):
+
+```
+1k5° System (parent)
+├── … (inverter / heat pump / meter as above)
+├── Wallbox (aggregate)           — carries the aggregate ev_chargers_power / _cost / wallbox_connected sensors
+├── Wallbox Garage  (go-e / HOMEfix / 60.5)
+│   └── Vehicle     (Volkswagen / ID.5 / …)
+└── Wallbox Carport (Enphase / EVSE_IQ2 / 1.2.3)
+    └── Vehicle     (Tesla / Model 3 / …)
+```
+
+Single-wallbox sites (the historical default) keep the exact sub-device identifier and label they had before v0.1.58: no migration, no renamed entities, no broken area assignments.
 
 Sub-device data is **PII-safe**: only `manufacturer`, `model`, `firmware` are pulled from the cloud `status_and_assets` payload; the Vehicle sub-device pulls `manufacturer` and `model` from the EV profile. Unclassified assets (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the parent — no empty placeholder devices.
 
