@@ -234,6 +234,63 @@ async def test_unpaired_vehicle_falls_back_to_system_parent(
     assert vehicle.via_device_id == parent.id
 
 
+async def test_multi_wallbox_yields_per_wallbox_connectivity_sensors(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """Phase 3: one connectivity binary_sensor per wallbox on multi setups.
+
+    Aggregate ``wallbox_connected`` stays in place; per-instance sensors
+    are additive so automations can react to a single wallbox going
+    offline. Single-wallbox setups do NOT get the per-instance sensor
+    (would be identical to the aggregate — noise).
+    """
+    system = mock_system_factory(
+        system_id="sys-1",
+        assets=[
+            _asset("EV_CHARGER", name="Garage", connection_status="CONNECTED"),
+            _asset("EV_CHARGER", name="Carport", connection_status="DISCONNECTED"),
+        ],
+        wallboxes=[
+            _wallbox(id_="wb-a", name="Garage"),
+            _wallbox(id_="wb-b", name="Carport"),
+        ],
+    )
+    entry = await _setup(hass, system)
+    entity_reg = er.async_get(hass)
+    unique_ids = {
+        r.unique_id for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+    }
+
+    # Aggregate still present.
+    assert "sys-1_wallbox_connected" in unique_ids
+    # Per-wallbox sensors present with wallbox id in the unique_id.
+    assert "sys-1_wallbox_wb-a_connected" in unique_ids
+    assert "sys-1_wallbox_wb-b_connected" in unique_ids
+
+    ent_a = entity_reg.async_get_entity_id("binary_sensor", DOMAIN, "sys-1_wallbox_wb-a_connected")
+    ent_b = entity_reg.async_get_entity_id("binary_sensor", DOMAIN, "sys-1_wallbox_wb-b_connected")
+    assert hass.states.get(ent_a).state == "on"
+    assert hass.states.get(ent_b).state == "off"
+
+
+async def test_single_wallbox_omits_per_wallbox_connectivity_sensor(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """Single-wallbox setups only get the aggregate sensor — no per-instance."""
+    system = mock_system_factory(
+        system_id="sys-1",
+        assets=[_asset("EV_CHARGER", name="Wallbox")],
+        wallboxes=[_wallbox(id_="wb-1", name="Wallbox")],
+    )
+    entry = await _setup(hass, system)
+    entity_reg = er.async_get(hass)
+    unique_ids = {
+        r.unique_id for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+    }
+    assert "sys-1_wallbox_connected" in unique_ids
+    assert "sys-1_wallbox_wb-1_connected" not in unique_ids
+
+
 async def test_vehicle_entities_unique_ids_are_unchanged_across_wallbox_split(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
