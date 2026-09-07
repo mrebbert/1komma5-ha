@@ -84,7 +84,11 @@ class SystemStatusData:
     site_status: str | None  # "CONNECTED" / "DISCONNECTED" / None
     assets: list[Any]  # list[onekommafive.models.sites.Asset]
     active_features: list[str]  # [] when customer_id unknown or fetch failed
-    assets_by_type: dict[str, Any]  # {asset.type: Asset} — first wins on duplicates
+    # first-wins-per-type view; convenience for the common single-asset lookup
+    assets_by_type: dict[str, Any]
+    # full list per asset type; needed wherever more than one asset of a type
+    # may realistically appear (currently EV_CHARGER for multi-wallbox setups)
+    assets_by_type_list: dict[str, list[Any]]
 
 
 @dataclass
@@ -467,23 +471,21 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
             except Exception as err:
                 _LOGGER.debug("Active features fetch failed: %s", err)
         assets = list(site.assets or [])
-        assets_by_type: dict[str, Any] = {}
+        assets_by_type_list: dict[str, list[Any]] = {}
         for asset in assets:
             asset_type = getattr(asset, "type", None)
             if not asset_type:
                 continue
-            if asset_type in assets_by_type:
-                _LOGGER.warning(
-                    "Duplicate asset of type %s; keeping first, dropping subsequent",
-                    asset_type,
-                )
-                continue
-            assets_by_type[asset_type] = asset
+            assets_by_type_list.setdefault(asset_type, []).append(asset)
+        # First-wins view keeps existing callers (device-info anchoring, single-
+        # asset lookups) working; multi-asset callers reach for the *_list map.
+        assets_by_type = {t: bucket[0] for t, bucket in assets_by_type_list.items()}
         return SystemStatusData(
             site_status=site.status,
             assets=assets,
             active_features=features,
             assets_by_type=assets_by_type,
+            assets_by_type_list=assets_by_type_list,
         )
 
 

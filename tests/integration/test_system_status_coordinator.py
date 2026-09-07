@@ -22,7 +22,14 @@ from custom_components.onekommafive.const import (
 )
 
 
-def _asset(asset_type: str, *, connection_status: str = "CONNECTED") -> MagicMock:
+def _asset(
+    asset_type: str,
+    *,
+    connection_status: str = "CONNECTED",
+    manufacturer: str | None = None,
+    model: str | None = None,
+    firmware: str | None = None,
+) -> MagicMock:
     # manufacturer/model/firmware default to None so the asset_device_info
     # helper (consumed by the sensor platform setup at the end of the test)
     # doesn't end up putting MagicMock objects into DeviceInfo and breaking
@@ -30,9 +37,9 @@ def _asset(asset_type: str, *, connection_status: str = "CONNECTED") -> MagicMoc
     return MagicMock(
         type=asset_type,
         connection_status=connection_status,
-        manufacturer=None,
-        model=None,
-        firmware=None,
+        manufacturer=manufacturer,
+        model=model,
+        firmware=firmware,
     )
 
 
@@ -69,6 +76,32 @@ async def test_happy_path_populates_all_three_fields(
     assert data.site_status == "CONNECTED"
     assert [a.type for a in data.assets] == ["HYBRID", "EV_CHARGER"]
     assert data.active_features == ["DYNAMIC_TARIFF", "SMART_CHARGING"]
+
+
+async def test_multi_wallbox_populates_full_list_and_first_wins_view(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """Two EV_CHARGER assets: full list under assets_by_type_list, first wins
+    under assets_by_type. No `Duplicate asset` warning; ready for per-wallbox
+    sub-device routing in phase 2."""
+    system = mock_system_factory(
+        system_id="sys-1",
+        assets=[
+            _asset("HYBRID", manufacturer="Sungrow"),
+            _asset("EV_CHARGER", manufacturer="go-e"),
+            _asset("EV_CHARGER", manufacturer="Enphase"),
+        ],
+    )
+    entry = await _setup(hass, system)
+
+    data = entry.runtime_data.system_status_coordinator.data
+    assert data is not None
+    assert data.assets_by_type["EV_CHARGER"].manufacturer == "go-e"
+    assert [a.manufacturer for a in data.assets_by_type_list["EV_CHARGER"]] == [
+        "go-e",
+        "Enphase",
+    ]
+    assert data.assets_by_type_list["HYBRID"] == [data.assets_by_type["HYBRID"]]
 
 
 async def test_details_failure_skips_features_but_keeps_status(
