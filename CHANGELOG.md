@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - System-status coordinator no longer logs `Duplicate asset of type EV_CHARGER; keeping first, dropping subsequent` when more than one wallbox is present. Multi-wallbox is a legitimate case; the full asset list is now surfaced.
+- Bump the `onekommafive` SDK pin to `>=0.2.3,<0.3` (from `>=0.2.0,<0.3`). Upstream `0.2.1` preserves the OAuth refresh token when Auth0's refresh response omits it (fixes an unlucky session-invalidation edge case that could force re-authentication). `0.2.2` narrows the SDK-CLI enrichment exception handler to `RequestError` only; `0.2.3` swaps a try/except in the enrichment path for `contextlib.suppress`. No integration-side code change.
 
 ### Compat
 - Single-wallbox installs (historical default) keep the wallbox sub-device identifier `(onekommafive, <system_id>_wallbox)` and the translated `device.wallbox.name` label. Area assignments, dashboards and device_registry references stay intact. Unique IDs and entity IDs of vehicle-related entities are unchanged across single- and multi-wallbox installs; long-term statistics, automations and Energy-Dashboard configuration keep working.
