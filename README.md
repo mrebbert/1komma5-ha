@@ -283,6 +283,8 @@ Available decision enum values: `BATTERY_CHARGE_FROM_GRID`, `BATTERY_NO_CHARGE`,
 
 > **Note:** `optimization_total_cost`, `optimization_energy_bought` and `optimization_energy_sold` exist but stay `unknown` — the API doesn't populate settlement data yet.
 
+> **Recommendation, not execution state.** These sensors reflect what the 1KOMMA5° Cloud AI *recommends*. The Heartbeat HEMS can act independently: `optimization_heat_pump_recommended` may stay `off` for days while your Wärmepumpe runs on locally-triggered SG-Ready, and `optimization_battery_grid_charge` follows the same pattern. Don't gate SG-Ready or grid-charge automations on these sensors as if they were live control signals.
+
 Bus event `onekommafive_optimization_decision` fires per new decision — see [Services & bus events](#services--bus-events).
 
 ### EV charger / wallbox
