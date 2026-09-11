@@ -15,7 +15,6 @@ from .const import DOMAIN
 from .coordinator import (
     OneKomma5EnergyCoordinator,
     OneKomma5LiveCoordinator,
-    OneKomma5NotificationsCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
     OneKomma5SystemStatusCoordinator,
@@ -79,13 +78,6 @@ ASSET_TYPES_BY_DEVICE_KEY: dict[str, tuple[str, ...]] = {
     "meter": ("METER",),
     "wallbox": ("EV_CHARGER",),
     "battery": ("BATTERY",),
-}
-
-# Backward-compatible flat map used by call-sites that look up a single
-# asset_type per device_key. First entry per key wins; readers that need
-# full coverage should iterate ``ASSET_TYPES_BY_DEVICE_KEY[key]`` instead.
-ASSET_TYPE_BY_DEVICE_KEY: dict[str, str] = {
-    key: types[0] for key, types in ASSET_TYPES_BY_DEVICE_KEY.items()
 }
 
 
@@ -324,15 +316,6 @@ class OneKomma5WeatherEntity(_BaseSystemEntity[OneKomma5WeatherCoordinator]):
 
 class OneKomma5EnergyEntity(_BaseSystemEntity[OneKomma5EnergyCoordinator]):
     """Base entity for sensors backed by the energy (today) coordinator."""
-
-
-class OneKomma5NotificationsEntity(_BaseSystemEntity[OneKomma5NotificationsCoordinator]):
-    """Base entity for sensors backed by the notifications coordinator.
-
-    Currently only used by the ``diag_notification_update`` diagnostic
-    timestamp — the notifications coordinator has no user-facing sensors,
-    it emits ``EVENT_NOTIFICATION`` bus events instead.
-    """
 
 
 class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
