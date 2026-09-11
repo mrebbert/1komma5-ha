@@ -353,6 +353,43 @@ EV_SENSORS: tuple[OneKomma5EVSensorDescription, ...] = (
     ),
 )
 
+# Known values of ``OptimizationEvent.decision`` — mirrors the ENUM options
+# on the ``optimization_last_decision`` sensor. The SDK documents this list
+# as explicitly non-exhaustive; ``_coerce_known_decision`` folds unknown
+# values to ``None`` and logs once so HA's ENUM validation does not raise.
+_KNOWN_DECISIONS: frozenset[str] = frozenset(
+    {
+        "battery_charge_from_grid",
+        "battery_no_charge",
+        "battery_no_discharge",
+        "ev_charge_from_grid",
+        "heatpump_recommend_on",
+        "heatpump_auto",
+    }
+)
+
+
+def _coerce_known_decision(value: str | None) -> str | None:
+    """Return ``value.lower()`` if it is a known decision, else ``None``.
+
+    Logs the first unknown value seen so a new cloud-side enum surfaces in
+    the log without spamming on every 15-minute refresh.
+    """
+    import logging as _log
+
+    if value is None:
+        return None
+    lowered = value.lower()
+    if lowered in _KNOWN_DECISIONS:
+        return lowered
+    _log.getLogger(__name__).warning(
+        "Unknown optimization decision %r; extend _KNOWN_DECISIONS + sensor "
+        "options to surface it. Sensor stays 'unknown' meanwhile.",
+        value,
+    )
+    return None
+
+
 OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
     OneKomma5OptimizationSensorDescription(
         key="optimization_event_count",
@@ -416,14 +453,19 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         # the SDK enum is uppercase (`BATTERY_CHARGE_FROM_GRID`, …), so we
         # lowercase the value at the sensor layer. Automations that match
         # on the state must use lowercase too.
+        # The SDK's `decision` field is explicitly documented as "not
+        # exhaustive"; the coerce below folds unknown values to `None` so a
+        # new cloud-side enum value does not crash the sensor with a
+        # ValueError from HA's ENUM validation.
         options=[
             "battery_charge_from_grid",
             "battery_no_charge",
             "battery_no_discharge",
+            "ev_charge_from_grid",
             "heatpump_recommend_on",
             "heatpump_auto",
         ],
-        value_fn=lambda d: d.last_event.decision.lower() if d.last_event else None,
+        value_fn=lambda d: _coerce_known_decision(d.last_event.decision) if d.last_event else None,
         attr_fn=lambda d: (
             {
                 "asset": d.last_event.asset,

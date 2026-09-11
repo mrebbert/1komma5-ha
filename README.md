@@ -279,7 +279,7 @@ Heartbeat AI decisions surfaced as sensors and binary sensors, updated every 15 
 | AI: Battery grid charging | `optimization_battery_grid_charge` | Binary — ON when the active BATTERY decision is `BATTERY_CHARGE_FROM_GRID` |
 | AI: Heat pump recommended | `optimization_heat_pump_recommended` | Binary — ON when the active HEAT_PUMP decision is `HEATPUMP_RECOMMEND_ON` |
 
-Available decision enum values: `BATTERY_CHARGE_FROM_GRID`, `BATTERY_NO_CHARGE`, `BATTERY_NO_DISCHARGE`, `HEATPUMP_RECOMMEND_ON`, `HEATPUMP_AUTO`.
+Available decision enum values: `BATTERY_CHARGE_FROM_GRID`, `BATTERY_NO_CHARGE`, `BATTERY_NO_DISCHARGE`, `EV_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`, `HEATPUMP_AUTO`. The SDK documents the list as non-exhaustive; unknown values keep the sensor at `unknown` and log a warning so a new cloud-side variant surfaces without breaking the state.
 
 > **Note:** `optimization_total_cost`, `optimization_energy_bought` and `optimization_energy_sold` exist but stay `unknown` — the API doesn't populate settlement data yet.
 

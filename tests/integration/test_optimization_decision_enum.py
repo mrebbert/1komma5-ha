@@ -61,6 +61,40 @@ async def test_last_decision_sensor_is_enum_with_known_options(
         "battery_charge_from_grid",
         "battery_no_charge",
         "battery_no_discharge",
+        "ev_charge_from_grid",
         "heatpump_recommend_on",
         "heatpump_auto",
     }
+
+
+async def test_unknown_decision_coerces_to_unknown_state(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """Cloud may ship enum values not in our options list; the sensor must
+    stay ``unknown`` instead of raising ValueError from HA's ENUM validation.
+
+    Regression for a live report on 2026-09-11 where the sensor crashed on
+    ``EV_CHARGE_FROM_GRID`` because the value was missing from the options.
+    The fix hardens ``_coerce_known_decision`` so future new decisions
+    degrade cleanly.
+    """
+    last_event = MagicMock(
+        decision="TOTALLY_UNKNOWN_FUTURE_DECISION",
+        asset="BATTERY",
+        from_time="2026-09-11T09:00:00Z",
+        to_time="2026-09-11T09:15:00Z",
+        market_price=42.0,
+        state_of_charge=50,
+    )
+    optimizations = MagicMock(events=[last_event])
+    system = mock_system_factory(system_id="sys-1", optimizations=optimizations)
+    await _setup(hass, system)
+
+    entity_reg = er.async_get(hass)
+    entity_id = entity_reg.async_get_entity_id(
+        "sensor", "onekommafive", "sys-1_optimization_last_decision"
+    )
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == "unknown"
