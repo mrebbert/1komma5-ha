@@ -132,6 +132,57 @@ def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuara
     return None
 
 
+def _setup_wallbox_sub_devices(
+    *,
+    device_registry: dr.DeviceRegistry,
+    entry: OneKomma5ConfigEntry,
+    system_id: str,
+    parent_device_id: str,
+    wallboxes: list[Any],
+    system_status_coordinator: OneKomma5SystemStatusCoordinator,
+) -> dict[str, str]:
+    """Pre-create one HA sub-device per physical wallbox and return ``{Wallbox.id: device_id}``.
+
+    Multi-wallbox setups get one sub-device per Wallbox with its own
+    manufacturer / model / firmware and ``Wallbox.name`` as label. Single-
+    wallbox setups keep the historical ``(DOMAIN, f"{system_id}_wallbox")``
+    identifier and the translated ``device.wallbox.name`` label so existing
+    area assignments and device_registry entries stay intact. The vehicle
+    sub-devices (see ``OneKomma5EVEntity``) via_device onto the matching
+    wallbox so HA renders "Vehicle under Wallbox" in the UI.
+    """
+    from .entity import asset_device_info, wallbox_sub_device_key
+
+    ev_charger_assets: list[Any] = []
+    if system_status_coordinator.data is not None:
+        ev_charger_assets = system_status_coordinator.data.assets_by_type_list.get("EV_CHARGER", [])
+    wallbox_device_ids: dict[str, str] = {}
+    wallbox_count = len(wallboxes)
+    for wallbox in wallboxes:
+        wb_id = getattr(wallbox, "id", None)
+        if not wb_id:
+            continue
+        # Multi-wallbox: name-match to enrich the sub-device with the
+        # matching Asset's manufacturer/model/firmware. Single-wallbox: take
+        # the one EV_CHARGER asset (implicit pairing, no name lookup).
+        if wallbox_count > 1:
+            matching_asset = next(
+                (a for a in ev_charger_assets if getattr(a, "name", None) == wallbox.name),
+                None,
+            )
+            explicit_name = wallbox.name
+        else:
+            matching_asset = ev_charger_assets[0] if ev_charger_assets else None
+            explicit_name = None
+        key = wallbox_sub_device_key(wb_id, wallbox_count)
+        di = asset_device_info(
+            system_id, key, matching_asset, parent_device_id, explicit_name=explicit_name
+        )
+        wallbox_device = device_registry.async_get_or_create(config_entry_id=entry.entry_id, **di)
+        wallbox_device_ids[wb_id] = wallbox_device.id
+    return wallbox_device_ids
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register integration-wide services once on HA startup."""
     async_setup_services(hass)
@@ -233,7 +284,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     # via `via_device_id` (device_registry id string) instead of the deprecated
     # `via_device` (identifier tuple). Deprecation removes the tuple form in
     # HA 2027.8; this migration keeps the log clean now.
-    from .entity import asset_device_info, system_device_info, wallbox_sub_device_key
+    from .entity import system_device_info
 
     device_registry = dr.async_get(hass)
     parent_device = device_registry.async_get_or_create(
@@ -241,41 +292,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         **system_device_info(system_id, system_name),
     )
 
-    # Multi-wallbox setups get one sub-device per Wallbox with its own
-    # manufacturer / model / firmware and Wallbox.name as label. Single-
-    # wallbox setups keep the historical `(DOMAIN, f"{system_id}_wallbox")`
-    # identifier and the translated `device.wallbox.name` label, so
-    # existing area assignments and device-registry entries stay intact.
-    # The vehicle sub-devices (see OneKomma5EVEntity) via_device onto the
-    # matching wallbox so HA renders "Vehicle under Wallbox" in the UI.
-    ev_charger_assets: list[Any] = []
-    if system_status_coordinator.data is not None:
-        ev_charger_assets = system_status_coordinator.data.assets_by_type_list.get("EV_CHARGER", [])
-    wallbox_device_ids: dict[str, str] = {}
-    wallbox_count = len(wallboxes)
-    for wallbox in wallboxes:
-        wb_id = getattr(wallbox, "id", None)
-        if not wb_id:
-            continue
-        # For multi-wallbox setups, try to enrich the sub-device with the
-        # matching Asset's manufacturer/model/firmware. Best-effort name-based
-        # match; the single-wallbox case just takes the one EV_CHARGER asset
-        # (implicit pairing, no name lookup needed).
-        if wallbox_count > 1:
-            matching_asset = next(
-                (a for a in ev_charger_assets if getattr(a, "name", None) == wallbox.name),
-                None,
-            )
-            explicit_name = wallbox.name
-        else:
-            matching_asset = ev_charger_assets[0] if ev_charger_assets else None
-            explicit_name = None
-        key = wallbox_sub_device_key(wb_id, wallbox_count)
-        di = asset_device_info(
-            system_id, key, matching_asset, parent_device.id, explicit_name=explicit_name
-        )
-        wallbox_device = device_registry.async_get_or_create(config_entry_id=entry.entry_id, **di)
-        wallbox_device_ids[wb_id] = wallbox_device.id
+    wallbox_device_ids = _setup_wallbox_sub_devices(
+        device_registry=device_registry,
+        entry=entry,
+        system_id=system_id,
+        parent_device_id=parent_device.id,
+        wallboxes=wallboxes,
+        system_status_coordinator=system_status_coordinator,
+    )
 
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,
