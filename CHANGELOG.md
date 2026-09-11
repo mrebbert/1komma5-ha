@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - `sensor.<sys>_optimization_last_decision` no longer raises `ValueError: … not in the list of options provided` when the 1KOMMA5° Cloud ships a decision enum value the sensor's ENUM options list doesn't cover. Added `EV_CHARGE_FROM_GRID` (observed live 2026-09-11) to the list and hardened the value coercion so future new decisions coerce to `unknown` + a one-line warning instead of crashing HA's ENUM validation. Regression test pins the behaviour.
 
+### Changed
+- Bump the `onekommafive` SDK pin to `>=0.3.0,<0.4` (from `>=0.2.3,<0.3`). Upstream `0.3.0` is a KISS-cleanup release: CLI dispatch via `argparse set_defaults(func=…)`, deduplicated CLI subcommand bodies, hoisted test fixtures and analytics helpers, tightened docstrings. No public API change (no new endpoint, no removed field, no signature change); the major-bump reflects the cut, not a break. Integration-side: no code change needed.
+
 ## [0.1.58] - 2026-09-14
 
 ### Added
