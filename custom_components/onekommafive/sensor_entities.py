@@ -45,11 +45,6 @@ from .sensor_descriptions import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Default currency-per-kWh string for installs whose country / currency
-# is unknown. Live overrides come from `OneKomma5Data.currency`, resolved
-# from `SystemDetails.address_country` at setup time.
-CURRENCY_EUR_PER_KWH = "EUR/kWh"
-
 
 def currency_per_kwh(currency: str) -> str:
     """Build the native_unit_of_measurement string for per-kWh prices."""
