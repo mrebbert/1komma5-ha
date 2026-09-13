@@ -309,6 +309,7 @@
           "battery_charge_from_grid": "Batterij vanuit net laden",
           "battery_no_charge": "Batterij niet laden",
           "battery_no_discharge": "Batterij niet ontladen",
+          "ev_charge_from_grid": "EV vanuit net laden",
           "heatpump_recommend_on": "Warmtepomp aanbevolen",
           "heatpump_auto": "Warmtepomp automatisch"
         }

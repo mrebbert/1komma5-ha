@@ -309,6 +309,7 @@
           "battery_charge_from_grid": "Lataa akku verkosta",
           "battery_no_charge": "Älä lataa akkua",
           "battery_no_discharge": "Älä pura akkua",
+          "ev_charge_from_grid": "Lataa sähköauto verkosta",
           "heatpump_recommend_on": "Lämpöpumppu suositeltu",
           "heatpump_auto": "Lämpöpumppu automaattinen"
         }

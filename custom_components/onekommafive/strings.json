@@ -309,6 +309,7 @@
           "battery_charge_from_grid": "Batterie aus Netz laden",
           "battery_no_charge": "Batterie nicht laden",
           "battery_no_discharge": "Batterie nicht entladen",
+          "ev_charge_from_grid": "E-Auto aus Netz laden",
           "heatpump_recommend_on": "Wärmepumpe empfohlen",
           "heatpump_auto": "Wärmepumpe Automatik"
         }

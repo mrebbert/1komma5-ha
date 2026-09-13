@@ -309,6 +309,7 @@
           "battery_charge_from_grid": "Cargar batería desde la red",
           "battery_no_charge": "No cargar batería",
           "battery_no_discharge": "No descargar batería",
+          "ev_charge_from_grid": "Cargar VE desde la red",
           "heatpump_recommend_on": "Bomba de calor recomendada",
           "heatpump_auto": "Bomba de calor automática"
         }
