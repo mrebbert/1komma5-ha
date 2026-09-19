@@ -8,8 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.60] - 2026-09-20
 
 ### Added
-- **Heartbeat-gateway sub-device.** GRIDX-backend installs now show one HA sub-device per Heartbeat gateway alongside the inverter / heat pump / meter / wallbox devices. The sub-device carries `manufacturer="1KOMMA5°"`, the backend `type` (e.g. `GRIDX`) as model, and the installation date as software version. 1K5-backend installs have no gateway and stay unchanged. Multi-gateway installs get one instance sub-device each, labelled with the installing partner name.
-- **Diagnostics: `system.device_gateways[]` block.** Support requests can now read `type`, `installer_name` and `installation_date` per gateway from the diagnostics dump. IDs, serial numbers, GridX identifiers and user identifiers stay excluded from the payload by contract.
+- **Diagnostics: `system.device_gateways[]` block.** Support requests can now read `type`, `installer_name` and `installation_date` per Heartbeat gateway from the diagnostics dump. IDs, serial numbers, GridX identifiers and user identifiers stay excluded from the payload by contract.
 
 ### Changed
 - Bump the `onekommafive` SDK pin to `>=0.4.0,<0.5` (from `>=0.3.0,<0.4`). Upstream `0.4.0` migrates the `active-features` endpoint from v1 to v2 (response schema unchanged) and adds `System.get_device_gateways()` as a richer standalone gateway accessor. The new endpoint drives the additions above.

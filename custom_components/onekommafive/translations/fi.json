@@ -417,9 +417,6 @@
     "wallbox": {
       "name": "Latauspiste"
     },
-    "gateway": {
-      "name": "Heartbeat-yhdyskäytävä"
-    },
     "battery": {
       "name": "Akku"
     },
