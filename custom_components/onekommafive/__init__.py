@@ -73,6 +73,8 @@ class OneKomma5Data:
     wallbox_device_ids: dict[
         str, str
     ]  # {Wallbox.id: device_registry id}; used to via_device the paired EV
+    device_gateways: list[Any]  # Heartbeat gateways from SDK v0.4.0 endpoint, cached at setup
+    gateway_device_ids: dict[str, str]  # {DeviceGateway.id: device_registry id}
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -183,6 +185,43 @@ def _setup_wallbox_sub_devices(
     return wallbox_device_ids
 
 
+def _setup_gateway_sub_devices(
+    *,
+    device_registry: dr.DeviceRegistry,
+    entry: OneKomma5ConfigEntry,
+    system_id: str,
+    parent_device_id: str,
+    device_gateways: list[Any],
+) -> dict[str, str]:
+    """Pre-create one HA sub-device per Heartbeat gateway (SDK v0.4.0 endpoint).
+
+    Single-gateway installs (the vast majority) keep the static identifier
+    ``(DOMAIN, f"{system_id}_gateway")`` and pick up the translated
+    ``device.gateway.name`` label. Multi-gateway installs get one instance
+    sub-device per hardware, keyed on ``DeviceGateway.id``. DeviceInfo
+    stays PII-safe: only ``type``, ``installer_name`` and
+    ``installation_date`` reach the device_registry; ``id``,
+    ``serial_number`` and the GridX identifiers are excluded.
+    """
+    from .entity import gateway_device_info, gateway_sub_device_key
+
+    gateway_device_ids: dict[str, str] = {}
+    gateway_count = len(device_gateways)
+    for gateway in device_gateways:
+        gw_id = getattr(gateway, "id", None)
+        if not gw_id:
+            continue
+        key = gateway_sub_device_key(gw_id, gateway_count)
+        installer_name = getattr(gateway, "installer_name", None)
+        explicit_name = installer_name if gateway_count > 1 and installer_name else None
+        di = gateway_device_info(
+            system_id, key, gateway, parent_device_id, explicit_name=explicit_name
+        )
+        device = device_registry.async_get_or_create(config_entry_id=entry.entry_id, **di)
+        gateway_device_ids[gw_id] = device.id
+    return gateway_device_ids
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register integration-wide services once on HA startup."""
     async_setup_services(hass)
@@ -209,6 +248,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             float | None,
             str | None,
             list[Any],
+            list[Any],
         ]:
             client = Client(username, password)
             system = Systems(client).get_system(system_id)
@@ -232,7 +272,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             # additions. Failure is non-fatal (e.g. transient upstream error);
             # empty list means multi-wallbox sub-devices are skipped this run.
             wallboxes = _safe_fetch("Wallboxes", system.get_wallboxes) or []
-            return system, name, details, price_guarantee, co2_saved_kg, sdk_version, wallboxes
+            # Heartbeat gateways (SDK v0.4.0). 1K5-backend installs return
+            # an empty list here; GRIDX installs return one gateway per
+            # HEMS box. Non-fatal on failure.
+            device_gateways = _safe_fetch("Device gateways", system.get_device_gateways) or []
+            return (
+                system,
+                name,
+                details,
+                price_guarantee,
+                co2_saved_kg,
+                sdk_version,
+                wallboxes,
+                device_gateways,
+            )
 
         (
             system,
@@ -242,6 +295,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             co2_saved_kg,
             sdk_version,
             wallboxes,
+            device_gateways,
         ) = await hass.async_add_executor_job(_fetch_system)
     except AuthenticationError as err:
         raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
@@ -300,6 +354,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         wallboxes=wallboxes,
         system_status_coordinator=system_status_coordinator,
     )
+    gateway_device_ids = _setup_gateway_sub_devices(
+        device_registry=device_registry,
+        entry=entry,
+        system_id=system_id,
+        parent_device_id=parent_device.id,
+        device_gateways=device_gateways,
+    )
 
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,
@@ -321,6 +382,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         sdk_version=sdk_version,
         wallboxes=wallboxes,
         wallbox_device_ids=wallbox_device_ids,
+        device_gateways=device_gateways,
+        gateway_device_ids=gateway_device_ids,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

@@ -184,6 +184,51 @@ def asset_device_info(
     return _set_via(di, system_id, parent_device_id)
 
 
+def gateway_device_info(
+    system_id: str,
+    device_key: str,
+    gateway: Any,
+    parent_device_id: str | None = None,
+    *,
+    explicit_name: str | None = None,
+) -> DeviceInfo:
+    """Build a PII-safe DeviceInfo for a Heartbeat gateway sub-device.
+
+    Only ``type``, ``installer_name`` and ``installation_date`` reach the
+    device_registry. ``id``, ``serial_number`` and the GridX identifiers
+    stay excluded by contract. Single-gateway installs (translation_key
+    ``gateway``) take precedence; multi-gateway installs pass
+    ``explicit_name`` (typically the installer name) since no translation
+    exists for instance keys.
+    """
+    gateway_type = getattr(gateway, "type", None) or "Heartbeat gateway"
+    installation_date = getattr(gateway, "installation_date", None)
+    di = DeviceInfo(
+        identifiers={(DOMAIN, f"{system_id}_{device_key}")},
+        manufacturer="1KOMMA5°",
+        model=gateway_type,
+        sw_version=installation_date,
+    )
+    if explicit_name is not None:
+        di["name"] = explicit_name
+    else:
+        di["translation_key"] = "gateway"
+    return _set_via(di, system_id, parent_device_id)
+
+
+def gateway_sub_device_key(gateway_id: str | None, gateway_count: int) -> str:
+    """Return the sub-device identifier suffix for a Heartbeat gateway.
+
+    Single-gateway installs (the overwhelming case) get the static
+    ``gateway`` key so translation and future device-registry references
+    stay stable. Multi-gateway installs (rare) get one instance-scoped
+    key per hardware.
+    """
+    if gateway_count <= 1 or gateway_id is None:
+        return "gateway"
+    return f"gateway_{gateway_id}"
+
+
 def wallbox_sub_device_key(wallbox_id: str | None, wallbox_count: int) -> str:
     """Return the sub-device identifier suffix for a wallbox.
 

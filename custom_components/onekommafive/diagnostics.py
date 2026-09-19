@@ -153,6 +153,25 @@ def _assets_redacted(status_data: Any) -> dict[str, Any]:
     }
 
 
+def _device_gateways_snapshot(device_gateways: list[Any]) -> list[dict[str, Any]]:
+    """PII-safe view of the Heartbeat gateways cached at setup.
+
+    Excludes ``id``, ``serial_number``, ``gridx_start_code``,
+    ``gridx_system_id``, ``gridx_gateway_id``, ``installer_id`` and
+    ``claimed_by_user_id``. Keeps ``type`` (backend), ``installer_name``
+    (installing partner) and ``installation_date`` — three fields that
+    let support triage a report without leaking identifiers.
+    """
+    return [
+        {
+            "type": getattr(gw, "type", None),
+            "installer_name": getattr(gw, "installer_name", None),
+            "installation_date": getattr(gw, "installation_date", None),
+        }
+        for gw in (device_gateways or [])
+    ]
+
+
 async def _wallbox_snapshot(
     hass: HomeAssistant, system: Any, details: Any
 ) -> list[dict[str, Any]] | None:
@@ -237,6 +256,7 @@ async def async_get_config_entry_diagnostics(
             "details": _details_redacted(data.details) if data.details else None,
             "status_and_assets": _assets_redacted(data.system_status_coordinator.data),
             "wallboxes": await _wallbox_snapshot(hass, data.system, data.details),
+            "device_gateways": _device_gateways_snapshot(data.device_gateways),
         },
     }
 

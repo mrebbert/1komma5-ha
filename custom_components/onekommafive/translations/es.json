@@ -417,6 +417,9 @@
     "wallbox": {
       "name": "Wallbox"
     },
+    "gateway": {
+      "name": "Pasarela Heartbeat"
+    },
     "battery": {
       "name": "Batería"
     },
