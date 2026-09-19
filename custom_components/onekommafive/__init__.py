@@ -356,3 +356,18 @@ async def _async_options_updated(hass: HomeAssistant, entry: OneKomma5ConfigEntr
 async def async_unload_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) -> bool:
     """Unload a 1KOMMA5° config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    config_entry: OneKomma5ConfigEntry,
+    device_entry: dr.DeviceEntry,
+) -> bool:
+    """Let the user delete sub-devices from the HA devices view.
+
+    Live sub-devices (system parent, inverter / heat pump / meter / wallbox /
+    battery / vehicle) get re-created on the next reload, so deleting one by
+    accident is safe. Orphaned sub-devices from earlier releases (like the
+    empty gateway sub-device from a pre-v0.1.60 build) simply stay gone.
+    """
+    return True
