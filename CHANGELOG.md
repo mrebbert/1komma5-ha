@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.60] - 2026-09-20
+
+### Changed
+- Bump the `onekommafive` SDK pin to `>=0.4.0,<0.5` (from `>=0.3.0,<0.4`). Upstream `0.4.0` migrates the `active-features` endpoint from v1 to v2 (response schema unchanged) and adds `System.get_device_gateways()` as a richer standalone gateway accessor. No integration-side code change needed.
+
 ## [0.1.59] - 2026-09-13
 
 ### Fixed
