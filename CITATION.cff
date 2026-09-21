@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+title: 1KOMMA5° Home Assistant Integration
+message: If you use this software, please cite it using the metadata below.
+type: software
+authors:
+  - given-names: Markus
+    family-names: Rebbert
+    email: code@rebbert.de
+repository-code: https://github.com/mrebbert/1komma5-ha
+url: https://github.com/mrebbert/1komma5-ha
+license: MIT
+version: 0.1.60
+date-released: 2026-09-20
