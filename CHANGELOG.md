@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
-- `sensor.<sys>_optimization_last_decision` now surfaces the `BATTERY_DISCHARGE_TO_GRID` decision instead of degrading to `unknown` with a warning. The Cloud started shipping this decision on 2026-09-22 (reported in issue #23 on a Swedish site with SEK spot prices) when the battery discharges into the grid at high market prices. Added the value to `_KNOWN_DECISIONS` and to the sensor's ENUM `options`, translated in all seven locales.
+- `sensor.<sys>_optimization_last_decision` now surfaces the `BATTERY_DISCHARGE_TO_GRID` decision instead of degrading to `unknown` with a warning. The Cloud emits this decision when the battery discharges into the grid at high spot prices; first surfaced in issue #23 on a Swedish site. Added the value to `_KNOWN_DECISIONS` and to the sensor's ENUM `options`, translated in all seven locales.
 
 ## [0.1.60] - 2026-09-20
 
