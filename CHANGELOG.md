@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.61] - 2026-09-24
+
 ### Fixed
 - `sensor.<sys>_optimization_last_decision` now surfaces the `BATTERY_DISCHARGE_TO_GRID` decision instead of degrading to `unknown` with a warning. The 1KOMMA5° API emits this decision when the battery discharges into the grid at high spot prices; first surfaced in issue #23. Added the value to `_KNOWN_DECISIONS` and to the sensor's ENUM `options`, translated in all seven locales.
 
