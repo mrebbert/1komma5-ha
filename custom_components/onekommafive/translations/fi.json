@@ -307,6 +307,7 @@
         "name": "Viimeisin optimointipäätös",
         "state": {
           "battery_charge_from_grid": "Lataa akku verkosta",
+          "battery_discharge_to_grid": "Pura akku verkkoon",
           "battery_no_charge": "Älä lataa akkua",
           "battery_no_discharge": "Älä pura akkua",
           "ev_charge_from_grid": "Lataa sähköauto verkosta",

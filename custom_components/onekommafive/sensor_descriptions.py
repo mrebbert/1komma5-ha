@@ -366,6 +366,7 @@ EV_SENSORS: tuple[OneKomma5EVSensorDescription, ...] = (
 _KNOWN_DECISIONS: frozenset[str] = frozenset(
     {
         "battery_charge_from_grid",
+        "battery_discharge_to_grid",
         "battery_no_charge",
         "battery_no_discharge",
         "ev_charge_from_grid",
@@ -463,6 +464,7 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         # ValueError from HA's ENUM validation.
         options=[
             "battery_charge_from_grid",
+            "battery_discharge_to_grid",
             "battery_no_charge",
             "battery_no_discharge",
             "ev_charge_from_grid",

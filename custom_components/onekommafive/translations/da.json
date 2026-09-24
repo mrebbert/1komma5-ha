@@ -307,6 +307,7 @@
         "name": "Seneste optimeringsbeslutning",
         "state": {
           "battery_charge_from_grid": "Oplad batteri fra nettet",
+          "battery_discharge_to_grid": "Aflad batteri til nettet",
           "battery_no_charge": "Oplad ikke batteri",
           "battery_no_discharge": "Aflad ikke batteri",
           "ev_charge_from_grid": "Oplad elbil fra nettet",

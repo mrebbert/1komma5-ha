@@ -307,6 +307,7 @@
         "name": "Última decisión de optimización",
         "state": {
           "battery_charge_from_grid": "Cargar batería desde la red",
+          "battery_discharge_to_grid": "Descargar batería a la red",
           "battery_no_charge": "No cargar batería",
           "battery_no_discharge": "No descargar batería",
           "ev_charge_from_grid": "Cargar VE desde la red",

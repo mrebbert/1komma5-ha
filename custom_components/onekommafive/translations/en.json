@@ -307,6 +307,7 @@
         "name": "Last optimization decision",
         "state": {
           "battery_charge_from_grid": "Charge battery from grid",
+          "battery_discharge_to_grid": "Discharge battery to grid",
           "battery_no_charge": "Don't charge battery",
           "battery_no_discharge": "Don't discharge battery",
           "ev_charge_from_grid": "Charge EV from grid",

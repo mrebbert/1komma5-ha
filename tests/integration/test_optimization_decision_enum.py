@@ -59,6 +59,7 @@ async def test_last_decision_sensor_is_enum_with_known_options(
     assert state.attributes["device_class"] == SensorDeviceClass.ENUM.value
     assert set(state.attributes["options"]) == {
         "battery_charge_from_grid",
+        "battery_discharge_to_grid",
         "battery_no_charge",
         "battery_no_discharge",
         "ev_charge_from_grid",
@@ -98,3 +99,31 @@ async def test_unknown_decision_coerces_to_unknown_state(
     state = hass.states.get(entity_id)
     assert state is not None
     assert state.state == "unknown"
+
+
+async def test_battery_discharge_to_grid_is_known(hass: HomeAssistant, mock_system_factory) -> None:
+    """Regression for issue #23 (2026-09-22): the cloud started emitting
+    ``BATTERY_DISCHARGE_TO_GRID`` (battery trades energy back to the grid at
+    high spot prices). The value must coerce to its lowercase key and land
+    in the sensor state, not degrade to ``unknown``.
+    """
+    last_event = MagicMock(
+        decision="BATTERY_DISCHARGE_TO_GRID",
+        asset="BATTERY",
+        from_time="2026-09-22T16:15:00Z",
+        to_time="2026-09-22T16:30:00Z",
+        market_price=448.625,
+        state_of_charge=None,
+    )
+    optimizations = MagicMock(events=[last_event])
+    system = mock_system_factory(system_id="sys-1", optimizations=optimizations)
+    await _setup(hass, system)
+
+    entity_reg = er.async_get(hass)
+    entity_id = entity_reg.async_get_entity_id(
+        "sensor", "onekommafive", "sys-1_optimization_last_decision"
+    )
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == "battery_discharge_to_grid"
