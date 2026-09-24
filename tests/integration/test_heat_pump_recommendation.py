@@ -22,11 +22,16 @@ from custom_components.onekommafive.const import (
 
 
 def _hp_event(decision: str, from_time: str, to_time: str) -> MagicMock:
+    # ``end_time`` mirrors ``to_time`` for single-slot events; the SDK
+    # (v0.4.2+) surfaces it as a string on every OptimizationEvent, and the
+    # active-window helper relies on that type.
     return MagicMock(
         asset="HEATPUMP",
         decision=decision,
         from_time=from_time,
         to_time=to_time,
+        end_time=to_time,
+        slot_count=1,
         timestamp=from_time,
         market_price=5.0,
         market_price_currency="EUR",

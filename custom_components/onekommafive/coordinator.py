@@ -405,6 +405,8 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
                 "decision": event.decision,
                 "from": event.from_time,
                 "to": event.to_time,
+                "end": getattr(event, "end_time", None) or event.to_time,
+                "slot_count": getattr(event, "slot_count", 1),
                 "market_price": event.market_price,
                 "market_price_currency": event.market_price_currency,
                 "state_of_charge": event.state_of_charge,

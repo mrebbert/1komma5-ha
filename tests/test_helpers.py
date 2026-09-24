@@ -214,6 +214,29 @@ class TestAggregateOptimizationEvents:
         result = aggregate_optimization_events(events)
         assert result["last_event"].from_time == "2026-04-26T15:00:00Z"
 
+    def test_event_count_sums_slot_counts(self) -> None:
+        """SDK ≥ 0.4.2 aggregates same-decision slots into a single event with
+        ``slot_count``; ``event_count`` must reflect the underlying 15-min-slot
+        total, not the number of event objects.
+        """
+
+        @dataclass
+        class _AggEvent:
+            slot_count: int
+            from_time: str | None = None
+            timestamp: str = ""
+            total_cost: float | None = None
+            energy_bought: float | None = None
+            energy_sold: float | None = None
+
+        events = [
+            _AggEvent(slot_count=4, from_time="2026-09-22T15:00:00Z"),
+            _AggEvent(slot_count=1, from_time="2026-09-22T16:00:00Z"),
+            _AggEvent(slot_count=2, from_time="2026-09-22T16:15:00Z"),
+        ]
+        result = aggregate_optimization_events(events)
+        assert result["event_count"] == 7
+
 
 # ----------------------------------------------------------------------------
 # find_cheapest_window
@@ -429,6 +452,34 @@ class TestActiveOptimizationEvent:
         ]
         result = active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 5))
         assert result is events[2]
+
+    def test_uses_end_time_over_to_time_for_multislot_events(self) -> None:
+        """SDK ≥ 0.4.2 aggregates same-decision consecutive slots into one event;
+        ``to_time`` describes only the first slot, ``end_time`` covers the full
+        span. Active-window checks must respect ``end_time`` — otherwise a
+        60-min event silently deactivates at the 15-min mark.
+        """
+
+        @dataclass
+        class _AggEvent:
+            asset: str
+            decision: str
+            from_time: str | None
+            to_time: str | None
+            end_time: str | None
+
+        events = [
+            _AggEvent(
+                asset="BATTERY",
+                decision="BATTERY_CHARGE_FROM_GRID",
+                from_time="2026-09-22T12:00:00Z",
+                to_time="2026-09-22T12:15:00Z",  # first slot only
+                end_time="2026-09-22T13:00:00Z",  # full four-slot span
+            ),
+        ]
+        # 45 minutes into the aggregated hour — must still match
+        result = active_optimization_event(events, "BATTERY", _at(2026, 9, 22, 12, 45))
+        assert result is events[0]
 
 
 # ----------------------------------------------------------------------------

@@ -409,7 +409,8 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
                         "asset": e.asset,
                         "decision": e.decision,
                         "from": e.from_time,
-                        "to": e.to_time,
+                        "to": getattr(e, "end_time", None) or e.to_time,
+                        "slot_count": getattr(e, "slot_count", 1),
                         "market_price": e.market_price,
                     }
                     for e in d.events
@@ -476,7 +477,8 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
             {
                 "asset": d.last_event.asset,
                 "from": d.last_event.from_time,
-                "to": d.last_event.to_time,
+                "to": getattr(d.last_event, "end_time", None) or d.last_event.to_time,
+                "slot_count": getattr(d.last_event, "slot_count", 1),
                 "market_price": d.last_event.market_price,
                 "state_of_charge": d.last_event.state_of_charge,
             }

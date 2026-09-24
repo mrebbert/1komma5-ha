@@ -118,9 +118,14 @@ def split_prices_by_date(
 def aggregate_optimization_events(events: list[Any]) -> dict[str, Any]:
     """Aggregate a list of optimization events into summary statistics.
 
-    Returns a dict with: event_count, total_cost, energy_bought, energy_sold,
-    last_event. Fields that have no values aggregate to None (not zero) so HA
-    sensors render as 'unknown' rather than misleading zeros.
+    ``event_count`` counts logical 15-min slots, not event objects. The
+    /heartbeat-ai/optimizations endpoint aggregates consecutive same-decision
+    slots within a one-hour bucket into a single event (see SDK ≥ 0.4.2's
+    ``OptimizationEvent.slot_count`` / ``end_time`` properties), so counting
+    objects would silently undercount by up to 4×.
+
+    Fields that have no values aggregate to None (not zero) so HA sensors
+    render as 'unknown' rather than misleading zeros.
     """
     costs = [e.total_cost for e in events if e.total_cost is not None]
     bought = [e.energy_bought for e in events if e.energy_bought is not None]
@@ -131,7 +136,7 @@ def aggregate_optimization_events(events: list[Any]) -> dict[str, Any]:
         last_event = max(events, key=lambda e: e.from_time or e.timestamp)
 
     return {
-        "event_count": len(events),
+        "event_count": sum(getattr(e, "slot_count", 1) for e in events),
         "total_cost": sum(costs) if costs else None,
         "energy_bought": sum(bought) if bought else None,
         "energy_sold": sum(sold) if sold else None,
@@ -146,27 +151,28 @@ def active_optimization_event(
 ) -> Any | None:
     """Return the optimization event currently active for ``asset``, or ``None``.
 
-    "Active" means ``from_time <= now < to_time``. The first matching event in
-    iteration order wins (the API typically returns at most one event per
-    asset per slot, so order does not matter in practice).
+    "Active" means ``from_time <= now < end_time``. ``end_time`` (SDK ≥ 0.4.2)
+    covers the full aggregated slot span; ``to_time`` describes only the first
+    slot and would close the window up to 45 min too early on multi-slot
+    events. Falls back to ``to_time`` on older SDK payloads.
     """
     for event in events:
         if getattr(event, "asset", None) != asset:
             continue
         from_raw = getattr(event, "from_time", None)
-        to_raw = getattr(event, "to_time", None)
-        if not from_raw or not to_raw:
+        end_raw = getattr(event, "end_time", None) or getattr(event, "to_time", None)
+        if not from_raw or not end_raw:
             continue
         try:
             from_dt = datetime.datetime.fromisoformat(from_raw.replace("Z", "+00:00"))
-            to_dt = datetime.datetime.fromisoformat(to_raw.replace("Z", "+00:00"))
+            end_dt = datetime.datetime.fromisoformat(end_raw.replace("Z", "+00:00"))
         except ValueError:
             continue
         if from_dt.tzinfo is None:
             from_dt = from_dt.replace(tzinfo=datetime.UTC)
-        if to_dt.tzinfo is None:
-            to_dt = to_dt.replace(tzinfo=datetime.UTC)
-        if from_dt <= now < to_dt:
+        if end_dt.tzinfo is None:
+            end_dt = end_dt.replace(tzinfo=datetime.UTC)
+        if from_dt <= now < end_dt:
             return event
     return None
 

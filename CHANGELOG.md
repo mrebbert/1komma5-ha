@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.62] - 2026-09-27
+
+### Fixed
+- `sensor.<sys>_optimization_event_count` now counts logical 15-minute slots instead of API event objects. The `/heartbeat-ai/optimizations` endpoint aggregates consecutive same-decision slots within a one-hour bucket into a single event, so counting objects was silently under-reporting by up to a factor of four. Existing installs will see the sensor step up on the first refresh after the update; the new value is correct, the previous one was too low.
+- `binary_sensor.<sys>_optimization_battery_grid_charge` and `binary_sensor.<sys>_heatpump_recommendation` stay `on` for the full aggregated slot span instead of dropping back to `off` at the 15-minute mark of a multi-slot decision. Uses the SDK's new `OptimizationEvent.end_time` property; falls back to `to_time` on older payloads.
+
+### Changed
+- `attributes.to` on `sensor.<sys>_optimization_last_decision` and on the `decisions[]` entries under `sensor.<sys>_optimization_event_count` now reflects the aggregated slot-span end (was: the end of the first slot). New `slot_count` attribute exposes how many 15-min slots the decision covers.
+- Bus event `onekommafive_optimization_decision` gains `end` (aggregated span end) and `slot_count` fields alongside the existing `to` (first-slot end, kept for compatibility).
+- Bump the `onekommafive` SDK pin to `>=0.4.2,<0.5` (from `>=0.4.0,<0.5`). Upstream `0.4.1` is contributor-tooling only (uv lockfile in the repo, Dependabot switched to the uv ecosystem, second CI job that runs `uv sync --frozen && uv run pytest`); `0.4.2` documents the aggregated optimization-events semantics and adds the `slot_count` / `end_time` accessors that back all three fixes above.
+
 ## [0.1.61] - 2026-09-24
 
 ### Fixed
