@@ -303,6 +303,13 @@ One set of entities per **vehicle profile** registered in the 1KOMMA5° app.
 | Target SoC | Number (0–100 %) | Desired battery target |
 | Departure Time | Time | Daily primary departure |
 | Vehicle SoC (Manual) | Number (0–100 %) | Manual current-SoC report (SMART_CHARGE only) |
+| Assigned Vehicle | Select (per wallbox) | Which vehicle profile is currently paired with the wallbox (see below). |
+
+**Wallbox → vehicle assignment (since v0.1.63).** Sites with more than one vehicle profile in the 1KOMMA5° app get one `select.<sys>_<wallbox>_assigned_vehicle` per physical wallbox, parented on the wallbox sub-device. Options are the site's vehicles as lowercase name slugs (`bmw_i3`, `tesla_model_y`, …); the state reflects `Wallbox.assigned_ev_id`. Selecting an option binds that vehicle to the wallbox — the same switch the 1KOMMA5° app offers. The backend is 1:1 exclusive: setting the assignment on one vehicle automatically releases whichever vehicle was previously bound to the same wallbox. There is no unassign option (the app UI has none either). Single-vehicle sites see the entity but have nothing to switch — no UI breakage, just an inert control.
+
+Automation shortcut: the [`vehicle_at_wallbox.yaml` blueprint](blueprints/automation/onekommafive/vehicle_at_wallbox.yaml) flips the select automatically when a "car plugged in" binary sensor (from your car integration or a smart-plug helper) goes ON. One import per vehicle.
+
+Id-addressed alternative for scripts: the `onekommafive.assign_ev_to_wallbox` service — see [Services & bus events](#services--bus-events).
 
 <details>
 <summary>Automation: sync manual SoC from your car integration</summary>
@@ -465,6 +472,25 @@ action:
 
 </details>
 
+### `onekommafive.assign_ev_to_wallbox` (v0.1.63)
+
+Bind a vehicle profile to a wallbox — the id-addressed counterpart to the `select.<sys>_<wallbox>_assigned_vehicle` entity, for scripts that carry the identifiers as data. Wraps the same SDK write path (`EVCharger.assign_charger`, v0.5.0+).
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `wallbox_id` | yes | UUID of the target wallbox — from the wallbox sub-device's diagnostics dump or from the SDK's `system.get_wallboxes()` |
+| `ev_id` | yes | UUID of the vehicle profile |
+| `config_entry_id` | no | Only required with multiple systems configured |
+
+**Response:**
+
+```yaml
+success: true
+previous_ev_id: "ev-uuid-a"   # null when the wallbox had no assignment
+```
+
+`previous_ev_id` is captured from the local system-status cache before the write, so an automation can log the swap. Unknown ids raise a clear `HomeAssistantError`. There is no detach path: `ev_id` is required — the 1KOMMA5° model is 1:1 exclusive, and setting one vehicle releases the previously bound one automatically in the same call.
+
 ### Bus event: `onekommafive_notification` (v0.1.52)
 
 Fires once per newly-observed 1KOMMA5° cloud notification (energy market thresholds, system health alerts, dynamic-pulse events, …). Enables automations that react to the same push notifications the mobile app receives — no email/webhook/tap-detection needed.
@@ -548,7 +574,7 @@ See the `notify_negative_price_started.yaml` blueprint for a ready-made notifica
 
 **Dashboards** — [`dashboard/`](dashboard/) contains two ready-to-import Home Assistant dashboards (energy & grid + EV charger). All cards are native HA types, no extra frontend components needed. [Dashboard README with screenshots](dashboard/README.md).
 
-**Automation blueprints** — eight importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
+**Automation blueprints** — nine importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
 
 - **Run during cheapest window** — schedule a switch for the cheapest N-min window daily (dishwasher, washer, EV)
 - **Follow cheap electricity** — mirror a switch to `binary_sensor…_cheap_electricity` for opportunistic loads
@@ -556,6 +582,7 @@ See the `notify_negative_price_started.yaml` blueprint for a ready-made notifica
 - **Notify on negative prices tomorrow** — heads-up when tomorrow has ≥ N negative slots (fires ~13:00 CET)
 - **Notify when the grid pays you** — instant alert on positive↔negative edge, built on the bus event
 - **EV charge on PV surplus** — toggle a switch ON when battery is full AND PV exceeds a threshold
+- **Vehicle at wallbox** — bind a vehicle profile when its plug-in sensor goes ON (one automation per car)
 - **Notify when a device goes offline** — connectivity-based alerts with debounce
 - **Forward 1KOMMA5° cloud notifications** — passthrough for `onekommafive_notification` events with optional `type_filter`
 

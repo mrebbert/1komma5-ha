@@ -59,6 +59,7 @@ The view header shows four **badges**: EMS auto mode switch, self-sufficiency ra
 A focused view for controlling the EV charger:
 
 - Charging mode selector (Smart Charge / Quick Charge / Solar Charge)
+- Wallbox → vehicle assignment (since v0.1.63): which vehicle profile is currently bound to the wallbox. Options are the site's vehicles as lowercase name slugs. Placeholder `WALLBOX_IDENTIFIER` in the YAML resolves to `wallbox` on single-wallbox sites (the historical default) and to each wallbox's own slug on multi-wallbox sites — check *Settings → Devices & Services → 1KOMMA5°* on your install for the exact `select.SYSTEM_NAME_<wallbox>_assigned_vehicle` id.
 - Manual battery level input, target battery level and daily departure time (visible in Smart Charge mode only)
 
 ### Prices and costs
