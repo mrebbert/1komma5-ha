@@ -212,6 +212,21 @@ def wallbox_identifier(
     return (DOMAIN, f"{system_id}_{wallbox_sub_device_key(wallbox_id, wallbox_count)}")
 
 
+def attach_to_wallbox_sub_device(
+    system_id: str, wallbox_id: str | None, wallbox_count: int
+) -> DeviceInfo:
+    """Return DeviceInfo that re-attaches an entity to an existing wallbox sub-device.
+
+    The wallbox sub-device is already registered by
+    ``_setup_wallbox_sub_devices`` with its own name / manufacturer / model /
+    firmware and correct ``via_device_id``; a per-wallbox entity only needs
+    to declare the identifier so HA attaches it to that existing device. Do
+    not add ``via_device`` here — that would raise
+    ``HomeAssistantError: A device can not be its own via device``.
+    """
+    return DeviceInfo(identifiers={wallbox_identifier(system_id, wallbox_id, wallbox_count)})
+
+
 def ev_wallbox_parent(ev: Any, data: Any) -> tuple[str | None, tuple[str, str] | None]:
     """Return the paired wallbox sub-device's ``(device_id, identifier)``.
 

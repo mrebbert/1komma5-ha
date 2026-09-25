@@ -181,10 +181,15 @@ async def async_setup_entry(
         )
     )
 
-    # Accumulated electricity cost sensor
+    # Accumulated electricity cost sensor. Cost sensors read the stable price
+    # via a callable instead of holding a reference to the sensor entity — same
+    # value, weaker coupling.
+    def _stable_price() -> float | None:
+        return stable_price_sensor.stable_price
+
     entities.append(
         OneKomma5CostSensor(
-            live_coordinator, system_id, system_name, stable_price_sensor, currency=currency
+            live_coordinator, system_id, system_name, _stable_price, currency=currency
         )
     )
 
@@ -195,7 +200,7 @@ async def async_setup_entry(
             live_coordinator,
             system_id,
             system_name,
-            stable_price_sensor,
+            _stable_price,
             attr,
             key,
             device_key=device_key,

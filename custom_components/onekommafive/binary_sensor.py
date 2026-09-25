@@ -25,9 +25,9 @@ from .entity import (
     QuarterHourUpdateMixin,
     apply_stable_entity_ids,
     asset_redacted_dict,
+    attach_to_wallbox_sub_device,
     resolve_asset,
     resolve_assets_by_type,
-    wallbox_identifier,
 )
 from .helpers import active_optimization_event
 
@@ -141,8 +141,7 @@ async def async_setup_entry(
                     system_id,
                     data.system_name,
                     wallbox,
-                    parent_device_id=data.wallbox_device_ids.get(wb_id),
-                    parent_identifier=wallbox_identifier(system_id, wb_id, len(wallboxes)),
+                    wallbox_count=len(wallboxes),
                 )
             )
 
@@ -481,14 +480,8 @@ class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySens
         system_name: str,
         wallbox: Any,
         *,
-        parent_device_id: str | None,
-        parent_identifier: tuple[str, str],
+        wallbox_count: int,
     ) -> None:
-        # Bypass the parent's asset_device_info wiring: DeviceInfo for this
-        # sensor is the wallbox sub-device the __init__.py already registered,
-        # not a fresh key-driven one. Passing device_key=None + asset=None
-        # makes _BaseSystemEntity default to the system parent, which we
-        # then overwrite with the wallbox sub-device identifier.
         super().__init__(
             coordinator,
             system_id,
@@ -499,14 +492,10 @@ class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySens
         # Name-based match to the EV_CHARGER Asset; kept as a plain string so
         # `_matching_asset` can look up the current status on every state read.
         self._wallbox_name = wallbox.name
-        # DeviceInfo targets the wallbox sub-device the setup pre-created.
-        # via_device_id links to it on HA ≥ 2026.7; the identifier tuple is
-        # the fallback for older HA versions (see _set_via in entity.py).
-        di: dict[str, Any] = {"identifiers": {parent_identifier}}
-        # We do not need to re-declare name/manufacturer/model/sw_version here
-        # — the setup-time async_get_or_create already populated them on the
-        # wallbox sub-device. Repeating them would just risk drift.
-        self._attr_device_info = di  # type: ignore[assignment]
+        # Re-attach to the wallbox sub-device that setup pre-registered; that
+        # device carries the manufacturer / model / firmware / via_device
+        # already, so we just declare its identifier.
+        self._attr_device_info = attach_to_wallbox_sub_device(system_id, wallbox.id, wallbox_count)
 
     def _matching_asset(self) -> Any | None:
         if self.coordinator.data is None:

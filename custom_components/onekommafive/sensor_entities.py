@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import logging
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
@@ -609,19 +610,19 @@ class OneKomma5CostSensor(OneKomma5AccumulatingSensor):
         coordinator: Any,
         system_id: str,
         system_name: str,
-        stable_price_sensor: OneKomma5StablePriceSensor,
+        stable_price: Callable[[], float | None],
         *,
         currency: str = "EUR",
     ) -> None:
         super().__init__(coordinator, system_id, system_name, "electricity_cost")
         self._attr_native_unit_of_measurement = currency
-        self._stable_price_sensor = stable_price_sensor
+        self._stable_price = stable_price
 
     def _get_power_w(self, data: LiveData) -> float | None:
         return data.live_overview.grid_consumption_power
 
     def _get_kwh_multiplier(self) -> float | None:
-        return self._stable_price_sensor.stable_price
+        return self._stable_price()
 
 
 class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
@@ -643,7 +644,7 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
         coordinator: Any,
         system_id: str,
         system_name: str,
-        stable_price_sensor: OneKomma5StablePriceSensor,
+        stable_price: Callable[[], float | None],
         consumer_power_attr: str,
         translation_key: str,
         *,
@@ -663,7 +664,7 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
         )
         self._attr_native_unit_of_measurement = currency
         self._attr_translation_key = translation_key
-        self._stable_price_sensor = stable_price_sensor
+        self._stable_price = stable_price
         self._consumer_power_attr = consumer_power_attr
 
     def _get_power_w(self, data: LiveData) -> float | None:
@@ -678,7 +679,7 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
         return grid * (consumer_power / total)
 
     def _get_kwh_multiplier(self) -> float | None:
-        return self._stable_price_sensor.stable_price
+        return self._stable_price()
 
 
 class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):

@@ -26,7 +26,7 @@ from .coordinator import OneKomma5LiveCoordinator
 from .entity import (
     OneKomma5EVEntity,
     apply_stable_entity_ids,
-    wallbox_identifier,
+    attach_to_wallbox_sub_device,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ async def async_setup_entry(
                 system_id,
                 system_name,
                 wallbox,
-                wallbox_parent_identifier=wallbox_identifier(system_id, wb_id, wallbox_count),
+                wallbox_count=wallbox_count,
             )
         )
 
@@ -150,11 +150,9 @@ class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinato
         system_name: str,
         wallbox: Any,
         *,
-        wallbox_parent_identifier: tuple[str, str] | None = None,
+        wallbox_count: int = 1,
     ) -> None:
         """Initialize the assignment select."""
-        from homeassistant.helpers.device_registry import DeviceInfo
-
         super().__init__(coordinator)
         self._system_id = system_id
         self._wallbox_id = wallbox.id
@@ -162,14 +160,7 @@ class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinato
         self._stable_object_id = (
             f"{slugify(system_name)}_{slugify(self._wallbox_id)}_assigned_vehicle"
         )
-        # Parent the entity onto the pre-registered wallbox sub-device.
-        # ``_setup_wallbox_sub_devices`` already registered that sub-device
-        # with the correct via_device pointing at the system parent — we
-        # must only re-declare the identifier so HA attaches this entity
-        # to the existing device (never re-set via_device on ourselves,
-        # which would raise "A device can not be its own via device").
-        identifier = wallbox_parent_identifier or wallbox_identifier(system_id, None, 1)
-        self._attr_device_info = DeviceInfo(identifiers={identifier})
+        self._attr_device_info = attach_to_wallbox_sub_device(system_id, wallbox.id, wallbox_count)
 
     def _ev_chargers(self) -> list[Any]:
         if self.coordinator.data is None:
