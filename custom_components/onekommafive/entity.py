@@ -199,6 +199,19 @@ def wallbox_sub_device_key(wallbox_id: str | None, wallbox_count: int) -> str:
     return f"wallbox_{wallbox_id}"
 
 
+def wallbox_identifier(
+    system_id: str, wallbox_id: str | None, wallbox_count: int
+) -> tuple[str, str]:
+    """Return the wallbox sub-device's ``(DOMAIN, identifier)`` tuple.
+
+    Single source of truth for the identifier that ``_setup_wallbox_sub_devices``
+    registers and that per-wallbox entities re-declare. Uses
+    :func:`wallbox_sub_device_key` under the hood so the single-wallbox
+    compat frontier lives in one place.
+    """
+    return (DOMAIN, f"{system_id}_{wallbox_sub_device_key(wallbox_id, wallbox_count)}")
+
+
 def ev_wallbox_parent(ev: Any, data: Any) -> tuple[str | None, tuple[str, str] | None]:
     """Return the paired wallbox sub-device's ``(device_id, identifier)``.
 
@@ -218,11 +231,11 @@ def ev_wallbox_parent(ev: Any, data: Any) -> tuple[str | None, tuple[str, str] |
     if not wallbox_id:
         return (None, None)
     device_id = wallbox_device_ids.get(wallbox_id)
-    key = wallbox_sub_device_key(wallbox_id, len(wallboxes))
-    system_id = getattr(getattr(data, "system", None), "id", lambda: None)()
+    system = getattr(data, "system", None)
+    system_id = system.id() if system is not None else None
     if system_id is None:
         return (device_id, None)
-    return (device_id, (DOMAIN, f"{system_id}_{key}"))
+    return (device_id, wallbox_identifier(system_id, wallbox_id, len(wallboxes)))
 
 
 def resolve_wallbox_for_ev(ev: Any, wallboxes: list[Any]) -> Any | None:
@@ -335,19 +348,15 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         system_name: str,
         ev: Any,
         unique_id_suffix: str,
-        parent_device_id: str | None = None,
-        *,
-        wallbox_device_id: str | None = None,
-        wallbox_parent_identifier: tuple[str, str] | None = None,
+        data: Any,
     ) -> None:
         """Initialize the entity.
 
-        ``wallbox_device_id`` and ``wallbox_parent_identifier`` together
-        route the vehicle sub-device under the paired wallbox: the id
-        drives via_device_id on modern HA, the identifier is the fallback
-        via_device tuple for HA versions without the TypedDict key.
-        Unpaired vehicles pass ``(None, None)`` and fall back to the
-        system parent through the ``parent_device_id`` path.
+        ``data`` is ``entry.runtime_data``; the base resolves the vehicle's
+        paired wallbox sub-device from it via :func:`ev_wallbox_parent` so
+        each platform setup does not need to compute the pairing itself.
+        Unpaired vehicles or missing wallbox inventory fall back to the
+        system parent.
         """
         super().__init__(coordinator)
         self._system_id = system_id
@@ -355,6 +364,10 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         self._attr_unique_id = f"{system_id}_{self._ev_id}_{unique_id_suffix}"
         # ev_id in the object_id so multi-vehicle installs don't collide.
         self._stable_object_id = f"{slugify(system_name)}_{slugify(self._ev_id)}_{unique_id_suffix}"
+        wallbox_device_id, wallbox_parent_identifier = ev_wallbox_parent(ev, data)
+        via_device_id = (
+            wallbox_device_id if wallbox_device_id is not None else data.system_device_id
+        )
         self._attr_device_info = _set_via(
             DeviceInfo(
                 identifiers={(DOMAIN, f"{system_id}_{self._ev_id}")},
@@ -363,7 +376,7 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
                 model=ev.model(),
             ),
             system_id,
-            wallbox_device_id if wallbox_device_id is not None else parent_device_id,
+            via_device_id,
             parent_identifier=wallbox_parent_identifier,
         )
 

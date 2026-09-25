@@ -17,7 +17,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .const import DOMAIN
 from .entity import (
     ASSET_TYPES_BY_DEVICE_KEY,
     OneKomma5OptimizationEntity,
@@ -28,6 +27,7 @@ from .entity import (
     asset_redacted_dict,
     resolve_asset,
     resolve_assets_by_type,
+    wallbox_identifier,
 )
 from .helpers import active_optimization_event
 
@@ -142,7 +142,7 @@ async def async_setup_entry(
                     data.system_name,
                     wallbox,
                     parent_device_id=data.wallbox_device_ids.get(wb_id),
-                    parent_identifier=(DOMAIN, f"{system_id}_wallbox_{wb_id}"),
+                    parent_identifier=wallbox_identifier(system_id, wb_id, len(wallboxes)),
                 )
             )
 

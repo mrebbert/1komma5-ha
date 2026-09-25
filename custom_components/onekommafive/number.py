@@ -21,7 +21,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
-from .entity import OneKomma5EVEntity, apply_stable_entity_ids, ev_wallbox_parent
+from .entity import OneKomma5EVEntity, apply_stable_entity_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +85,6 @@ async def async_setup_entry(
 
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
-            wb_device_id, wb_identifier = ev_wallbox_parent(ev, data)
             entities.extend(
                 OneKomma5EVNumber(
                     live_coordinator,
@@ -93,9 +92,7 @@ async def async_setup_entry(
                     system_name,
                     ev,
                     desc,
-                    data.system_device_id,
-                    wallbox_device_id=wb_device_id,
-                    wallbox_parent_identifier=wb_identifier,
+                    data,
                 )
                 for desc in EV_NUMBERS
             )
@@ -116,22 +113,10 @@ class OneKomma5EVNumber(OneKomma5EVEntity, NumberEntity):
         system_name: str,
         ev: Any,
         description: OneKomma5EVNumberDescription,
-        parent_device_id: str,
-        *,
-        wallbox_device_id: str | None = None,
-        wallbox_parent_identifier: tuple[str, str] | None = None,
+        data: Any,
     ) -> None:
         """Initialize the number entity."""
-        super().__init__(
-            coordinator,
-            system_id,
-            system_name,
-            ev,
-            description.key,
-            parent_device_id,
-            wallbox_device_id=wallbox_device_id,
-            wallbox_parent_identifier=wallbox_parent_identifier,
-        )
+        super().__init__(coordinator, system_id, system_name, ev, description.key, data)
         self.entity_description = description
 
     @property

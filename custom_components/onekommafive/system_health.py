@@ -71,13 +71,14 @@ async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
 
 
 def _sdk_version() -> str:
-    """Return the installed onekommafive SDK version, or a sentinel."""
-    try:
-        import importlib.metadata as md
+    """Return the installed onekommafive SDK version, or ``"unknown"``.
 
-        return md.version("onekommafive")
-    except Exception:  # pragma: no cover - defensive
-        return "unknown"
+    Wraps :func:`onekommafive.helpers.sdk_version` with the sentinel that
+    the System Health card expects on a broken install.
+    """
+    from .helpers import sdk_version
+
+    return sdk_version() or "unknown"
 
 
 def _format_age(then: dt.datetime) -> str:

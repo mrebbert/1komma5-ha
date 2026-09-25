@@ -90,16 +90,6 @@ def _safe_fetch[T](label: str, fn: Callable[[], T]) -> T | None:
         return None
 
 
-def _installed_sdk_version() -> str | None:
-    """Read the installed onekommafive package version. Blocking I/O; call from executor."""
-    from importlib.metadata import PackageNotFoundError, version
-
-    try:
-        return version("onekommafive")
-    except PackageNotFoundError:
-        return None
-
-
 def _extract_co2_saved(system: Any) -> float | None:
     """Return lifetime CO2 saved in kg from get_impact_overview, or None on failure."""
     impact = _safe_fetch("Impact overview", system.get_impact_overview)
@@ -198,6 +188,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     from onekommafive.errors import AuthenticationError, RequestError
     from onekommafive.systems import Systems
 
+    from .helpers import sdk_version as _read_sdk_version
+
     username: str = entry.data[CONF_USERNAME]
     password: str = entry.data[CONF_PASSWORD]
     system_id: str = entry.data[CONF_SYSTEM_ID]
@@ -231,7 +223,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
             cust_id = getattr(details, "customer_id", None) if details else None
             price_guarantee = _extract_price_guarantee(system, cust_id)
             co2_saved_kg = _extract_co2_saved(system)
-            sdk_version = _installed_sdk_version()
+            sdk_version = _read_sdk_version()
             # Wallbox inventory rarely changes; reload picks up hardware
             # additions. Failure is non-fatal (e.g. transient upstream error);
             # empty list means multi-wallbox sub-devices are skipped this run.

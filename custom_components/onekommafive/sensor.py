@@ -24,7 +24,6 @@ from .const import (
 )
 from .entity import (
     apply_stable_entity_ids,
-    ev_wallbox_parent,
     resolve_asset,
     resolve_assets_by_type,
 )
@@ -240,7 +239,6 @@ async def async_setup_entry(
     # parent (unpaired vehicle / single-wallbox setup).
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
-            wb_device_id, wb_identifier = ev_wallbox_parent(ev, data)
             entities.extend(
                 OneKomma5EVSensor(
                     live_coordinator,
@@ -248,9 +246,7 @@ async def async_setup_entry(
                     system_name,
                     ev,
                     desc,
-                    data.system_device_id,
-                    wallbox_device_id=wb_device_id,
-                    wallbox_parent_identifier=wb_identifier,
+                    data,
                 )
                 for desc in EV_SENSORS
             )

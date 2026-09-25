@@ -22,13 +22,11 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
 from . import OneKomma5ConfigEntry
-from .const import DOMAIN
 from .coordinator import OneKomma5LiveCoordinator
 from .entity import (
     OneKomma5EVEntity,
     apply_stable_entity_ids,
-    ev_wallbox_parent,
-    wallbox_sub_device_key,
+    wallbox_identifier,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,16 +51,13 @@ async def async_setup_entry(
 
     if live_coordinator.data:
         for ev in live_coordinator.data.ev_chargers:
-            wb_device_id, wb_identifier = ev_wallbox_parent(ev, data)
             entities.append(
                 OneKomma5ChargingModeSelect(
                     live_coordinator,
                     system_id,
                     system_name,
                     ev,
-                    data.system_device_id,
-                    wallbox_device_id=wb_device_id,
-                    wallbox_parent_identifier=wb_identifier,
+                    data,
                 )
             )
 
@@ -72,14 +67,13 @@ async def async_setup_entry(
         wb_id = getattr(wallbox, "id", None)
         if not wb_id:
             continue
-        key = wallbox_sub_device_key(wb_id, wallbox_count)
         entities.append(
             OneKomma5WallboxAssignmentSelect(
                 live_coordinator,
                 system_id,
                 system_name,
                 wallbox,
-                wallbox_parent_identifier=(DOMAIN, f"{system_id}_{key}"),
+                wallbox_parent_identifier=wallbox_identifier(system_id, wb_id, wallbox_count),
             )
         )
 
@@ -110,22 +104,10 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         system_id: str,
         system_name: str,
         ev: Any,
-        parent_device_id: str,
-        *,
-        wallbox_device_id: str | None = None,
-        wallbox_parent_identifier: tuple[str, str] | None = None,
+        data: Any,
     ) -> None:
         """Initialize the select entity."""
-        super().__init__(
-            coordinator,
-            system_id,
-            system_name,
-            ev,
-            "charging_mode_select",
-            parent_device_id,
-            wallbox_device_id=wallbox_device_id,
-            wallbox_parent_identifier=wallbox_parent_identifier,
-        )
+        super().__init__(coordinator, system_id, system_name, ev, "charging_mode_select", data)
 
     @property
     def current_option(self) -> str | None:
@@ -186,7 +168,7 @@ class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinato
         # must only re-declare the identifier so HA attaches this entity
         # to the existing device (never re-set via_device on ourselves,
         # which would raise "A device can not be its own via device").
-        identifier = wallbox_parent_identifier or (DOMAIN, f"{system_id}_wallbox")
+        identifier = wallbox_parent_identifier or wallbox_identifier(system_id, None, 1)
         self._attr_device_info = DeviceInfo(identifiers={identifier})
 
     def _ev_chargers(self) -> list[Any]:

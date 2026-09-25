@@ -10,6 +10,21 @@ import datetime
 from collections.abc import Callable
 from typing import Any
 
+
+def sdk_version() -> str | None:
+    """Return the installed ``onekommafive`` SDK version, or ``None``.
+
+    Uses ``importlib.metadata``; performs blocking file I/O the first time
+    around, so run it in an executor when called from an async context.
+    """
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("onekommafive")
+    except PackageNotFoundError:
+        return None
+
+
 # ISO 4217 currency mapping for the seven markets 1KOMMA5° currently
 # operates in (DE, NL, FI, ES → EUR; DK → DKK; SE → SEK; AU → AUD).
 # Other country codes default to EUR — most likely correct, and the
