@@ -89,6 +89,10 @@ class SystemStatusData:
     # full list per asset type; needed wherever more than one asset of a type
     # may realistically appear (currently EV_CHARGER for multi-wallbox setups)
     assets_by_type_list: dict[str, list[Any]]
+    # Wallbox inventory with live ``assigned_ev_id`` (5-min refresh cadence).
+    # OneKomma5Data.wallboxes (fetched once at setup) drives sub-device
+    # registration; this list is the live source for the assignment select.
+    wallboxes: list[Any]  # list[onekommafive.models.Wallbox]
 
 
 @dataclass
@@ -482,12 +486,18 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
         # First-wins view keeps existing callers (device-info anchoring, single-
         # asset lookups) working; multi-asset callers reach for the *_list map.
         assets_by_type = {t: bucket[0] for t, bucket in assets_by_type_list.items()}
+        wallboxes: list[Any] = []
+        try:
+            wallboxes = list(self._system.get_wallboxes() or [])
+        except Exception as err:
+            _LOGGER.debug("Wallbox inventory fetch failed: %s", err)
         return SystemStatusData(
             site_status=site.status,
             assets=assets,
             active_features=features,
             assets_by_type=assets_by_type,
             assets_by_type_list=assets_by_type_list,
+            wallboxes=wallboxes,
         )
 
 

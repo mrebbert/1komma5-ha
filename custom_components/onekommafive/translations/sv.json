@@ -389,6 +389,9 @@
           "quick_charge": "Snabbladdning",
           "solar_charge": "Sol-laddning"
         }
+      },
+      "wallbox_assigned_vehicle": {
+        "name": "Tilldelat fordon"
       }
     },
     "number": {

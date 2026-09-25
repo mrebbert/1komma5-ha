@@ -389,6 +389,9 @@
           "quick_charge": "Snel laden",
           "solar_charge": "Zonne-laden"
         }
+      },
+      "wallbox_assigned_vehicle": {
+        "name": "Toegewezen voertuig"
       }
     },
     "number": {

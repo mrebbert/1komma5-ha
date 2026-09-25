@@ -389,6 +389,9 @@
           "quick_charge": "Pikalataus",
           "solar_charge": "Aurinkolataus"
         }
+      },
+      "wallbox_assigned_vehicle": {
+        "name": "Määritetty ajoneuvo"
       }
     },
     "number": {

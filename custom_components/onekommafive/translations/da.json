@@ -389,6 +389,9 @@
           "quick_charge": "Hurtig opladning",
           "solar_charge": "Solcelle-opladning"
         }
+      },
+      "wallbox_assigned_vehicle": {
+        "name": "Tildelt køretøj"
       }
     },
     "number": {

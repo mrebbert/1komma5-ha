@@ -5,7 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.62] - 2026-09-27
+## [0.1.63] - 2026-09-27
+
+### Added
+- **`select.<sys>_<wallbox>_assigned_vehicle`** — one select per wallbox to bind a vehicle profile to the wallbox from Home Assistant (feature request #24). Options are the site's vehicles; selecting an option calls the 1KOMMA5° API's assignment endpoint (SDK ≥ 0.5.0). The 1KOMMA5° model is 1:1 exclusive; the previously bound vehicle is released automatically by the backend in the same call. Sites with a single vehicle see the entity but have nothing to switch (no UI breakage, just an inert control).
+- **Service `onekommafive.assign_ev_to_wallbox`** — id-addressed counterpart to the select entity for automations that carry the vehicle and wallbox as data. Schema: `wallbox_id`, `ev_id` (both required); returns `{success, previous_ev_id}` so automations can log the swap.
+- System-status coordinator now surfaces the wallbox inventory with live `assigned_ev_id` (5-minute cadence) — needed to drive the assignment select without a dedicated coordinator.
 
 ### Fixed
 - `sensor.<sys>_optimization_event_count` now counts logical 15-minute slots instead of API event objects. The `/heartbeat-ai/optimizations` endpoint aggregates consecutive same-decision slots within a one-hour bucket into a single event, so counting objects was silently under-reporting by up to a factor of four. Existing installs will see the sensor step up on the first refresh after the update; the new value is correct, the previous one was too low.
@@ -14,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - `attributes.to` on `sensor.<sys>_optimization_last_decision` and on the `decisions[]` entries under `sensor.<sys>_optimization_event_count` now reflects the aggregated slot-span end (was: the end of the first slot). New `slot_count` attribute exposes how many 15-min slots the decision covers.
 - Bus event `onekommafive_optimization_decision` gains `end` (aggregated span end) and `slot_count` fields alongside the existing `to` (first-slot end, kept for compatibility).
-- Bump the `onekommafive` SDK pin to `>=0.4.2,<0.5` (from `>=0.4.0,<0.5`). Upstream `0.4.1` is contributor-tooling only (uv lockfile in the repo, Dependabot switched to the uv ecosystem, second CI job that runs `uv sync --frozen && uv run pytest`); `0.4.2` documents the aggregated optimization-events semantics and adds the `slot_count` / `end_time` accessors that back all three fixes above.
+- Bump the `onekommafive` SDK pin to `>=0.5.0,<0.6` (from `>=0.4.0,<0.5`). Upstream `0.4.1` is contributor-tooling only (uv lockfile in the repo, Dependabot switched to the uv ecosystem, second CI job that runs `uv sync --frozen && uv run pytest`). `0.4.2` documents the aggregated optimization-events semantics and adds the `slot_count` / `end_time` accessors that back the optimization fixes above. `0.5.0` adds `EVCharger.assign_charger(charger_id)` — the write path that backs the assignment surface.
 
 ## [0.1.61] - 2026-09-24
 

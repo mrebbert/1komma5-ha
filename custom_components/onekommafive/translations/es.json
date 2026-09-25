@@ -389,6 +389,9 @@
           "quick_charge": "Carga rápida",
           "solar_charge": "Carga solar"
         }
+      },
+      "wallbox_assigned_vehicle": {
+        "name": "Vehículo asignado"
       }
     },
     "number": {

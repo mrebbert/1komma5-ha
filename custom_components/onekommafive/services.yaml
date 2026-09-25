@@ -86,3 +86,20 @@ get_heartbeat_metrics:
       selector:
         config_entry:
           integration: onekommafive
+
+assign_ev_to_wallbox:
+  fields:
+    wallbox_id:
+      required: true
+      example: "5f8c9b2e-1234-4a5b-9c8d-1a2b3c4d5e6f"
+      selector:
+        text:
+    ev_id:
+      required: true
+      example: "e7d3f412-abcd-4321-8765-fedcba098765"
+      selector:
+        text:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: onekommafive
