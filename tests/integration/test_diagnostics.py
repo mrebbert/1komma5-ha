@@ -192,3 +192,67 @@ async def test_diagnostics_is_json_serialisable(hass: HomeAssistant, mock_system
     # Must not raise.
     json.dumps(diag)
     assert diag["sdk_version"]  # version() returns a string for the installed SDK
+
+
+async def test_diagnostics_1k5_native_wallbox_30401_hint(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """A 1K5-backend install with no gateways and a 30401 wallbox error must
+    surface ``emp_type_1k5_native_hint=True`` — the flag that tells support
+    the SDK's wallbox endpoint routing did not settle for this account.
+
+    The Wallbox endpoint is site-scoped since SDK 0.2.0 and normally succeeds
+    on 1K5 too; the hint is our safety net for the rare exception.
+    """
+    details = MagicMock(
+        customer_id="cust-1",
+        emp_type="1K5",  # 1K5 backend
+        status="ACTIVE",
+        dynamic_pulse_compatible=True,
+        energy_trader_active=True,
+        electricity_contract_active=True,
+        has_third_party_smart_meter=None,
+        earliest_measurement="2024-01-15",
+        created_at=None,
+        updated_at=None,
+        device_gateways=[],  # no gateways → cloud-native install
+        address_country="DE",
+    )
+    system = mock_system_factory(system_id="sys-1", details=details, device_gateways=[])
+    entry = await _setup(hass, system)
+
+    # Setup succeeded with the default empty-list get_wallboxes; the 30401
+    # branch triggers only when the diagnostics call itself hits the error.
+    system.get_wallboxes.side_effect = RuntimeError(
+        "HTTP 400 - error 30401 - endpoint not available"
+    )
+    diag = await async_get_config_entry_diagnostics(hass, entry)
+
+    wallboxes = diag["system"]["wallboxes"]
+    assert wallboxes and len(wallboxes) == 1
+    entry_snapshot = wallboxes[0]
+    assert entry_snapshot["emp_type"] == "1K5"
+    assert entry_snapshot["device_gateway_count"] == 0
+    assert entry_snapshot.get("emp_type_1k5_native_hint") is True
+
+
+async def test_async_remove_config_entry_device_allows_removal(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """The remove-device handler returns True so orphaned sub-devices can be
+    deleted via the HA UI. Reload after a delete recreates the sub-device.
+    """
+    from custom_components.onekommafive import async_remove_config_entry_device
+
+    system = mock_system_factory(system_id="sys-1")
+    entry = await _setup(hass, system)
+
+    # Pick any device the integration owns.
+    from homeassistant.helpers import device_registry as dr
+
+    dev_reg = dr.async_get(hass)
+    devices = dr.async_entries_for_config_entry(dev_reg, entry.entry_id)
+    assert devices, "expected the integration to have registered at least one device"
+
+    allowed = await async_remove_config_entry_device(hass, entry, devices[0])
+    assert allowed is True

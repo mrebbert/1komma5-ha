@@ -134,3 +134,57 @@ async def test_get_cheapest_window_validation_rejects_short_duration(
             blocking=True,
             return_response=True,
         )
+
+
+async def test_get_cheapest_window_respects_earliest_start_and_latest_end(
+    hass: HomeAssistant, integration_with_prices
+) -> None:
+    """``earliest_start`` must exclude the true cheapest slot pair.
+
+    The forecast is 4 × 15-min slots at (0.30, 0.10, 0.05, 0.40); the true
+    30-min cheapest window is slots 1+2 (avg 0.075). Constraining
+    ``earliest_start`` to the third slot forces the resolver to pick
+    slots 2+3 (avg 0.225 → still the minimum among what is allowed).
+    """
+    forecast = integration_with_prices.runtime_data.price_coordinator.data.forecast
+    first_slot_start = datetime.datetime.fromisoformat(forecast[0]["start"])
+    third_slot_start = first_slot_start + datetime.timedelta(minutes=30)
+
+    response = await hass.services.async_call(
+        DOMAIN,
+        "get_cheapest_window",
+        {
+            "duration_minutes": 30,
+            "earliest_start": third_slot_start.isoformat(),
+        },
+        blocking=True,
+        return_response=True,
+    )
+    assert response["found"] is True
+    assert response["slot_count"] == 2
+    # Only slots 2+3 are eligible → (0.05 + 0.40) / 2 = 0.225
+    assert response["average_price"] == pytest.approx(0.225)
+
+
+async def test_get_cheapest_window_latest_end_excludes_outside_slots(
+    hass: HomeAssistant, integration_with_prices
+) -> None:
+    """A ``latest_end`` before the true cheapest slot flips the result."""
+    forecast = integration_with_prices.runtime_data.price_coordinator.data.forecast
+    first_slot_start = datetime.datetime.fromisoformat(forecast[0]["start"])
+    # Cut off after the first two slots (0.30, 0.10) → only pair is that.
+    latest_end = first_slot_start + datetime.timedelta(minutes=30)
+
+    response = await hass.services.async_call(
+        DOMAIN,
+        "get_cheapest_window",
+        {
+            "duration_minutes": 30,
+            "latest_end": latest_end.isoformat(),
+        },
+        blocking=True,
+        return_response=True,
+    )
+    assert response["found"] is True
+    # Only slots 0+1 fit inside the window → (0.30 + 0.10) / 2 = 0.20
+    assert response["average_price"] == pytest.approx(0.20)
