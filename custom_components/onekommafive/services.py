@@ -249,9 +249,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         Wraps ``EVCharger.assign_charger(wallbox_id)`` (SDK ≥ 0.5.0). The
         1KOMMA5° backend is 1:1 exclusive — the previously bound EV, if any,
         is released automatically. ``previous_ev_id`` is captured from the
-        local system-status cache before the write so automations can log
-        the swap; it is ``None`` when the wallbox had no assignment or when
-        the cache is not yet populated.
+        live-coordinator cache before the write so automations can log the
+        swap; it is ``None`` when the wallbox had no assignment or when the
+        cache is not yet populated.
         """
         entry = _resolve_config_entry(hass, call)
         wallbox_id: str = call.data["wallbox_id"]
@@ -265,21 +265,18 @@ def async_setup_services(hass: HomeAssistant) -> None:
         if target_ev is None:
             raise HomeAssistantError(f"Vehicle '{ev_id}' not found")
 
-        status = data.system_status_coordinator.data
         known_wallbox_ids: set[str] = set()
         previous_ev_id: str | None = None
-        if status is not None:
-            for wb in getattr(status, "wallboxes", []) or []:
-                wb_id = getattr(wb, "id", None)
-                if wb_id:
-                    known_wallbox_ids.add(wb_id)
-                if wb_id == wallbox_id:
-                    previous_ev_id = getattr(wb, "assigned_ev_id", None)
+        for wb in getattr(live, "wallboxes", []) or []:
+            wb_id = getattr(wb, "id", None)
+            if wb_id:
+                known_wallbox_ids.add(wb_id)
+            if wb_id == wallbox_id:
+                previous_ev_id = getattr(wb, "assigned_ev_id", None)
         if known_wallbox_ids and wallbox_id not in known_wallbox_ids:
             raise HomeAssistantError(f"Wallbox '{wallbox_id}' not found")
 
         await hass.async_add_executor_job(target_ev.assign_charger, wallbox_id)
-        await data.system_status_coordinator.async_request_refresh()
         await data.live_coordinator.async_request_refresh()
         return cast(
             ServiceResponse,

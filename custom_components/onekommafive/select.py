@@ -23,7 +23,7 @@ from homeassistant.util import slugify
 
 from . import OneKomma5ConfigEntry
 from .const import DOMAIN
-from .coordinator import OneKomma5LiveCoordinator, OneKomma5SystemStatusCoordinator
+from .coordinator import OneKomma5LiveCoordinator
 from .entity import (
     OneKomma5EVEntity,
     apply_stable_entity_ids,
@@ -45,7 +45,6 @@ async def async_setup_entry(
     """Set up select entities from a config entry."""
     data = entry.runtime_data
     live_coordinator = data.live_coordinator
-    system_status_coordinator = data.system_status_coordinator
     system = data.system
     system_id = system.id()
     system_name = data.system_name
@@ -76,7 +75,6 @@ async def async_setup_entry(
         key = wallbox_sub_device_key(wb_id, wallbox_count)
         entities.append(
             OneKomma5WallboxAssignmentSelect(
-                system_status_coordinator,
                 live_coordinator,
                 system_id,
                 system_name,
@@ -150,16 +148,13 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         await self.coordinator.async_request_refresh()
 
 
-class OneKomma5WallboxAssignmentSelect(
-    CoordinatorEntity[OneKomma5SystemStatusCoordinator], SelectEntity
-):
+class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinator], SelectEntity):
     """Select entity that binds a vehicle profile to a wallbox.
 
-    Primary coordinator is the system-status coordinator (5-min cadence)
-    because it carries the live ``Wallbox.assigned_ev_id``. The live
-    coordinator supplies the vehicle inventory used to build the option
-    list — the two refresh at different intervals, so both are triggered
-    after a select-option write.
+    Rides the 30-second live coordinator so app-side assignment changes
+    surface in HA within one tick. Both ``Wallbox.assigned_ev_id`` (the
+    state) and the vehicle inventory (the options) live in the same
+    ``LiveData`` payload; one refresh keeps the entity consistent.
     """
 
     _attr_has_entity_name = True
@@ -168,8 +163,7 @@ class OneKomma5WallboxAssignmentSelect(
 
     def __init__(
         self,
-        coordinator: OneKomma5SystemStatusCoordinator,
-        live_coordinator: OneKomma5LiveCoordinator,
+        coordinator: OneKomma5LiveCoordinator,
         system_id: str,
         system_name: str,
         wallbox: Any,
@@ -180,7 +174,6 @@ class OneKomma5WallboxAssignmentSelect(
         from homeassistant.helpers.device_registry import DeviceInfo
 
         super().__init__(coordinator)
-        self._live_coordinator = live_coordinator
         self._system_id = system_id
         self._wallbox_id = wallbox.id
         self._attr_unique_id = f"{system_id}_{self._wallbox_id}_assigned_vehicle"
@@ -197,9 +190,9 @@ class OneKomma5WallboxAssignmentSelect(
         self._attr_device_info = DeviceInfo(identifiers={identifier})
 
     def _ev_chargers(self) -> list[Any]:
-        if self._live_coordinator.data is None:
+        if self.coordinator.data is None:
             return []
-        return self._live_coordinator.data.ev_chargers
+        return self.coordinator.data.ev_chargers
 
     def _current_wallbox(self) -> Any | None:
         if self.coordinator.data is None:
@@ -244,4 +237,3 @@ class OneKomma5WallboxAssignmentSelect(
             return
         await self.hass.async_add_executor_job(target_ev.assign_charger, self._wallbox_id)
         await self.coordinator.async_request_refresh()
-        await self._live_coordinator.async_request_refresh()

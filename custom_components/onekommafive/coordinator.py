@@ -46,6 +46,10 @@ class LiveData:
     live_overview: Any  # onekommafive.models.LiveOverview
     ev_chargers: list[Any]  # list[onekommafive.ev_charger.EVCharger]
     ems_settings: Any  # onekommafive.models.EmsSettings
+    # Wallbox inventory with live ``assigned_ev_id`` — piggy-backs the 30-sec
+    # live cadence so app-side assignment changes surface in HA within one
+    # tick instead of waiting for the 5-min system-status coordinator.
+    wallboxes: list[Any]  # list[onekommafive.models.Wallbox]
 
 
 @dataclass
@@ -89,10 +93,6 @@ class SystemStatusData:
     # full list per asset type; needed wherever more than one asset of a type
     # may realistically appear (currently EV_CHARGER for multi-wallbox setups)
     assets_by_type_list: dict[str, list[Any]]
-    # Wallbox inventory with live ``assigned_ev_id`` (5-min refresh cadence).
-    # OneKomma5Data.wallboxes (fetched once at setup) drives sub-device
-    # registration; this list is the live source for the assignment select.
-    wallboxes: list[Any]  # list[onekommafive.models.Wallbox]
 
 
 @dataclass
@@ -207,10 +207,19 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             except Exception:
                 _LOGGER.debug("EMS settings not available (no DeviceGateway?), skipping")
                 ems_settings = None
+        # A wallbox-endpoint blip must not kill the live loop — degrade to an
+        # empty list so the assignment select renders `unknown` instead of the
+        # entity dropping to `unavailable`.
+        try:
+            wallboxes = list(self._system.get_wallboxes() or [])
+        except Exception as err:
+            _LOGGER.debug("Wallbox inventory fetch failed: %s", err)
+            wallboxes = []
         return LiveData(
             live_overview=live_overview,
             ev_chargers=ev_chargers,
             ems_settings=ems_settings,
+            wallboxes=wallboxes,
         )
 
     async def _on_data(self, data: LiveData) -> None:
@@ -486,18 +495,12 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
         # First-wins view keeps existing callers (device-info anchoring, single-
         # asset lookups) working; multi-asset callers reach for the *_list map.
         assets_by_type = {t: bucket[0] for t, bucket in assets_by_type_list.items()}
-        wallboxes: list[Any] = []
-        try:
-            wallboxes = list(self._system.get_wallboxes() or [])
-        except Exception as err:
-            _LOGGER.debug("Wallbox inventory fetch failed: %s", err)
         return SystemStatusData(
             site_status=site.status,
             assets=assets,
             active_features=features,
             assets_by_type=assets_by_type,
             assets_by_type_list=assets_by_type_list,
-            wallboxes=wallboxes,
         )
 
 
