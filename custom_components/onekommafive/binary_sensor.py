@@ -31,6 +31,12 @@ from .entity import (
 )
 from .helpers import active_optimization_event
 
+# All entities read from the shared DataUpdateCoordinator instances built in
+# ``async_setup_entry``; HA does not need to serialise per-platform update
+# calls on top of that. Explicit declaration satisfies the Silver quality
+# scale rule ``parallel-updates``.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

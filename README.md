@@ -81,6 +81,12 @@ One-click open:
 
 Credentials are stored securely in the Home Assistant config entry. Sensors appear within seconds.
 
+### Removing the integration
+
+Under **Settings → Devices & Services → 1KOMMA5° → ⋮ → Delete**. HA cleans up all entities, sub-devices and stored credentials — the integration owns nothing else on your machine.
+
+Individual sub-devices (Wallbox, Vehicle, Heat pump, …) can also be removed one at a time from the device view (**Devices → click the sub-device → ⋮ → Delete device**), useful when a wallbox is retired: the parent device stays put and the entities come back if the cloud reports the hardware again on the next reload.
+
 ---
 
 ## Configuration

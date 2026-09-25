@@ -67,6 +67,33 @@ async def test_user_flow_cannot_connect_shows_error(
     assert result["errors"] == {"base": "cannot_connect"}
 
 
+async def test_user_flow_unexpected_exception_shows_unknown_error(
+    hass: HomeAssistant,
+) -> None:
+    """Any other exception coming out of the library surfaces as ``unknown``.
+
+    Guards against a future SDK error class that the two named branches above
+    don't cover: the config flow must still hand the user a form with a
+    readable error instead of raising through to HA.
+    """
+    with (
+        patch("onekommafive.systems.Systems") as mock_systems_cls,
+        patch("onekommafive.client.Client"),
+    ):
+        mock_systems_cls.return_value.get_systems.side_effect = RuntimeError("boom")
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {"username": "u@x.de", "password": "pw"},
+        )
+
+    assert result["type"] == "form"
+    assert result["errors"] == {"base": "unknown"}
+
+
 # ----------------------------------------------------------------------------
 # user flow — success paths
 #

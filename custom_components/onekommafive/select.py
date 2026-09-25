@@ -34,6 +34,9 @@ _LOGGER = logging.getLogger(__name__)
 # HA translation keys must be lowercase; the API uses UPPER_CASE enum values.
 CHARGING_MODE_OPTIONS = ["smart_charge", "quick_charge", "solar_charge"]
 
+# Coordinator-based reads; see binary_sensor.py for the rationale.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

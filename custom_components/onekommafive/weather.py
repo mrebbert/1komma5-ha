@@ -25,6 +25,9 @@ from .coordinator import OneKomma5WeatherCoordinator
 from .entity import system_device_info
 from .helpers import weather_symbol_to_ha_condition
 
+# Coordinator-based reads; see binary_sensor.py for the rationale.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

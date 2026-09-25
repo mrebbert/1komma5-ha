@@ -18,6 +18,9 @@ from .entity import OneKomma5Entity, apply_stable_entity_ids, is_1k5_backend
 
 _LOGGER = logging.getLogger(__name__)
 
+# Coordinator-based reads; see binary_sensor.py for the rationale.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

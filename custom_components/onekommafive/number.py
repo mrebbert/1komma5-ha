@@ -69,6 +69,9 @@ EV_NUMBERS: tuple[OneKomma5EVNumberDescription, ...] = (
     ),
 )
 
+# Coordinator-based reads; see binary_sensor.py for the rationale.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
