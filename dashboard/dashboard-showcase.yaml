@@ -443,6 +443,23 @@ views:
                 - entity: time.CAR_IDENTIFIER_abfahrtzeit
                   name: Tägliche Abfahrtzeit
 
+      # Wallbox → Fahrzeug (seit v0.1.63). Ein Select pro physischer Wallbox
+      # bindet ein Fahrzeugprofil an die Wallbox. Bei einer einzelnen Wallbox
+      # heißt der Sub-Device "wallbox"; bei mehreren nutzt HA den Slug des
+      # Wallbox-Namens (z. B. select.SYSTEM_NAME_garage_assigned_vehicle) —
+      # dann pro Wallbox eine eigene Karte anlegen.
+      - type: grid
+        cards:
+          - type: heading
+            heading: Wallbox-Zuweisung
+            heading_style: title
+            icon: mdi:car-arrow-right
+          - type: entities
+            entities:
+              - entity: select.SYSTEM_NAME_wallbox_assigned_vehicle
+                name: Zugewiesenes Fahrzeug
+                secondary_info: last-updated
+
       - type: grid
         cards:
           - type: heading

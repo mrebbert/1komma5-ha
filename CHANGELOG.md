@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **`select.<sys>_<wallbox>_assigned_vehicle`** — one select per wallbox to bind a vehicle profile to the wallbox from Home Assistant (feature request #24). Options are the site's vehicles; selecting an option calls the 1KOMMA5° API's assignment endpoint (SDK ≥ 0.5.0). The 1KOMMA5° model is 1:1 exclusive; the previously bound vehicle is released automatically by the backend in the same call. Sites with a single vehicle see the entity but have nothing to switch (no UI breakage, just an inert control).
 - **Service `onekommafive.assign_ev_to_wallbox`** — id-addressed counterpart to the select entity for automations that carry the vehicle and wallbox as data. Schema: `wallbox_id`, `ev_id` (both required); returns `{success, previous_ev_id}` so automations can log the swap.
+- **Automation blueprint `vehicle_at_wallbox.yaml`** — one automation per vehicle. Trigger = the vehicle's plug-in binary sensor (from any other integration) goes `on`, action = the assignment select flips to the vehicle's option. Turns "car plugs in" into "1KOMMA5° binds the right profile" without hand-crafting the automation.
+- Example dashboards (`dashboard.yaml`, `dashboard-showcase.yaml`) gain a *Wallbox → Fahrzeug* card in the EV view.
 - System-status coordinator now surfaces the wallbox inventory with live `assigned_ev_id` (5-minute cadence) — needed to drive the assignment select without a dedicated coordinator.
 
 ### Fixed

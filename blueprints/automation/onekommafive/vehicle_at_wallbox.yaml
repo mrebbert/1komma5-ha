@@ -1,0 +1,77 @@
+blueprint:
+  name: 1KOMMA5° — Vehicle at wallbox
+  description: >
+    When a vehicle is physically connected to your wallbox, bind its
+    1KOMMA5° profile to the wallbox — so the vehicle's charging mode,
+    target SoC and departure schedule from 1KOMMA5° apply to the ongoing
+    session.
+
+
+    Typical setup: one automation per vehicle. Each automation watches a
+    binary_sensor that goes ON when *that* car plugs in (from the car's
+    own manufacturer integration, an OCPP sensor, a smart-plug's current
+    draw, or any other source). When the sensor flips ON, the blueprint
+    calls `select.select_option` on the wallbox's assigned-vehicle select
+    with the option slug that identifies this vehicle in 1KOMMA5°.
+
+
+    The 1KOMMA5° model is 1:1 exclusive: assigning one vehicle
+    automatically releases whichever vehicle was previously bound to the
+    same wallbox. No "unassign" call is needed, and there is none in the
+    API.
+
+
+    You do not need to do anything on unplug — the assignment stays with
+    the last plugged-in vehicle until the other one plugs in and this
+    blueprint re-fires.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/vehicle_at_wallbox.yaml
+
+  input:
+    connected_binary_sensor:
+      name: Vehicle-connected binary sensor
+      description: >
+        The binary sensor that reads ON when *this specific vehicle* is
+        plugged into the wallbox. Comes from your car integration or a
+        current-based smart-plug helper — not from 1KOMMA5° (the
+        integration exposes wallbox connectivity, not per-vehicle plug
+        state).
+      selector:
+        entity:
+          domain: binary_sensor
+    assignment_select:
+      name: Wallbox assignment select
+      description: >
+        The 1KOMMA5° assignment select for the wallbox this vehicle
+        plugs into. Named ``select.<system>_<wallbox>_assigned_vehicle``
+        — one per wallbox on the site.
+      selector:
+        entity:
+          domain: select
+          integration: onekommafive
+    vehicle_option:
+      name: Vehicle option
+      description: >
+        The exact option value that represents this vehicle in the
+        assignment select — a lowercase slug of the vehicle's name as
+        configured in the 1KOMMA5° app (e.g. ``bmw_i3``,
+        ``tesla_model_y``). Check the assignment select's ``options``
+        attribute in Developer Tools → States for the exact string.
+      selector:
+        text:
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input connected_binary_sensor
+    to: "on"
+
+action:
+  - service: select.select_option
+    target:
+      entity_id: !input assignment_select
+    data:
+      option: !input vehicle_option

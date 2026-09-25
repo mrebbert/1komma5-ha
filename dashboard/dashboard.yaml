@@ -373,6 +373,16 @@ views:
           - type: entities
             entities:
               - entity: select.CAR_IDENTIFIER_lademodus
+          # Wallbox → Fahrzeug (seit v0.1.63). Placeholder-Konvention: bei
+          # einer einzelnen Wallbox trägt der Sub-Device den Namen "wallbox",
+          # bei mehreren Wallboxen den Slug des jeweiligen Wallbox-Namens
+          # (z. B. select.SYSTEM_NAME_garage_assigned_vehicle). Der Options-
+          # Zustand ist der Slug des zugewiesenen Fahrzeugs.
+          - type: entities
+            title: Wallbox → Fahrzeug
+            entities:
+              - entity: select.SYSTEM_NAME_wallbox_assigned_vehicle
+                name: Zugewiesenes Fahrzeug
           - type: entities
             entities:
               - entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell

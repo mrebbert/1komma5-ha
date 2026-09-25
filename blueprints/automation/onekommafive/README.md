@@ -1,6 +1,6 @@
 # 1KOMMA5° automation blueprints
 
-Eight ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
+Nine ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
 common automations on top of this integration.
 
 ## Importing
@@ -61,6 +61,21 @@ want to hear about hour-or-longer negative windows (≥ 4 slots).
 
 Inputs: `…_negative_price_slots_tomorrow` sensor, minimum slot count,
 notify service, title, message (Jinja-templatable).
+
+### `vehicle_at_wallbox.yaml` — Bind vehicle profile when it plugs in
+Watches a binary sensor that reads ON when *one specific vehicle* is plugged
+into your wallbox. When it fires, calls `select.select_option` on the
+wallbox's assignment select (`select.<sys>_<wallbox>_assigned_vehicle`,
+v0.1.63) so 1KOMMA5° applies that vehicle's charging mode, target SoC and
+departure schedule to the ongoing session.
+
+Typical setup: one automation per vehicle. Each points at the connect-signal
+that identifies its car (from the car integration, an OCPP wallbox sensor,
+or a smart-plug's current draw). The 1KOMMA5° model is 1:1 exclusive — the
+previously bound vehicle is released automatically in the same API call.
+
+Inputs: vehicle-connected binary sensor, wallbox assignment select, vehicle
+option slug (e.g. `bmw_i3`; look up in the select's `options` attribute).
 
 ### `ev_charge_on_pv_surplus.yaml` — EV charge on PV surplus
 Toggles a target switch (smart plug, `input_boolean`, or hand-off to the
