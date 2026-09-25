@@ -26,7 +26,6 @@ from .const import DOMAIN
 from .coordinator import OneKomma5LiveCoordinator, OneKomma5SystemStatusCoordinator
 from .entity import (
     OneKomma5EVEntity,
-    _set_via,
     apply_stable_entity_ids,
     ev_wallbox_parent,
     wallbox_sub_device_key,
@@ -69,7 +68,6 @@ async def async_setup_entry(
             )
 
     wallboxes = getattr(data, "wallboxes", None) or []
-    wallbox_device_ids: dict[str, str] = getattr(data, "wallbox_device_ids", None) or {}
     wallbox_count = len(wallboxes)
     for wallbox in wallboxes:
         wb_id = getattr(wallbox, "id", None)
@@ -83,9 +81,7 @@ async def async_setup_entry(
                 system_id,
                 system_name,
                 wallbox,
-                wallbox_device_id=wallbox_device_ids.get(wb_id),
                 wallbox_parent_identifier=(DOMAIN, f"{system_id}_{key}"),
-                parent_device_id=data.system_device_id,
             )
         )
 
@@ -178,9 +174,7 @@ class OneKomma5WallboxAssignmentSelect(
         system_name: str,
         wallbox: Any,
         *,
-        wallbox_device_id: str | None = None,
         wallbox_parent_identifier: tuple[str, str] | None = None,
-        parent_device_id: str | None = None,
     ) -> None:
         """Initialize the assignment select."""
         from homeassistant.helpers.device_registry import DeviceInfo
@@ -193,20 +187,14 @@ class OneKomma5WallboxAssignmentSelect(
         self._stable_object_id = (
             f"{slugify(system_name)}_{slugify(self._wallbox_id)}_assigned_vehicle"
         )
-        # Parent the entity onto the wallbox sub-device. The identifier
-        # tuple is the pre-registered sub-device we get from
-        # ``_setup_wallbox_sub_devices``; DeviceInfo carries only that
-        # identifier so HA doesn't create a duplicate sub-device.
-        if wallbox_parent_identifier is not None:
-            di = DeviceInfo(identifiers={wallbox_parent_identifier})
-        else:
-            di = DeviceInfo(identifiers={(DOMAIN, f"{system_id}_wallbox")})
-        self._attr_device_info = _set_via(
-            di,
-            system_id,
-            wallbox_device_id if wallbox_device_id is not None else parent_device_id,
-            parent_identifier=None,
-        )
+        # Parent the entity onto the pre-registered wallbox sub-device.
+        # ``_setup_wallbox_sub_devices`` already registered that sub-device
+        # with the correct via_device pointing at the system parent — we
+        # must only re-declare the identifier so HA attaches this entity
+        # to the existing device (never re-set via_device on ourselves,
+        # which would raise "A device can not be its own via device").
+        identifier = wallbox_parent_identifier or (DOMAIN, f"{system_id}_wallbox")
+        self._attr_device_info = DeviceInfo(identifiers={identifier})
 
     def _ev_chargers(self) -> list[Any]:
         if self._live_coordinator.data is None:
