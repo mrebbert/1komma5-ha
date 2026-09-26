@@ -272,7 +272,10 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             sorted(current),
         )
         self._known_wallbox_ids = current
-        self.hass.async_create_task(self.hass.config_entries.async_reload(self._entry_id))
+        self.hass.async_create_task(
+            self.hass.config_entries.async_reload(self._entry_id),
+            name="onekommafive_reload_on_wallbox_change",
+        )
 
     def _update_ems_repair_issue(self, ems_available: bool) -> None:
         """Track consecutive EMS failures and create / delete the repair issue."""

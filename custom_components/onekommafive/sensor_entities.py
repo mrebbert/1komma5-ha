@@ -440,13 +440,12 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
     async def async_added_to_hass(self) -> None:
         """Restore accumulated value after HA restart."""
         await super().async_added_to_hass()
-        if (
-            restored := await self.async_get_last_sensor_data()
-        ) and restored.native_value is not None:
+        restored = await self.async_get_last_sensor_data()
+        # RestoreSensor may hand back date/Decimal/str — only accept numerics/strings
+        # that survive ``float(...)`` cleanly.
+        if restored is not None and isinstance(restored.native_value, (int, float, str)):
             try:
-                # RestoreSensor may hand back a non-numeric type (date/str);
-                # the except guards it. mypy can't see the runtime guard.
-                self._accumulated = float(restored.native_value)  # type: ignore[arg-type]
+                self._accumulated = float(restored.native_value)
             except (TypeError, ValueError):
                 self._accumulated = 0.0
 
@@ -555,14 +554,14 @@ class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, R
     async def async_added_to_hass(self) -> None:
         """Subscribe to coordinator; fall back to restored state if coordinator has no price."""
         await super().async_added_to_hass()
+        restored = await self.async_get_last_sensor_data()
         if (
             self._stable_price is None
-            and (restored := await self.async_get_last_sensor_data())
-            and restored.native_value is not None
+            and restored is not None
+            and isinstance(restored.native_value, (int, float, str))
         ):
             try:
-                # See the accumulator note above — non-numeric restore is guarded.
-                self._stable_price = float(restored.native_value)  # type: ignore[arg-type]
+                self._stable_price = float(restored.native_value)
                 self.async_write_ha_state()
             except (TypeError, ValueError) as err:
                 _LOGGER.debug(
@@ -937,6 +936,7 @@ class OneKomma5DynamicPulsePriceGuaranteeSensor(OneKomma5SystemStatusEntity, Sen
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 4
     _attr_icon = "mdi:shield-check-outline"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,

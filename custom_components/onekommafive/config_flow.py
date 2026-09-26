@@ -36,7 +36,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class _SystemEntry:
     """System with pre-fetched title. ``system_id`` is captured up front so
     later steps do not have to touch the SDK for identity lookups.

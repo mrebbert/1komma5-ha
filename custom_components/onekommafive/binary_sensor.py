@@ -16,6 +16,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -521,6 +522,8 @@ class OneKomma5ActiveFeatureBinarySensor(OneKomma5SystemStatusEntity, BinarySens
     attribute lists.
     """
 
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     def __init__(
         self,
         coordinator: Any,
@@ -559,6 +562,8 @@ DETAILS_FLAG_SENSORS: tuple[tuple[str, str, str], ...] = (
 
 class OneKomma5DetailsFlagSensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
     """Binary sensor exposing one Boolean attribute of ``SystemDetails``."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
