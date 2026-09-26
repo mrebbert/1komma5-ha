@@ -12,6 +12,8 @@ data payloads can be large and are not needed for triage.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from functools import wraps
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
@@ -22,6 +24,23 @@ from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME
 from .entity import asset_redacted_dict, get_emp_type, is_1k5_backend
 
 TO_REDACT = {CONF_USERNAME, CONF_PASSWORD, CONF_SYSTEM_ID, "system_id", "unique_id"}
+
+
+def _null_safe(fn: Callable[[Any], dict[str, Any]]) -> Callable[[Any], dict[str, Any]]:
+    """Wrap a summariser so a ``None`` coordinator payload maps to ``{}``.
+
+    Each per-coordinator summariser starts with the same
+    ``if data is None: return {}`` guard; the decorator centralises it so the
+    summariser bodies only handle the populated case.
+    """
+
+    @wraps(fn)
+    def wrapper(data: Any) -> dict[str, Any]:
+        if data is None:
+            return {}
+        return fn(data)
+
+    return wrapper
 
 
 def _coordinator_snapshot(coord: Any) -> dict[str, Any]:
@@ -37,9 +56,8 @@ def _coordinator_snapshot(coord: Any) -> dict[str, Any]:
     }
 
 
+@_null_safe
 def _live_summary(data: Any) -> dict[str, Any]:
-    if data is None:
-        return {}
     return {
         "has_live_overview": data.live_overview is not None,
         "ev_charger_count": len(data.ev_chargers) if data.ev_chargers else 0,
@@ -47,9 +65,8 @@ def _live_summary(data: Any) -> dict[str, Any]:
     }
 
 
+@_null_safe
 def _price_summary(data: Any) -> dict[str, Any]:
-    if data is None:
-        return {}
     return {
         "current_price": data.current_price,
         "forecast_slot_count": len(data.forecast) if data.forecast else 0,
@@ -60,18 +77,16 @@ def _price_summary(data: Any) -> dict[str, Any]:
     }
 
 
+@_null_safe
 def _optimization_summary(data: Any) -> dict[str, Any]:
-    if data is None:
-        return {}
     return {
         "event_count": data.event_count,
         "last_decision": (data.last_event.decision if data.last_event is not None else None),
     }
 
 
+@_null_safe
 def _weather_summary(data: Any) -> dict[str, Any]:
-    if data is None:
-        return {}
     weather = data.weather
     return {
         "has_today": getattr(weather, "today", None) is not None,
@@ -82,9 +97,8 @@ def _weather_summary(data: Any) -> dict[str, Any]:
     }
 
 
+@_null_safe
 def _energy_summary(data: Any) -> dict[str, Any]:
-    if data is None:
-        return {}
     energy = data.energy
     return {
         "savings_eur": getattr(energy, "savings_eur", None),
@@ -93,16 +107,14 @@ def _energy_summary(data: Any) -> dict[str, Any]:
     }
 
 
+@_null_safe
 def _notifications_summary(data: Any) -> dict[str, Any]:
-    if data is None:
-        return {}
     notifications = getattr(data, "notifications", None) or []
     return {"count": len(notifications)}
 
 
+@_null_safe
 def _system_status_summary(data: Any) -> dict[str, Any]:
-    if data is None:
-        return {}
     asset_types = sorted({a.type for a in (data.assets or [])})
     return {
         "site_status": data.site_status,

@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 if TYPE_CHECKING:
     from onekommafive.models import DeviceGateway, SystemDetails, Wallbox
@@ -28,6 +29,15 @@ from .coordinator import (
     OneKomma5SystemStatusCoordinator,
     OneKomma5WeatherCoordinator,
 )
+from .entity import (
+    asset_device_info,
+    get_emp_type,
+    is_1k5_backend,
+    system_device_info,
+    wallbox_sub_device_key,
+)
+from .helpers import resolve_currency
+from .helpers import sdk_version as _read_sdk_version
 from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
@@ -78,6 +88,23 @@ class OneKomma5Data:
     # {Wallbox.id: device_registry id}; used to via_device the paired EV
     wallbox_device_ids: dict[str, str]
     device_gateways: list[DeviceGateway]  # Heartbeat gateways, surfaces in diagnostics
+
+    def named_coordinators(self) -> dict[str, DataUpdateCoordinator[Any]]:
+        """Return the seven coordinators keyed by the label used in services / diagnostics.
+
+        Single source of truth: adding an eighth coordinator now updates
+        ``services.refresh_now``, the diagnostics dump and the system-health
+        panel in one place.
+        """
+        return {
+            "live": self.live_coordinator,
+            "price": self.price_coordinator,
+            "optimization": self.optimization_coordinator,
+            "weather": self.weather_coordinator,
+            "system_status": self.system_status_coordinator,
+            "energy": self.energy_coordinator,
+            "notifications": self.notifications_coordinator,
+        }
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -148,8 +175,6 @@ def _remove_stale_wallbox_devices(
     entry whose identifier starts with ``f"{system_id}_wallbox"`` but does not
     match one of the currently-valid keys is removed from the device registry.
     """
-    from .entity import wallbox_sub_device_key
-
     keep = {
         f"{system_id}_{wallbox_sub_device_key(wb.id, len(wallboxes))}"
         for wb in wallboxes
@@ -186,8 +211,6 @@ def _setup_wallbox_sub_devices(
     sub-devices (see ``OneKomma5EVEntity``) via_device onto the matching
     wallbox so HA renders "Vehicle under Wallbox" in the UI.
     """
-    from .entity import asset_device_info, wallbox_sub_device_key
-
     ev_charger_assets: list[Any] = []
     if system_status_coordinator.data is not None:
         ev_charger_assets = system_status_coordinator.data.assets_by_type_list.get("EV_CHARGER", [])
@@ -230,8 +253,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     from onekommafive.errors import AuthenticationError, RequestError
     from onekommafive.systems import Systems
 
-    from .helpers import sdk_version as _read_sdk_version
-
     username: str = entry.data[CONF_USERNAME]
     password: str = entry.data[CONF_PASSWORD]
     system_id: str = entry.data[CONF_SYSTEM_ID]
@@ -271,11 +292,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         raise ConfigEntryNotReady(f"Cannot connect to 1KOMMA5° API: {err}") from err
 
     customer_id = getattr(details, "customer_id", None) if details else None
-    from .helpers import resolve_currency
-
     currency = resolve_currency(getattr(details, "address_country", None) if details else None)
-
-    from .entity import get_emp_type, is_1k5_backend
 
     emp_type = get_emp_type(details)
     live_coordinator = OneKomma5LiveCoordinator(
@@ -308,8 +325,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     # via `via_device_id` (device_registry id string) instead of the deprecated
     # `via_device` (identifier tuple). Deprecation removes the tuple form in
     # HA 2027.8; this migration keeps the log clean now.
-    from .entity import system_device_info
-
     device_registry = dr.async_get(hass)
     parent_device = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,

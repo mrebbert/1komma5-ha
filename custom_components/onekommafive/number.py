@@ -25,6 +25,8 @@ from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from onekommafive.models import ChargingMode
+
 from . import OneKomma5ConfigEntry
 from .entity import OneKomma5EVEntity, apply_stable_entity_ids
 
@@ -42,8 +44,6 @@ class OneKomma5EVNumberDescription(NumberEntityDescription):
 
 def _ev_smart_charge_available(ev: EVCharger) -> bool:
     """True only when the EV charger is in SMART_CHARGE mode."""
-    from onekommafive.models import ChargingMode
-
     return ev.charging_mode() == ChargingMode.SMART_CHARGE
 
 

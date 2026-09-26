@@ -43,13 +43,7 @@ async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
         data = getattr(entry, "runtime_data", None)
         if data is None:
             continue
-        for label, coord in (
-            ("live", data.live_coordinator),
-            ("price", data.price_coordinator),
-            ("optimization", data.optimization_coordinator),
-            ("weather", data.weather_coordinator),
-            ("system_status", data.system_status_coordinator),
-        ):
+        for label, coord in data.named_coordinators().items():
             info[f"{label}_last_update_success"] = bool(coord.last_update_success)
             # DataUpdateCoordinator's `last_update_success_time` was added in
             # HA 2024.10 and exposed publicly later; fall back gracefully so

@@ -210,15 +210,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         """
         entry = _resolve_config_entry(hass, call)
         target = call.data["coordinator"]
-        all_coords: dict[str, Any] = {
-            "live": entry.runtime_data.live_coordinator,
-            "price": entry.runtime_data.price_coordinator,
-            "optimization": entry.runtime_data.optimization_coordinator,
-            "weather": entry.runtime_data.weather_coordinator,
-            "system_status": entry.runtime_data.system_status_coordinator,
-            "energy": entry.runtime_data.energy_coordinator,
-            "notifications": entry.runtime_data.notifications_coordinator,
-        }
+        all_coords = entry.runtime_data.named_coordinators()
         selected = all_coords if target == "all" else {target: all_coords[target]}
 
         results = await asyncio.gather(

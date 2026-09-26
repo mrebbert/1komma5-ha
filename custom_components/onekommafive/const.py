@@ -14,9 +14,6 @@ SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS = 300  # 5 minutes
 ENERGY_UPDATE_INTERVAL_SECONDS = 900  # 15 minutes (API updates ~hourly)
 NOTIFICATION_UPDATE_INTERVAL_SECONDS = 300  # 5 minutes (bridge to HA event bus)
 
-ATTR_SYSTEM_ID = "system_id"
-ATTR_SYSTEM_NAME = "system_name"
-
 CONF_FEED_IN_TARIFF = "feed_in_tariff"
 DEFAULT_FEED_IN_TARIFF = 0.0803
 

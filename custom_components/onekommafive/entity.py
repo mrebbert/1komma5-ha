@@ -20,6 +20,7 @@ from .coordinator import (
     OneKomma5SystemStatusCoordinator,
     OneKomma5WeatherCoordinator,
 )
+from .helpers import get_current_price
 
 if TYPE_CHECKING:
     from onekommafive.ev_charger import EVCharger
@@ -277,7 +278,7 @@ def resolve_wallbox_for_ev(ev: EVCharger, wallboxes: list[Wallbox]) -> Wallbox |
     return None
 
 
-class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
+class SystemEntityBase[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
     """Generic base for all entities tied to a 1KOMMA5° system device.
 
     The five typed `OneKomma5*Entity` aliases below just bind the coordinator
@@ -320,17 +321,15 @@ class _BaseSystemEntity[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
                 self._attr_entity_registry_enabled_default = False
 
 
-class OneKomma5Entity(_BaseSystemEntity[OneKomma5LiveCoordinator]):
+class OneKomma5Entity(SystemEntityBase[OneKomma5LiveCoordinator]):
     """Base entity for live-data entities."""
 
 
-class OneKomma5PriceEntity(_BaseSystemEntity[OneKomma5PriceCoordinator]):
+class OneKomma5PriceEntity(SystemEntityBase[OneKomma5PriceCoordinator]):
     """Base entity for price-data entities."""
 
     def _dynamic_current_price(self) -> float | None:
         """Look up the current price using the dynamic helper if available."""
-        from .helpers import get_current_price  # local import to avoid cycles
-
         if self.coordinator.data is None:
             return None
         if self.coordinator.data.all_in_prices:
@@ -338,19 +337,19 @@ class OneKomma5PriceEntity(_BaseSystemEntity[OneKomma5PriceCoordinator]):
         return self.coordinator.data.current_price
 
 
-class OneKomma5OptimizationEntity(_BaseSystemEntity[OneKomma5OptimizationCoordinator]):
+class OneKomma5OptimizationEntity(SystemEntityBase[OneKomma5OptimizationCoordinator]):
     """Base entity for optimization-data entities."""
 
 
-class OneKomma5SystemStatusEntity(_BaseSystemEntity[OneKomma5SystemStatusCoordinator]):
+class OneKomma5SystemStatusEntity(SystemEntityBase[OneKomma5SystemStatusCoordinator]):
     """Base entity for system-status entities (connectivity, active features)."""
 
 
-class OneKomma5WeatherEntity(_BaseSystemEntity[OneKomma5WeatherCoordinator]):
+class OneKomma5WeatherEntity(SystemEntityBase[OneKomma5WeatherCoordinator]):
     """Base entity for sensors backed by the weather coordinator."""
 
 
-class OneKomma5EnergyEntity(_BaseSystemEntity[OneKomma5EnergyCoordinator]):
+class OneKomma5EnergyEntity(SystemEntityBase[OneKomma5EnergyCoordinator]):
     """Base entity for sensors backed by the energy (today) coordinator."""
 
 

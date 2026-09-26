@@ -46,9 +46,6 @@ class _SystemEntry:
     system_id: str
     title: str
 
-    def id(self) -> str:
-        return self.system_id
-
 
 class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for 1KOMMA5°."""
@@ -88,14 +85,14 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 if len(self._systems) == 1:
                     entry = self._systems[0]
-                    await self.async_set_unique_id(entry.id())
+                    await self.async_set_unique_id(entry.system_id)
                     self._abort_if_unique_id_configured()
                     return self.async_create_entry(
                         title=entry.title,
                         data={
                             CONF_USERNAME: self._username,
                             CONF_PASSWORD: self._password,
-                            CONF_SYSTEM_ID: entry.id(),
+                            CONF_SYSTEM_ID: entry.system_id,
                         },
                     )
                 return await self.async_step_system()
@@ -162,7 +159,7 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 existing_system_id = entry.data[CONF_SYSTEM_ID]
-                if not any(s.id() == existing_system_id for s in systems):
+                if not any(s.system_id == existing_system_id for s in systems):
                     errors["base"] = "system_not_found"
                 else:
                     return self.async_update_reload_and_abort(
@@ -188,7 +185,7 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
         """Handle system selection when the account has multiple systems."""
         if user_input is not None:
             system_id = user_input[CONF_SYSTEM_ID]
-            entry = next(e for e in self._systems if e.id() == system_id)
+            entry = next(e for e in self._systems if e.system_id == system_id)
             await self.async_set_unique_id(system_id)
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
@@ -200,7 +197,7 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
                 },
             )
 
-        system_options = {e.id(): e.title for e in self._systems}
+        system_options = {e.system_id: e.title for e in self._systems}
         return self.async_show_form(
             step_id="system",
             data_schema=vol.Schema({vol.Required(CONF_SYSTEM_ID): vol.In(system_options)}),

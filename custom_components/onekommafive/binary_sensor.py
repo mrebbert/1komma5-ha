@@ -353,11 +353,6 @@ class OneKomma5OptimizationDecisionSensor(
         return attrs
 
 
-def _redact_asset(asset: Any) -> dict[str, Any]:
-    """Strip asset attrs that may carry secrets (serial, IP, opaque id/name)."""
-    return asset_redacted_dict(asset)
-
-
 class OneKomma5SiteConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
     """Binary sensor reflecting whether the 1KOMMA5° cloud sees the site as CONNECTED."""
 
@@ -437,7 +432,7 @@ class OneKomma5AssetTypeConnectivitySensor(OneKomma5SystemStatusEntity, BinarySe
         return {
             "count": len(assets),
             "connected_count": sum(1 for a in assets if a.connection_status == "CONNECTED"),
-            "assets": [_redact_asset(a) for a in assets],
+            "assets": [asset_redacted_dict(a) for a in assets],
         }
 
 

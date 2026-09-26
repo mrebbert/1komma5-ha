@@ -39,7 +39,7 @@ from .entity import (
     OneKomma5SystemStatusEntity,
     OneKomma5WeatherEntity,
     QuarterHourUpdateMixin,
-    _BaseSystemEntity,
+    SystemEntityBase,
 )
 from .helpers import find_cheapest_window, get_current_price, trapezoidal_delta_kwh
 from .sensor_descriptions import (
@@ -770,7 +770,7 @@ class OneKomma5WeatherSensor(_DescriptionValueSensor, OneKomma5WeatherEntity, Se
         self.entity_description = description
 
 
-class OneKomma5DiagnosticSensor(_BaseSystemEntity[DataUpdateCoordinator[Any]], SensorEntity):
+class OneKomma5DiagnosticSensor(SystemEntityBase[DataUpdateCoordinator[Any]], SensorEntity):
     """Diagnostic sensor tracking the last successful coordinator update.
 
     Bound to the abstract ``DataUpdateCoordinator[Any]`` so one instance can

@@ -21,6 +21,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
+from onekommafive.models import ChargingMode
+
 from . import OneKomma5ConfigEntry
 from .coordinator import OneKomma5LiveCoordinator
 from .entity import (
@@ -128,8 +130,6 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Change the charging mode."""
-        from onekommafive.models import ChargingMode
-
         mode = ChargingMode(option.upper())
         ev = self._get_ev()
         if ev is None:
