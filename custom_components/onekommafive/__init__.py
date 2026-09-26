@@ -156,9 +156,7 @@ def _remove_stale_wallbox_devices(
         if getattr(wb, "id", None)
     }
     stale_prefix = f"{system_id}_wallbox"
-    for device in list(device_registry.devices.values()):
-        if entry_id not in device.config_entries:
-            continue
+    for device in dr.async_entries_for_config_entry(device_registry, entry_id):
         our_ids = [ident for ident in device.identifiers if ident[0] == DOMAIN]
         if not our_ids:
             continue
