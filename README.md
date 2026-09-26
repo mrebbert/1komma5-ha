@@ -386,6 +386,26 @@ Hidden by default (`entity_category: diagnostic`) — useful for troubleshooting
 
 ---
 
+## Data updates
+
+Every polled endpoint is fronted by its own `DataUpdateCoordinator`; the interval is chosen for the endpoint's actual change rate, not a single global tick. All coordinators are non-blocking on setup, so the integration surface comes up even when one of them times out (typical on the price coordinator right after HA restart).
+
+| Coordinator | Cadence | Fills |
+|-------------|---------|-------|
+| Live | 30 s | `live_overview`, `ev_chargers`, `ems_settings`, `wallboxes` (assignment stays fresh within one tick) |
+| System status | 5 min | Site connectivity, asset inventory, active feature flags |
+| Optimization | 15 min | Today's AI decision events + last-decision enum |
+| Energy | 15 min | Daily-cumulative cloud figures (`daily_savings`, `co2_saved_today`) |
+| Notifications | 5 min | New cloud push notifications → `onekommafive_notification` bus event |
+| Price | 1 h | Today + tomorrow's dynamic tariff forecast (timestamps are slot ENDs) |
+| Weather | 1 h | 48 h hourly forecast + sunshine totals |
+
+The intervals are compile-time constants; they can be temporarily overridden by calling `onekommafive.refresh_now` from an automation or the Developer Tools (see [Services & bus events](#services--bus-events)).
+
+**Slot-boundary redraws.** A few sensors (`cheap_electricity`, `cheapest_hour_now`, the two `stable_electricity_price`-derived cost accumulators) need to re-evaluate at `:00`/`:15`/`:30`/`:45` even if no coordinator has refreshed yet. A shared `QuarterHourUpdateMixin` triggers those state writes from a single time-listener; individual coordinators do NOT re-poll on the quarter, which would waste four polls per hour for no new data.
+
+---
+
 ## Services & bus events
 
 ### `onekommafive.get_cheapest_window` / `get_most_expensive_window`
@@ -596,6 +616,27 @@ See the `notify_negative_price_started.yaml` blueprint for a ready-made notifica
 
 ---
 
+## Supported devices
+
+The integration exposes whatever the 1KOMMA5° cloud reports for your site: every device it recognises comes through the shared `status_and_assets` endpoint, so any hardware 1KOMMA5° has certified for the Heartbeat platform surfaces automatically. No allowlist inside the integration.
+
+Observed hardware from live installs (diagnostic dumps, developer + reporter reports):
+
+| Sub-device | Manufacturers seen | Notes |
+|---|---|---|
+| Inverter (`HYBRID` asset) | Sungrow (`SH*RT-V112`), Enphase | Hybrid inverters carry the battery entities on the same sub-device |
+| Inverter + separate battery | FoxESS | Reports `PV_SYSTEM` + `BATTERY` split; `battery` sub-device is created only in that case |
+| Heat pump | Stiebel Eltron (`WPMsystem`), Vaillant, Buderus | Optional; sub-device only when 1KOMMA5° reports it |
+| Smart meter | Chint (`DTSU666`), Iskra | Backs the meter connectivity + feed-in revenue sensors |
+| Wallbox | go-e (`HOMEfix 11kW`), MENNEKES (`AMTRON`), Enphase (`EVSE_IQ2`), KEBA | Multi-wallbox sites get one sub-device per wallbox since v0.1.58 |
+| Vehicle profile | Any brand configured in the 1KOMMA5° app (Volkswagen, BMW, Tesla, Škoda, …) | Managed in the app under *Settings → Vehicles*; no HA-side pairing |
+
+**Unrecognised assets** (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the system parent; the integration deliberately does not create empty placeholder sub-devices for hardware it can't classify.
+
+If your hardware isn't on this list, that's expected: the entry surfaces the same way as long as 1KOMMA5° reports it. Please attach a diagnostics dump to an issue if a fresh device shows up as `UNKNOWN` or landed on the wrong sub-device.
+
+---
+
 ## Devices & entity structure
 
 Entities are grouped under one system parent device plus per-asset sub-devices — read off each hardware component's manufacturer, model and firmware version at a glance, assign areas / disable sensors per device:
@@ -668,6 +709,18 @@ Cost, revenue and price sensors render in the local currency without manual conf
 
 ---
 
+## Known limitations
+
+Three cloud-API realities the integration cannot design around. Documenting them here so nobody wastes time modelling them as bugs.
+
+**The optimization binaries reflect the Cloud recommendation, not the local HEMS.** `binary_sensor.<sys>_optimization_battery_grid_charge` and `binary_sensor.<sys>_heatpump_recommendation` mirror the latest `Decision` returned by the AI endpoint: what 1KOMMA5°'s Cloud AI thinks *should* happen. The Heartbeat HEMS decides locally whether to act; the two can diverge for days. Owner-verified example (2026-09-10): heat-pump-recommended stayed `off` while SG-Ready ran the pump anyway. Automations that assume `recommended = on ⇔ device runs` will be wrong.
+
+**Optimization settlement fields are permanently `unknown`.** `optimization_total_cost`, `optimization_energy_bought`, `optimization_energy_sold` come from `OptimizationEvent` fields the backend does not populate ("or None when not settled yet" per the SDK docstring, never seen non-`null` in the wild). The sensors stay because they are semantically correct and would start reporting if 1KOMMA5° ever ships settlement data; the showcase dashboard parks them in a commented-out block.
+
+**The EMS auto-mode switch is likely cosmetic.** `switch.<sys>_ems_auto_mode` (GRIDX backends only) POSTs to `/systems/{id}/ems/actions/set-manual-override`. The read model (`EmsSettings.manual_devices`) and the official 1KOMMA5° app both suggest there is no user-facing way to override automatic optimisation; the endpoint accepts writes without an observable side effect. Kept as diagnostic-category in case the cloud starts honouring it.
+
+---
+
 ## FAQ / troubleshooting
 
 ### Why does HACS not show the latest release yet?
@@ -710,6 +763,10 @@ Entity naming is composed from `device.name + entity original_name` unless you r
 ### The Energy Dashboard shows no data / wrong data
 
 See [`dashboard/ENERGY_DASHBOARD.md`](dashboard/ENERGY_DASHBOARD.md) for the slot-to-sensor mapping. The two most common misconfigurations: (a) using `battery_power` (bidirectional) instead of `battery_charge_power_energy` + `battery_discharge_power_energy`; (b) using the raw `grid_power` instead of the split `grid_consumption_power_energy` + `grid_feed_in_power_energy`.
+
+### The log shows repeated `30401` errors for `/ems`
+
+That means your account runs on the newer **1K5-native** backend, which serves the `EmsSettings` payload as an empty document (`30401`) rather than the GRIDX shape the SDK expects. Since v0.1.58 the integration detects this via `emp_type_1k5_native_hint` and stops registering the EMS switch, so the log entry should be silent on affected installs. If you still see it after upgrading, download diagnostics and open an issue with `data.system.emp_type` and `emp_type_1k5_native_hint` attached; that's the triage evidence.
 
 ### How do I file a good bug report?
 
