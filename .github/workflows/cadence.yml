@@ -2,10 +2,12 @@ name: Release cadence
 
 # Weekly auto-release path:
 #   - Every push lands on `main` (hot branch). No tags from main.
-#   - This workflow runs Sunday 20:00 UTC, fast-forwards `release/next` from
-#     `main`, then tags + releases iff `manifest.json` carries a NEW version
-#     and `release-notes/v<version>.md` exists.
-#   - HACS users see the update Monday morning EU time.
+#   - This workflow runs Saturday 12:00 UTC = 14:00 Europe/Berlin (CEST),
+#     fast-forwards `release/next` from `main`, then tags + releases iff
+#     `manifest.json` carries a NEW version and `release-notes/v<version>.md`
+#     exists. In winter (CET) the release lands at 13:00 Berlin — GitHub
+#     Actions cron does not honour DST, so we pin summer-accurate.
+#   - HACS users see the update Sunday morning EU time.
 #
 # Hotfix lane (bypasses this workflow):
 #   1. Push fix to `main`.
@@ -16,7 +18,7 @@ name: Release cadence
 
 on:
   schedule:
-    - cron: '0 20 * * 0'   # Sunday 20:00 UTC
+    - cron: '0 12 * * 6'   # Saturday 12:00 UTC (Sat 14:00 Berlin CEST)
   workflow_dispatch:
 
 permissions:
