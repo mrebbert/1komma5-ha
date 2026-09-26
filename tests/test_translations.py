@@ -27,7 +27,9 @@ def _flatten_keys(obj: dict, prefix: str = "") -> set[str]:
     return keys
 
 
-@pytest.mark.parametrize("locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem)
+@pytest.mark.parametrize(
+    "locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem
+)
 def test_translation_keys_match_strings(locale_path: Path) -> None:
     """Every key in strings.json must exist in each translation locale, and vice versa."""
     strings = _flatten_keys(_load(_STRINGS))
@@ -50,7 +52,9 @@ def test_strings_json_is_valid_json() -> None:
     _load(_STRINGS)
 
 
-@pytest.mark.parametrize("locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem)
+@pytest.mark.parametrize(
+    "locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem
+)
 def test_translation_locale_is_valid_json(locale_path: Path) -> None:
     """Sanity check — every translation locale must be parseable JSON."""
     _load(locale_path)
@@ -65,7 +69,9 @@ def test_icons_json_keys_match_binary_sensor_translations() -> None:
     binary_sensor_names = set(strings["entity"]["binary_sensor"].keys())
 
     missing = icon_keys - binary_sensor_names
-    assert not missing, f"icons.json refers to unknown binary_sensor keys: {sorted(missing)}"
+    assert not missing, (
+        f"icons.json refers to unknown binary_sensor keys: {sorted(missing)}"
+    )
 
 
 def test_exception_translation_keys_are_referenced_from_services() -> None:

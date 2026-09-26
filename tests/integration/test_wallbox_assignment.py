@@ -89,7 +89,9 @@ async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:
 
 def _assignment_entity_id(hass: HomeAssistant, wallbox_id: str) -> str | None:
     reg = er.async_get(hass)
-    return reg.async_get_entity_id("select", DOMAIN, f"sys-1_{wallbox_id}_assigned_vehicle")
+    return reg.async_get_entity_id(
+        "select", DOMAIN, f"sys-1_{wallbox_id}_assigned_vehicle"
+    )
 
 
 async def test_assignment_select_reflects_wallbox_state(
@@ -114,7 +116,9 @@ async def test_assignment_select_reflects_wallbox_state(
     assert set(state.attributes["options"]) == {"bmw_i3", "tesla_model_y"}
 
 
-async def test_assignment_select_option_calls_sdk(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_assignment_select_option_calls_sdk(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Selecting the other EV's slug PATCHes via `ev.assign_charger(wb_id)`."""
     ev_a = _ev(id_="ev-a", name="BMW i3", assigned_charger_id="wb-1")
     ev_b = _ev(id_="ev-b", name="Tesla Model Y")
@@ -162,7 +166,9 @@ async def test_assignment_select_unknown_assignment_is_unknown(
     assert state.state == "unknown"
 
 
-async def test_assign_ev_service_success(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_assign_ev_service_success(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Service call returns `previous_ev_id` from the local cache and
     PATCHes via the SDK; the previous binding is the one captured before
     the write.
@@ -188,7 +194,9 @@ async def test_assign_ev_service_success(hass: HomeAssistant, mock_system_factor
     assert result == {"success": True, "previous_ev_id": "ev-a"}
 
 
-async def test_assign_ev_service_unknown_ev(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_assign_ev_service_unknown_ev(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     ev_a = _ev(id_="ev-a", name="BMW i3", assigned_charger_id="wb-1")
     system = mock_system_factory(
         system_id="sys-1",
@@ -210,7 +218,9 @@ async def test_assign_ev_service_unknown_ev(hass: HomeAssistant, mock_system_fac
     assert excinfo.value.translation_placeholders == {"ev_id": "ev-missing"}
 
 
-async def test_assign_ev_service_unknown_wallbox(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_assign_ev_service_unknown_wallbox(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     ev_a = _ev(id_="ev-a", name="BMW i3", assigned_charger_id="wb-1")
     system = mock_system_factory(
         system_id="sys-1",

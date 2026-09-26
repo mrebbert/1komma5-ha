@@ -193,7 +193,9 @@ async def test_persistent_dedup_across_restart(
         ],
     )
     # Sentinel already at 10:00 — nothing in the batch is strictly newer.
-    await _setup_entry(hass, system, stored={"last_seen_created_at": "2026-08-01T10:00:00Z"})
+    await _setup_entry(
+        hass, system, stored={"last_seen_created_at": "2026-08-01T10:00:00Z"}
+    )
     assert captured_events == []
 
 

@@ -13,7 +13,10 @@ import sys
 from pathlib import Path
 
 _HELPERS_PATH = (
-    Path(__file__).resolve().parent.parent / "custom_components" / "onekommafive" / "helpers.py"
+    Path(__file__).resolve().parent.parent
+    / "custom_components"
+    / "onekommafive"
+    / "helpers.py"
 )
 
 _spec = importlib.util.spec_from_file_location("helpers", _HELPERS_PATH)

@@ -190,7 +190,10 @@ class TestAggregateOptimizationEvents:
     def test_aggregates_present_values(self) -> None:
         events = [
             _StubEvent(
-                total_cost=1.0, energy_bought=2.0, energy_sold=0.5, from_time="2026-04-26T09:00:00Z"
+                total_cost=1.0,
+                energy_bought=2.0,
+                energy_sold=0.5,
+                from_time="2026-04-26T09:00:00Z",
             ),
             _StubEvent(
                 total_cost=2.0,
@@ -249,11 +252,15 @@ def _slot(start: str, end: str, price: float) -> dict:
 
 class TestFindCheapestWindow:
     def test_returns_none_when_forecast_too_short(self) -> None:
-        forecast = [_slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.1)]
+        forecast = [
+            _slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.1)
+        ]
         assert find_cheapest_window(forecast, slot_count=4) is None
 
     def test_returns_none_for_zero_slot_count(self) -> None:
-        forecast = [_slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.1)]
+        forecast = [
+            _slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.1)
+        ]
         assert find_cheapest_window(forecast, slot_count=0) is None
 
     def test_finds_cheapest_two_slot_window(self) -> None:
@@ -329,7 +336,9 @@ class TestFindCheapestWindow:
 
 class TestFindMostExpensiveWindow:
     def test_returns_none_when_forecast_too_short(self) -> None:
-        forecast = [_slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.1)]
+        forecast = [
+            _slot("2026-04-26T10:00:00+00:00", "2026-04-26T10:15:00+00:00", 0.1)
+        ]
         assert find_most_expensive_window(forecast, slot_count=4) is None
 
     def test_finds_most_expensive_two_slot_window(self) -> None:
@@ -412,7 +421,10 @@ class TestActiveOptimizationEvent:
                 to_time="2026-05-08T12:15:00Z",
             ),
         ]
-        assert active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 11, 59)) is None
+        assert (
+            active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 11, 59))
+            is None
+        )
 
     def test_excludes_event_at_or_after_to_time(self) -> None:
         events = [
@@ -424,7 +436,10 @@ class TestActiveOptimizationEvent:
             ),
         ]
         # to_time is exclusive
-        assert active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 15)) is None
+        assert (
+            active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 15))
+            is None
+        )
 
     def test_filters_by_asset(self) -> None:
         events = [
@@ -435,13 +450,20 @@ class TestActiveOptimizationEvent:
                 to_time="2026-05-08T12:15:00Z",
             ),
         ]
-        assert active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 7)) is None
+        assert (
+            active_optimization_event(events, "BATTERY", _at(2026, 5, 8, 12, 7)) is None
+        )
 
     def test_skips_events_with_invalid_timestamps(self) -> None:
         events = [
-            _ActiveStubEvent(asset="BATTERY", decision="X", from_time=None, to_time=None),
             _ActiveStubEvent(
-                asset="BATTERY", decision="X", from_time="garbage", to_time="2026-05-08T12:15:00Z"
+                asset="BATTERY", decision="X", from_time=None, to_time=None
+            ),
+            _ActiveStubEvent(
+                asset="BATTERY",
+                decision="X",
+                from_time="garbage",
+                to_time="2026-05-08T12:15:00Z",
             ),
             _ActiveStubEvent(
                 asset="BATTERY",
@@ -561,7 +583,9 @@ class TestWeatherSymbolToHaCondition:
             (115, "pouring"),
         ],
     )
-    def test_known_symbols_map_to_ha_conditions(self, symbol_id: int, expected: str) -> None:
+    def test_known_symbols_map_to_ha_conditions(
+        self, symbol_id: int, expected: str
+    ) -> None:
         assert weather_symbol_to_ha_condition(symbol_id) == expected
 
     def test_none_symbol_returns_none(self) -> None:
@@ -664,7 +688,11 @@ class TestNaiveTimestamps:
             end_time: str | None = None
 
         events = [
-            _Ev(asset="BATTERY", from_time="2026-04-26T10:00:00", end_time="2026-04-26T11:00:00")
+            _Ev(
+                asset="BATTERY",
+                from_time="2026-04-26T10:00:00",
+                end_time="2026-04-26T11:00:00",
+            )
         ]
         now = _at(2026, 4, 26, 10, 30)
         result = active_optimization_event(events, asset="BATTERY", now=now)

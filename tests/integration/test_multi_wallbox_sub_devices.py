@@ -128,7 +128,11 @@ async def test_multi_wallbox_yields_instance_sub_devices(
         system_id="sys-1",
         assets=[
             _asset(
-                "EV_CHARGER", name="Garage", manufacturer="go-e", model="HOMEfix", firmware="60.5"
+                "EV_CHARGER",
+                name="Garage",
+                manufacturer="go-e",
+                model="HOMEfix",
+                firmware="60.5",
             ),
             _asset(
                 "EV_CHARGER",
@@ -258,7 +262,8 @@ async def test_multi_wallbox_yields_per_wallbox_connectivity_sensors(
     entry = await _setup(hass, system)
     entity_reg = er.async_get(hass)
     unique_ids = {
-        r.unique_id for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+        r.unique_id
+        for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     }
 
     # Aggregate still present.
@@ -267,8 +272,12 @@ async def test_multi_wallbox_yields_per_wallbox_connectivity_sensors(
     assert "sys-1_wallbox_wb-a_connected" in unique_ids
     assert "sys-1_wallbox_wb-b_connected" in unique_ids
 
-    ent_a = entity_reg.async_get_entity_id("binary_sensor", DOMAIN, "sys-1_wallbox_wb-a_connected")
-    ent_b = entity_reg.async_get_entity_id("binary_sensor", DOMAIN, "sys-1_wallbox_wb-b_connected")
+    ent_a = entity_reg.async_get_entity_id(
+        "binary_sensor", DOMAIN, "sys-1_wallbox_wb-a_connected"
+    )
+    ent_b = entity_reg.async_get_entity_id(
+        "binary_sensor", DOMAIN, "sys-1_wallbox_wb-b_connected"
+    )
     assert hass.states.get(ent_a).state == "on"
     assert hass.states.get(ent_b).state == "off"
 
@@ -285,7 +294,8 @@ async def test_single_wallbox_omits_per_wallbox_connectivity_sensor(
     entry = await _setup(hass, system)
     entity_reg = er.async_get(hass)
     unique_ids = {
-        r.unique_id for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+        r.unique_id
+        for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     }
     assert "sys-1_wallbox_connected" in unique_ids
     assert "sys-1_wallbox_wb-1_connected" not in unique_ids
@@ -315,7 +325,8 @@ async def test_vehicle_entities_unique_ids_are_unchanged_across_wallbox_split(
     entry = await _setup(hass, system)
     entity_reg = er.async_get(hass)
     unique_ids = {
-        r.unique_id for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+        r.unique_id
+        for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     }
     # Unique_ids carry the vehicle id, never the wallbox sub-device key.
     for expected in (

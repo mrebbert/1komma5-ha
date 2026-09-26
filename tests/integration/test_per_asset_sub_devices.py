@@ -51,10 +51,19 @@ def _asset(
 
 def _all_assets() -> list[MagicMock]:
     return [
-        _asset("HYBRID", manufacturer="Sungrow", model="SH6.0RT-V112", firmware="SAPPHIRE-001"),
-        _asset("HEAT_PUMP", manufacturer="Stiebel Eltron", model="WPMsystem", firmware=None),
+        _asset(
+            "HYBRID",
+            manufacturer="Sungrow",
+            model="SH6.0RT-V112",
+            firmware="SAPPHIRE-001",
+        ),
+        _asset(
+            "HEAT_PUMP", manufacturer="Stiebel Eltron", model="WPMsystem", firmware=None
+        ),
         _asset("METER", manufacturer="Chint", model="DTSU666", firmware=None),
-        _asset("EV_CHARGER", manufacturer="go-e", model="HOMEfix 11kW", firmware="60.5"),
+        _asset(
+            "EV_CHARGER", manufacturer="go-e", model="HOMEfix 11kW", firmware="60.5"
+        ),
     ]
 
 
@@ -97,7 +106,9 @@ async def test_full_asset_set_yields_parent_plus_four_sub_devices(
     parent = by_identifier["sys-1"]
     for key in ("inverter", "heat_pump", "meter", "wallbox"):
         sub = by_identifier[f"sys-1_{key}"]
-        assert sub.via_device_id == parent.id, f"{key} sub-device not parented under system"
+        assert sub.via_device_id == parent.id, (
+            f"{key} sub-device not parented under system"
+        )
 
 
 async def test_sub_devices_carry_manufacturer_model_firmware(
@@ -163,7 +174,8 @@ async def test_entities_are_parented_under_correct_sub_device(
     ).id
 
     by_unique_id = {
-        r.unique_id: r for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+        r.unique_id: r
+        for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     }
 
     # One representative entity per sub-device + two parent-bound entities.
@@ -195,7 +207,8 @@ async def test_unique_ids_unchanged_after_sub_device_split(
     entity_reg = er.async_get(hass)
 
     unique_ids = {
-        r.unique_id for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+        r.unique_id
+        for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     }
 
     # Spot-check a few of the entities that moved to sub-devices —
@@ -226,11 +239,14 @@ async def test_fresh_install_entity_ids_start_with_system_slug(
     (EN) — breaking the ``dashboard/dashboard.yaml`` ``SYSTEM_NAME``
     placeholder and creating i18n divergence.
     """
-    system = mock_system_factory(system_id="sys-1", name="Test Home", assets=_all_assets())
+    system = mock_system_factory(
+        system_id="sys-1", name="Test Home", assets=_all_assets()
+    )
     entry = await _setup(hass, system)
     entity_reg = er.async_get(hass)
     by_unique_id = {
-        r.unique_id: r for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+        r.unique_id: r
+        for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     }
 
     # Sub-device sensors that HA would otherwise prefix with the translated
@@ -245,7 +261,10 @@ async def test_fresh_install_entity_ids_start_with_system_slug(
         ("sys-1_feed_in_revenue", "sensor.test_home_feed_in_revenue"),
         # System-parent entities were already correctly-prefixed pre-fix,
         # but the shim also applies to them — confirm no regression.
-        ("sys-1_current_electricity_price", "sensor.test_home_current_electricity_price"),
+        (
+            "sys-1_current_electricity_price",
+            "sensor.test_home_current_electricity_price",
+        ),
         ("sys-1_self_sufficiency", "sensor.test_home_self_sufficiency"),
     ):
         record = by_unique_id.get(unique_id)
@@ -264,11 +283,14 @@ async def test_system_name_with_umlauts_slugifies_cleanly(
     normalises punctuation. Users with names like ``Höst-System Süd`` still
     get valid, predictable entity_ids across all sub-device entities.
     """
-    system = mock_system_factory(system_id="sys-1", name="Höst-System Süd", assets=_all_assets())
+    system = mock_system_factory(
+        system_id="sys-1", name="Höst-System Süd", assets=_all_assets()
+    )
     entry = await _setup(hass, system)
     entity_reg = er.async_get(hass)
     by_unique_id = {
-        r.unique_id: r for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
+        r.unique_id: r
+        for r in er.async_entries_for_config_entry(entity_reg, entry.entry_id)
     }
     record = by_unique_id["sys-1_pv_power"]
     assert record.entity_id == "sensor.host_system_sud_pv_power"
@@ -290,7 +312,9 @@ async def test_existing_registry_entity_ids_are_preserved(
         suggested_object_id="wechselrichter_pv_leistung",  # old DE fresh-install id
     )
 
-    system = mock_system_factory(system_id="sys-1", name="Test Home", assets=_all_assets())
+    system = mock_system_factory(
+        system_id="sys-1", name="Test Home", assets=_all_assets()
+    )
     await _setup(hass, system)
 
     record = entity_reg.async_get_entity_id("sensor", DOMAIN, "sys-1_pv_power")
@@ -300,7 +324,9 @@ async def test_existing_registry_entity_ids_are_preserved(
     )
 
 
-async def test_missing_asset_falls_back_to_parent(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_missing_asset_falls_back_to_parent(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """When an asset type is missing, no sub-device exists; orphaned entities
     fall back to the system parent."""
     # Only inverter + meter present; heat pump and wallbox missing.

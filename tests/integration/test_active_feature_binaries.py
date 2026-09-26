@@ -53,7 +53,11 @@ async def test_all_three_features_active_yields_three_on(
     """All three feature binaries report ON when the SDK lists all three flags."""
     system = mock_system_factory(
         system_id="sys-1",
-        active_features=["DYNAMIC_TARIFF", "TIME_OF_USE_OPTIMIZATION", "SMART_CHARGING"],
+        active_features=[
+            "DYNAMIC_TARIFF",
+            "TIME_OF_USE_OPTIMIZATION",
+            "SMART_CHARGING",
+        ],
     )
     await _setup(hass, system)
 
@@ -62,7 +66,9 @@ async def test_all_three_features_active_yields_three_on(
         assert state.state == "on", f"{key} should be on, got {state.state}"
 
 
-async def test_missing_features_flip_off(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_missing_features_flip_off(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Only the features the SDK lists report ON; the others stay OFF."""
     system = mock_system_factory(
         system_id="sys-1",
@@ -75,7 +81,9 @@ async def test_missing_features_flip_off(hass: HomeAssistant, mock_system_factor
     assert hass.states.get(_entity_id(hass, "smart_charging_active")).state == "off"
 
 
-async def test_empty_feature_list_all_off(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_empty_feature_list_all_off(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Empty active_features → all three binaries OFF."""
     system = mock_system_factory(system_id="sys-1", active_features=[])
     await _setup(hass, system)

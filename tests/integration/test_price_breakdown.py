@@ -77,7 +77,9 @@ def _current_price_state(hass: HomeAssistant):
     return hass.states.get(entity_id)
 
 
-async def test_breakdown_attributes_reconcile(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_breakdown_attributes_reconcile(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     await _setup(hass, _market_prices(), mock_system_factory)
     attrs = _current_price_state(hass).attributes
 
@@ -90,11 +92,15 @@ async def test_breakdown_attributes_reconcile(hass: HomeAssistant, mock_system_f
     assert attrs["grid_cost_components"]["dynamic_markup"] == 0.0
 
     # The exposed net figures must reconcile to the all-in state.
-    reconstructed = round((attrs["spot_price"] + attrs["grid_costs"]) * (1 + attrs["vat_rate"]), 7)
+    reconstructed = round(
+        (attrs["spot_price"] + attrs["grid_costs"]) * (1 + attrs["vat_rate"]), 7
+    )
     assert reconstructed == ALL_IN
 
 
-async def test_fallback_flag_surfaces_true(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_fallback_flag_surfaces_true(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     await _setup(hass, _market_prices(uses_fallback=True), mock_system_factory)
     attrs = _current_price_state(hass).attributes
     assert attrs["uses_fallback_grid_costs"] is True

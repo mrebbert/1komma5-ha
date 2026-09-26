@@ -16,7 +16,9 @@ from homeassistant.core import HomeAssistant
 from custom_components.onekommafive.coordinator import OneKomma5LiveCoordinator
 
 
-async def test_fetch_timeout_marks_update_failed(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_fetch_timeout_marks_update_failed(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(system_id="sys-1")
 
     async def _stall(*_a: object, **_kw: object) -> None:

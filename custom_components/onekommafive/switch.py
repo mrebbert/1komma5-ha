@@ -43,14 +43,20 @@ async def async_setup_entry(
     # would be permanently unavailable. Skip creating it entirely and
     # remove any stale registry entry left from a prior GRIDX run.
     if is_1k5_backend(data.emp_type):
-        _LOGGER.debug("Skipping EMS auto-mode switch: emp_type=1K5 has no GridX EMS endpoint")
+        _LOGGER.debug(
+            "Skipping EMS auto-mode switch: emp_type=1K5 has no GridX EMS endpoint"
+        )
         registry = er.async_get(hass)
-        stale = registry.async_get_entity_id(SWITCH_DOMAIN, DOMAIN, f"{system_id}_ems_auto_mode")
+        stale = registry.async_get_entity_id(
+            SWITCH_DOMAIN, DOMAIN, f"{system_id}_ems_auto_mode"
+        )
         if stale is not None:
             registry.async_remove(stale)
         return
 
-    entities = [OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)]
+    entities = [
+        OneKomma5EMSSwitch(data.live_coordinator, system, system_id, system_name)
+    ]
     apply_stable_entity_ids(entities, SWITCH_DOMAIN)
     async_add_entities(entities)
 

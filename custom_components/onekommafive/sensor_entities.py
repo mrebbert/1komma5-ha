@@ -43,7 +43,9 @@ from .entity import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.helpers.update_coordinator import CoordinatorEntity as _CoordEntBase
+    from homeassistant.helpers.update_coordinator import (
+        CoordinatorEntity as _CoordEntBase,
+    )
 
     _DescriptionSensorBase = _CoordEntBase[DataUpdateCoordinator[Any]]
 else:
@@ -270,7 +272,11 @@ class OneKomma5CheapestChargingWindowSensor(_ChargingWindowBase, RestoreSensor):
         duration_minutes: int,
     ) -> None:
         super().__init__(
-            coordinator, system_id, system_name, "cheapest_charging_window_today", duration_minutes
+            coordinator,
+            system_id,
+            system_name,
+            "cheapest_charging_window_today",
+            duration_minutes,
         )
 
     async def async_added_to_hass(self) -> None:
@@ -338,7 +344,9 @@ class OneKomma5CheapestChargingWindowSensor(_ChargingWindowBase, RestoreSensor):
         if self.coordinator.data is None or not self.coordinator.data.forecast:
             return
         now_local = dt_util.now()
-        end_of_today_local = now_local.replace(hour=23, minute=59, second=59, microsecond=999999)
+        end_of_today_local = now_local.replace(
+            hour=23, minute=59, second=59, microsecond=999999
+        )
         self._window = find_cheapest_window(
             self.coordinator.data.forecast,
             self._slot_count,
@@ -454,7 +462,9 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
         restored = await self.async_get_last_sensor_data()
         # RestoreSensor may hand back date/Decimal/str — only accept numerics/strings
         # that survive ``float(...)`` cleanly.
-        if restored is not None and isinstance(restored.native_value, (int, float, str)):
+        if restored is not None and isinstance(
+            restored.native_value, (int, float, str)
+        ):
             try:
                 self._accumulated = float(restored.native_value)
             except (TypeError, ValueError):
@@ -478,7 +488,9 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
             return
         now = dt_util.utcnow()
         if self._last_power is not None and self._last_time is not None:
-            delta_kwh = trapezoidal_delta_kwh(self._last_power, self._last_time, power_w, now)
+            delta_kwh = trapezoidal_delta_kwh(
+                self._last_power, self._last_time, power_w, now
+            )
             if delta_kwh is not None:
                 multiplier = self._get_kwh_multiplier()
                 if multiplier is not None:
@@ -528,7 +540,9 @@ class OneKomma5EnergySensor(OneKomma5AccumulatingSensor):
         return cast(float | None, self._power_fn(data))
 
 
-class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, RestoreSensor):
+class OneKomma5StablePriceSensor(
+    QuarterHourUpdateMixin, OneKomma5PriceEntity, RestoreSensor
+):
     """Stable electricity price sensor with hold-last-valid logic.
 
     Exposes the last known valid electricity price, surviving unavailable/zero
@@ -549,7 +563,9 @@ class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, R
         currency: str = "EUR",
     ) -> None:
         """Initialize the stable price sensor."""
-        super().__init__(coordinator, system_id, system_name, "stable_electricity_price")
+        super().__init__(
+            coordinator, system_id, system_name, "stable_electricity_price"
+        )
         self._attr_native_unit_of_measurement = currency_per_kwh(currency)
         self._stable_price: float | None = None
         if coordinator.data is not None:
@@ -765,7 +781,9 @@ class OneKomma5OptimizationSensor(
             self._attr_native_unit_of_measurement = currency
 
 
-class OneKomma5WeatherSensor(_DescriptionValueSensor, OneKomma5WeatherEntity, SensorEntity):
+class OneKomma5WeatherSensor(
+    _DescriptionValueSensor, OneKomma5WeatherEntity, SensorEntity
+):
     """Sensor for weather coordinator data."""
 
     entity_description: OneKomma5WeatherSensorDescription
@@ -781,7 +799,9 @@ class OneKomma5WeatherSensor(_DescriptionValueSensor, OneKomma5WeatherEntity, Se
         self.entity_description = description
 
 
-class OneKomma5DiagnosticSensor(SystemEntityBase[DataUpdateCoordinator[Any]], SensorEntity):
+class OneKomma5DiagnosticSensor(
+    SystemEntityBase[DataUpdateCoordinator[Any]], SensorEntity
+):
     """Diagnostic sensor tracking the last successful coordinator update.
 
     Bound to the abstract ``DataUpdateCoordinator[Any]`` so one instance can
@@ -935,7 +955,9 @@ class OneKomma5DailySavingsSensor(OneKomma5EnergyEntity, SensorEntity):
         return {"co2_saved_kg": self._co2_saved_kg}
 
 
-class OneKomma5DynamicPulsePriceGuaranteeSensor(OneKomma5SystemStatusEntity, SensorEntity):
+class OneKomma5DynamicPulsePriceGuaranteeSensor(
+    OneKomma5SystemStatusEntity, SensorEntity
+):
     """DP price-guarantee (currency/kWh) — static value from get_subscriptions.
 
     Interpretation is undocumented by the SDK: magnitude empirically matches
@@ -959,7 +981,9 @@ class OneKomma5DynamicPulsePriceGuaranteeSensor(OneKomma5SystemStatusEntity, Sen
         *,
         currency: str = "EUR",
     ) -> None:
-        super().__init__(coordinator, system_id, system_name, "dynamic_pulse_price_guarantee")
+        super().__init__(
+            coordinator, system_id, system_name, "dynamic_pulse_price_guarantee"
+        )
         self._attr_native_unit_of_measurement = currency_per_kwh(currency)
         self._value = value_eur_per_kwh
         self._version = version

@@ -61,10 +61,14 @@ def _binary_state(hass: HomeAssistant, system_id: str = "sys-1") -> str:
     """Look the entity up by unique_id since entity_id is name-derived."""
     registry = er.async_get(hass)
     entity_id = registry.async_get_entity_id(
-        "binary_sensor", "onekommafive", f"{system_id}_optimization_heat_pump_recommended"
+        "binary_sensor",
+        "onekommafive",
+        f"{system_id}_optimization_heat_pump_recommended",
     )
     if entity_id is None:
-        raise AssertionError("optimization_heat_pump_recommended binary sensor not registered")
+        raise AssertionError(
+            "optimization_heat_pump_recommended binary sensor not registered"
+        )
     state = hass.states.get(entity_id)
     assert state is not None
     return state.state

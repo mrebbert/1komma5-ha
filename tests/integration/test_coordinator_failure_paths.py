@@ -24,7 +24,9 @@ from custom_components.onekommafive.const import (
 from custom_components.onekommafive.coordinator import OneKomma5LiveCoordinator
 
 
-async def test_api_error_marks_update_failed(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_api_error_marks_update_failed(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(system_id="sys-1")
     system.get_live_overview.side_effect = ApiError("service down")
 
@@ -34,7 +36,9 @@ async def test_api_error_marks_update_failed(hass: HomeAssistant, mock_system_fa
     assert coordinator.last_update_success is False
 
 
-async def test_generic_error_marks_update_failed(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_generic_error_marks_update_failed(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(system_id="sys-1")
     system.get_live_overview.side_effect = RuntimeError("boom")
 
@@ -102,6 +106,8 @@ async def test_all_none_live_payload_yields_unknown_not_crash(
 
     await _setup(hass, system)
 
-    entity_id = er.async_get(hass).async_get_entity_id("sensor", "onekommafive", "sys-1_pv_power")
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "sensor", "onekommafive", "sys-1_pv_power"
+    )
     assert entity_id is not None
     assert hass.states.get(entity_id).state == "unknown"

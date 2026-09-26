@@ -87,7 +87,9 @@ async def test_weather_entity_reports_current_slot_condition(
     await _setup(hass, system)
 
     weather_state = next(
-        s for s in hass.states.async_all("weather") if s.entity_id.startswith("weather.")
+        s
+        for s in hass.states.async_all("weather")
+        if s.entity_id.startswith("weather.")
     )
     assert weather_state.state == "sunny"  # slot1 (1 h ago), symbol_id=1 → sunny
     assert weather_state.attributes["temperature"] == 18.5
@@ -134,7 +136,9 @@ async def test_weather_entity_picks_active_slot_not_first(
     await _setup(hass, system)
 
     weather_state = next(
-        s for s in hass.states.async_all("weather") if s.entity_id.startswith("weather.")
+        s
+        for s in hass.states.async_all("weather")
+        if s.entity_id.startswith("weather.")
     )
     assert weather_state.state == "sunny"
     assert weather_state.attributes["temperature"] == 24.0
@@ -148,7 +152,9 @@ async def test_weather_get_forecasts_service_returns_slots(
     await _setup(hass, system)
 
     weather_entity_id = next(
-        s.entity_id for s in hass.states.async_all("weather") if s.entity_id.startswith("weather.")
+        s.entity_id
+        for s in hass.states.async_all("weather")
+        if s.entity_id.startswith("weather.")
     )
 
     response = await hass.services.async_call(
@@ -173,10 +179,14 @@ async def test_sunshine_sensors_register_with_correct_values(
     await _setup(hass, system)
 
     today_state = next(
-        s for s in hass.states.async_all("sensor") if s.entity_id.endswith("_sunshine_today")
+        s
+        for s in hass.states.async_all("sensor")
+        if s.entity_id.endswith("_sunshine_today")
     )
     tomorrow_state = next(
-        s for s in hass.states.async_all("sensor") if s.entity_id.endswith("_sunshine_tomorrow")
+        s
+        for s in hass.states.async_all("sensor")
+        if s.entity_id.endswith("_sunshine_tomorrow")
     )
     assert int(float(today_state.state)) == 420
     assert int(float(tomorrow_state.state)) == 300

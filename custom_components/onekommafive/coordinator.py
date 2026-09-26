@@ -226,7 +226,9 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             try:
                 ems_settings = await self._system.get_ems_settings()
             except Exception:
-                _LOGGER.debug("EMS settings not available (no DeviceGateway?), skipping")
+                _LOGGER.debug(
+                    "EMS settings not available (no DeviceGateway?), skipping"
+                )
                 ems_settings = None
         # A wallbox-endpoint blip must not kill the live loop — degrade to an
         # empty list so the assignment select renders `unknown` instead of the
@@ -260,7 +262,9 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         """
         if self._entry_id is None:
             return
-        current: frozenset[str] = frozenset(wb.id for wb in data.wallboxes if wb.id is not None)
+        current: frozenset[str] = frozenset(
+            wb.id for wb in data.wallboxes if wb.id is not None
+        )
         if self._known_wallbox_ids is None:
             self._known_wallbox_ids = current
             return
@@ -294,7 +298,10 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
                 self._ems_issue_active = False
             return
         self._ems_failure_count += 1
-        if self._ems_failure_count >= self._EMS_FAILURE_THRESHOLD and not self._ems_issue_active:
+        if (
+            self._ems_failure_count >= self._EMS_FAILURE_THRESHOLD
+            and not self._ems_issue_active
+        ):
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -306,7 +313,9 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             self._ems_issue_active = True
 
 
-def _price_statistics(all_in_prices: dict[str, float], today: datetime.date) -> dict[str, Any]:
+def _price_statistics(
+    all_in_prices: dict[str, float], today: datetime.date
+) -> dict[str, Any]:
     """Compute the per-day price summary used by the price sensors."""
     today_prices, tomorrow_prices = split_prices_by_date(
         all_in_prices, today, today + datetime.timedelta(days=1)
@@ -319,7 +328,9 @@ def _price_statistics(all_in_prices: dict[str, float], today: datetime.date) -> 
         "tomorrow_highest": None,
     }
     if tomorrow_prices:
-        stats["negative_price_slots_tomorrow"] = sum(1 for p in tomorrow_prices if p < 0)
+        stats["negative_price_slots_tomorrow"] = sum(
+            1 for p in tomorrow_prices if p < 0
+        )
         stats["tomorrow_average"] = sum(tomorrow_prices) / len(tomorrow_prices)
         stats["tomorrow_lowest"] = min(tomorrow_prices)
         stats["tomorrow_highest"] = max(tomorrow_prices)
@@ -368,8 +379,12 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         """Fetch today's price slots and — best-effort — tomorrow's, merged into one dict."""
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-        market_prices = await self._system.get_prices(today_start, today_end, resolution="15m")
-        all_in_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs_and_vat)
+        market_prices = await self._system.get_prices(
+            today_start, today_end, resolution="15m"
+        )
+        all_in_prices: dict[str, float] = dict(
+            market_prices.prices_with_grid_costs_and_vat
+        )
 
         # Tomorrow's prices are best-effort — often not yet available in the morning.
         tomorrow_start = (now + datetime.timedelta(days=1)).replace(
@@ -405,7 +420,11 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             "price": data.current_price,
             "negative_price_slots_remaining": data.negative_price_slots_today,
         }
-        event_type = EVENT_NEGATIVE_PRICE_STARTED if is_negative_now else EVENT_NEGATIVE_PRICE_ENDED
+        event_type = (
+            EVENT_NEGATIVE_PRICE_STARTED
+            if is_negative_now
+            else EVENT_NEGATIVE_PRICE_ENDED
+        )
         _LOGGER.debug("Firing %s: %s", event_type, payload)
         self.hass.bus.async_fire(event_type, payload)
 
@@ -530,7 +549,9 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
     _coordinator_name = "1KOMMA5° System Status"
     _interval_seconds = SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS
 
-    def __init__(self, hass: HomeAssistant, system: System, customer_id: str | None) -> None:
+    def __init__(
+        self, hass: HomeAssistant, system: System, customer_id: str | None
+    ) -> None:
         super().__init__(hass, system)
         self._customer_id = customer_id
 
@@ -539,7 +560,9 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
         features: list[str] = []
         if self._customer_id:
             try:
-                features = list(await self._system.get_active_features(self._customer_id))
+                features = list(
+                    await self._system.get_active_features(self._customer_id)
+                )
             except Exception as err:
                 _LOGGER.debug("Active features fetch failed: %s", err)
         assets: list[Asset] = list(site.assets or [])
@@ -621,7 +644,9 @@ class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsDa
             # Prime silently on first run — save the horizon, emit nothing.
             self._last_seen_created_at = max_seen
             await self._store.async_save({self._STORAGE_KEY_FIELD: max_seen})
-            _LOGGER.debug("Notifications coordinator primed at %s (no events fired)", max_seen)
+            _LOGGER.debug(
+                "Notifications coordinator primed at %s (no events fired)", max_seen
+            )
             return
 
         cutoff = self._last_seen_created_at

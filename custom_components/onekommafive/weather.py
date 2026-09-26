@@ -37,7 +37,9 @@ async def async_setup_entry(
     """Set up the 1KOMMA5° weather entity."""
     data = entry.runtime_data
     system_id = data.system.id()
-    async_add_entities([OneKomma5Weather(data.weather_coordinator, system_id, data.system_name)])
+    async_add_entities(
+        [OneKomma5Weather(data.weather_coordinator, system_id, data.system_name)]
+    )
 
 
 class OneKomma5Weather(CoordinatorEntity[OneKomma5WeatherCoordinator], WeatherEntity):

@@ -48,7 +48,9 @@ def _coordinator_snapshot(coord: Any) -> dict[str, Any]:
     update_interval = coord.update_interval
     return {
         "name": coord.name,
-        "update_interval_seconds": (update_interval.total_seconds() if update_interval else None),
+        "update_interval_seconds": (
+            update_interval.total_seconds() if update_interval else None
+        ),
         "last_update_success": coord.last_update_success,
         "last_exception": repr(coord.last_exception) if coord.last_exception else None,
         "data_type": type(coord.data).__name__ if coord.data is not None else None,
@@ -81,7 +83,9 @@ def _price_summary(data: Any) -> dict[str, Any]:
 def _optimization_summary(data: Any) -> dict[str, Any]:
     return {
         "event_count": data.event_count,
-        "last_decision": (data.last_event.decision if data.last_event is not None else None),
+        "last_decision": (
+            data.last_event.decision if data.last_event is not None else None
+        ),
     }
 
 
@@ -120,7 +124,9 @@ def _system_status_summary(data: Any) -> dict[str, Any]:
         "site_status": data.site_status,
         "asset_count": len(data.assets) if data.assets else 0,
         "asset_types": asset_types,
-        "active_feature_count": len(data.active_features) if data.active_features else 0,
+        "active_feature_count": len(data.active_features)
+        if data.active_features
+        else 0,
     }
 
 
@@ -137,8 +143,12 @@ def _details_redacted(details: Any) -> dict[str, Any]:
         "status": getattr(details, "status", None),
         "dynamic_pulse_compatible": getattr(details, "dynamic_pulse_compatible", None),
         "energy_trader_active": getattr(details, "energy_trader_active", None),
-        "electricity_contract_active": getattr(details, "electricity_contract_active", None),
-        "has_third_party_smart_meter": getattr(details, "has_third_party_smart_meter", None),
+        "electricity_contract_active": getattr(
+            details, "electricity_contract_active", None
+        ),
+        "has_third_party_smart_meter": getattr(
+            details, "has_third_party_smart_meter", None
+        ),
         "earliest_measurement": getattr(details, "earliest_measurement", None),
         "created_at": getattr(details, "created_at", None),
         "updated_at": getattr(details, "updated_at", None),
@@ -206,8 +216,14 @@ async def _wallbox_snapshot(
     except Exception as err:
         entry: dict[str, Any] = {"error": repr(err)}
         emp_type = get_emp_type(details)
-        gateway_count = len(getattr(details, "device_gateways", []) or []) if details else None
-        if "30401" in entry["error"] and is_1k5_backend(emp_type) and gateway_count == 0:
+        gateway_count = (
+            len(getattr(details, "device_gateways", []) or []) if details else None
+        )
+        if (
+            "30401" in entry["error"]
+            and is_1k5_backend(emp_type)
+            and gateway_count == 0
+        ):
             entry["emp_type_1k5_native_hint"] = True
         entry["emp_type"] = emp_type
         entry["device_gateway_count"] = gateway_count

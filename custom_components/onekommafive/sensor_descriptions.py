@@ -277,7 +277,9 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
         value_fn=lambda d: (
-            round(d.tomorrow_average_price, 6) if d.tomorrow_average_price is not None else None
+            round(d.tomorrow_average_price, 6)
+            if d.tomorrow_average_price is not None
+            else None
         ),
     ),
     OneKomma5PriceSensorDescription(
@@ -344,7 +346,9 @@ EV_SENSORS: tuple[OneKomma5EVSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=1,
         icon="mdi:car-battery",
-        value_fn=lambda ev: ev.capacity_wh() / 1000 if ev.capacity_wh() is not None else None,
+        value_fn=lambda ev: (
+            ev.capacity_wh() / 1000 if ev.capacity_wh() is not None else None
+        ),
     ),
     # Scheduled departure SoC target — distinct from `target_soc` (the manual
     # override). Read-only in the SDK, so a sensor rather than a number.
@@ -440,7 +444,9 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=2,
-        value_fn=lambda d: round(d.energy_bought, 2) if d.energy_bought is not None else None,
+        value_fn=lambda d: (
+            round(d.energy_bought, 2) if d.energy_bought is not None else None
+        ),
     ),
     OneKomma5OptimizationSensorDescription(
         key="optimization_energy_sold",
@@ -448,7 +454,9 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=2,
-        value_fn=lambda d: round(d.energy_sold, 2) if d.energy_sold is not None else None,
+        value_fn=lambda d: (
+            round(d.energy_sold, 2) if d.energy_sold is not None else None
+        ),
     ),
     OneKomma5OptimizationSensorDescription(
         key="optimization_last_decision",
@@ -472,7 +480,9 @@ OPTIMIZATION_SENSORS: tuple[OneKomma5OptimizationSensorDescription, ...] = (
             "heatpump_recommend_on",
             "heatpump_auto",
         ],
-        value_fn=lambda d: _coerce_known_decision(d.last_event.decision) if d.last_event else None,
+        value_fn=lambda d: (
+            _coerce_known_decision(d.last_event.decision) if d.last_event else None
+        ),
         attr_fn=lambda d: (
             {
                 "asset": d.last_event.asset,

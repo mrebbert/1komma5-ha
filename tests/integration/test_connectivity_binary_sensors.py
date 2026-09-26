@@ -101,7 +101,9 @@ async def test_partial_inventory_skips_missing_asset_types(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
     """No heat pump in the API → no heat-pump connectivity sensor."""
-    system = mock_system_factory(system_id="sys-1", assets=[_asset("HYBRID"), _asset("METER")])
+    system = mock_system_factory(
+        system_id="sys-1", assets=[_asset("HYBRID"), _asset("METER")]
+    )
     await _setup(hass, system)
 
     assert _resolve(hass, "site_connected") is not None
@@ -121,7 +123,9 @@ async def test_empty_inventory_still_registers_site_sensor(
     assert _resolve(hass, "inverter_connected") is None
 
 
-async def test_site_disconnected_flips_sensor_off(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_site_disconnected_flips_sensor_off(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(
         system_id="sys-1", site_status="DISCONNECTED", assets=[_asset("HYBRID")]
     )

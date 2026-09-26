@@ -29,7 +29,9 @@ async def test_user_flow_invalid_credentials_shows_error(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems.side_effect = AuthenticationError("bad creds")
+        mock_systems_cls.return_value.get_systems.side_effect = AuthenticationError(
+            "bad creds"
+        )
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -146,7 +148,9 @@ async def test_user_flow_multiple_systems_shows_picker(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system_a, system_b])
+        mock_systems_cls.return_value.get_systems = AsyncMock(
+            return_value=[system_a, system_b]
+        )
         mock_systems_cls.return_value.get_system = AsyncMock(return_value=system_b)
 
         result = await hass.config_entries.flow.async_init(

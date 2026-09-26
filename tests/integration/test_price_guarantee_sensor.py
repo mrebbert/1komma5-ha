@@ -97,7 +97,9 @@ async def test_dp_subscription_with_eur_kwh_passthrough(
     assert float(state.state) == 0.12
 
 
-async def test_no_dp_subscription_no_sensor(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_no_dp_subscription_no_sensor(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Guarantee endpoint returns empty payload → sensor not registered."""
     system = mock_system_factory(
         system_id="sys-1",
@@ -119,7 +121,9 @@ async def test_dp_subscription_with_none_value_no_sensor(
     assert _sensor_entity_id(hass) is None
 
 
-async def test_missing_customer_id_no_sensor(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_missing_customer_id_no_sensor(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """No customer_id on details → guarantee fetch skipped → no sensor."""
     details = MagicMock(
         customer_id=None,

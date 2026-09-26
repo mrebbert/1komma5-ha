@@ -216,7 +216,9 @@ def mock_system_factory():
         # window attributes; default to all-None so absent windows return
         # gracefully. Tests that need populated data pass an explicit stub.
         if heartbeat_prices is None:
-            heartbeat_prices = MagicMock(day=None, week=None, month=None, half_year=None, year=None)
+            heartbeat_prices = MagicMock(
+                day=None, week=None, month=None, half_year=None, year=None
+            )
         system.get_heartbeat_prices = AsyncMock(return_value=heartbeat_prices)
 
         # ImpactOverview (v0.1.53) — SDK exposes `co2_savings_kg: float | None`.

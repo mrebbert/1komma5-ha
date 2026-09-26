@@ -57,7 +57,9 @@ async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:
     return entry
 
 
-async def test_danish_install_uses_dkk_units(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_danish_install_uses_dkk_units(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """A DK install renders cost sensors in DKK and price sensors in DKK/kWh."""
     system = mock_system_factory(system_id="sys-1", details=_details("DK"))
     await _setup(hass, system)
@@ -77,7 +79,9 @@ async def test_danish_install_uses_dkk_units(hass: HomeAssistant, mock_system_fa
     assert feed_in_state.attributes["unit_of_measurement"] == "DKK"
 
 
-async def test_australian_install_uses_aud_units(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_australian_install_uses_aud_units(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """An AU install renders cost sensors in AUD."""
     system = mock_system_factory(system_id="sys-1", details=_details("AU"))
     await _setup(hass, system)
@@ -87,7 +91,9 @@ async def test_australian_install_uses_aud_units(hass: HomeAssistant, mock_syste
     assert cost_state.attributes["unit_of_measurement"] == "AUD"
 
 
-async def test_german_install_keeps_eur(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_german_install_keeps_eur(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """A DE install — the previous default — stays on EUR."""
     system = mock_system_factory(system_id="sys-1", details=_details("DE"))
     await _setup(hass, system)
@@ -101,7 +107,9 @@ async def test_german_install_keeps_eur(hass: HomeAssistant, mock_system_factory
     assert price_state.attributes["unit_of_measurement"] == "EUR/kWh"
 
 
-async def test_unknown_country_falls_back_to_eur(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_unknown_country_falls_back_to_eur(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Defensive: a country we haven't mapped yet (or address_country=None)
     falls back to EUR rather than breaking the integration."""
     system = mock_system_factory(system_id="sys-1", details=_details(None))
@@ -112,5 +120,7 @@ async def test_unknown_country_falls_back_to_eur(hass: HomeAssistant, mock_syste
     record = entity_reg.async_get("sensor.test_home_electricity_cost")
     assert record is not None
     assert record.unit_of_measurement is None or "EUR" in str(
-        hass.states.get("sensor.test_home_electricity_cost").attributes["unit_of_measurement"]
+        hass.states.get("sensor.test_home_electricity_cost").attributes[
+            "unit_of_measurement"
+        ]
     )

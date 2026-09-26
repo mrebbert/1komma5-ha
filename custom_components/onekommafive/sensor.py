@@ -157,7 +157,9 @@ async def async_setup_entry(
 
     # Price sensors
     entities.extend(
-        OneKomma5PriceSensor(price_coordinator, system_id, system_name, desc, currency=currency)
+        OneKomma5PriceSensor(
+            price_coordinator, system_id, system_name, desc, currency=currency
+        )
         for desc in PRICE_SENSORS
     )
 
@@ -273,7 +275,10 @@ async def async_setup_entry(
     # Dynamic-Pulse price-guarantee sensor. Only created when the account has
     # a DYNAMIC_PULSE subscription AND the guarantee field is populated —
     # accounts without DP get no unavailable sensor to worry about.
-    if data.price_guarantee is not None and data.price_guarantee.value_eur_per_kwh is not None:
+    if (
+        data.price_guarantee is not None
+        and data.price_guarantee.value_eur_per_kwh is not None
+    ):
         entities.append(
             OneKomma5DynamicPulsePriceGuaranteeSensor(
                 data.system_status_coordinator,

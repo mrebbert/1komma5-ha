@@ -90,7 +90,12 @@ async def test_present_asset_keeps_entities_enabled(
     """When the asset is present, the matching entities stay enabled."""
     system = mock_system_factory(
         system_id="sys-1",
-        assets=[_asset("HYBRID"), _asset("HEAT_PUMP"), _asset("METER"), _asset("EV_CHARGER")],
+        assets=[
+            _asset("HYBRID"),
+            _asset("HEAT_PUMP"),
+            _asset("METER"),
+            _asset("EV_CHARGER"),
+        ],
     )
     await _setup(hass, system)
 
@@ -114,4 +119,6 @@ async def test_parent_only_entities_always_enabled(
     ):
         record = _record_by_unique_id(hass, parent_unique_id)
         assert record is not None
-        assert record.disabled_by is None, f"{parent_unique_id} disabled but should not be"
+        assert record.disabled_by is None, (
+            f"{parent_unique_id} disabled but should not be"
+        )
