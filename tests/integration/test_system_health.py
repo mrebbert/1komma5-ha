@@ -151,3 +151,80 @@ async def test_async_register_wires_info_callback(hass: HomeAssistant, mock_syst
     register = SystemHealthRegistration(hass, DOMAIN)
     async_register(hass, register)
     # No assertion needed — completing the call without exception is the test.
+
+
+async def test_health_info_skips_entry_without_runtime_data(hass: HomeAssistant) -> None:
+    """Config entries whose setup failed carry no ``runtime_data``; the panel skips them."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="sys-no-runtime",
+        data={
+            CONF_USERNAME: "u@x.de",
+            CONF_PASSWORD: "pw",
+            CONF_SYSTEM_ID: "sys-no-runtime",
+        },
+    )
+    entry.add_to_hass(hass)
+
+    info = await system_health_info(hass)
+    _close_pending_coroutines(info)
+
+    assert info["config_entries"] == 1
+    # No coordinator fields — the entry was skipped because runtime_data is None.
+    assert "live_last_update_success" not in info
+
+
+async def test_health_info_includes_last_update_age_when_available(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """`last_update_success_time` on the coordinator surfaces as ``<label>_last_update_age``."""
+    import datetime as dt
+
+    system = mock_system_factory(system_id="sys-1")
+    entry = await _setup(hass, system)
+
+    fixed_now = dt.datetime(2026, 9, 26, 12, 0, 0, tzinfo=dt.UTC)
+    # Freeze the last-success timestamps on every coordinator so ``_format_age``
+    # sees a datetime instead of the MagicMock default.
+    for coord in (
+        entry.runtime_data.live_coordinator,
+        entry.runtime_data.price_coordinator,
+        entry.runtime_data.optimization_coordinator,
+        entry.runtime_data.weather_coordinator,
+        entry.runtime_data.system_status_coordinator,
+    ):
+        coord.last_update_success_time = fixed_now
+
+    info = await system_health_info(hass)
+    _close_pending_coroutines(info)
+
+    for label in ("live", "price", "optimization", "weather", "system_status"):
+        assert isinstance(info[f"{label}_last_update_age"], str)
+
+
+def test_format_age_covers_all_branches() -> None:
+    """``_format_age`` returns a well-formed 'time-since' string for each range."""
+    import datetime as dt
+
+    from custom_components.onekommafive.system_health import _format_age
+
+    now = dt.datetime.now(tz=dt.UTC)
+
+    # Future timestamp — negative delta branch.
+    assert _format_age(now + dt.timedelta(seconds=10)) == "in the future"
+    # Seconds bucket.
+    assert _format_age(now - dt.timedelta(seconds=5)).endswith("s ago")
+    # Minutes bucket.
+    assert _format_age(now - dt.timedelta(minutes=3)).endswith("m ago")
+    # Hours bucket.
+    assert _format_age(now - dt.timedelta(hours=2)).endswith("h ago")
+    # Days bucket.
+    assert _format_age(now - dt.timedelta(days=4)).endswith("d ago")
+
+
+def test_sdk_version_falls_back_to_unknown() -> None:
+    """When ``helpers.sdk_version`` returns None the health panel gets ``"unknown"``."""
+    from custom_components.onekommafive.system_health import _sdk_version
+
+    with patch("custom_components.onekommafive.helpers.sdk_version", return_value=None):
+        assert _sdk_version() == "unknown"

@@ -24,7 +24,7 @@ jobs:
         run: pip install -e ".[test]"
 
       - name: Run pytest
-        run: pytest tests/test_helpers.py tests/test_translations.py -v --cov=custom_components/onekommafive --cov-report=term-missing
+        run: pytest tests/test_helpers.py tests/test_translations.py -v --cov=custom_components/onekommafive/helpers --cov-report=term-missing --cov-fail-under=95
 
   integration-tests:
     name: Integration tests (HA stack)
@@ -42,8 +42,11 @@ jobs:
       - name: Install integration test dependencies
         run: pip install -e ".[test-integration]"
 
+      # Runs Tier-2 plus the Tier-1 helpers/translations tests so the
+      # coverage report reflects the full picture (Tier-1 covers `helpers.py`
+      # branches HA never touches, e.g. naive-timestamp parsing).
       - name: Run integration pytest
-        run: pytest tests/integration -v --cov=custom_components/onekommafive --cov-report=term-missing --cov-fail-under=90
+        run: pytest tests -v --cov=custom_components/onekommafive --cov-report=term-missing --cov-fail-under=95
 
   typecheck:
     name: Type check (mypy)

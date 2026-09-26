@@ -604,3 +604,68 @@ class TestResolveCurrency:
         # back to EUR; eurozone neighbours are correct, others can be fixed
         # in the country map without an emergency release.
         assert resolve_currency("ZZ") == "EUR"
+
+
+# ----------------------------------------------------------------------------
+# sdk_version — importlib.metadata fall-through
+# ----------------------------------------------------------------------------
+
+
+class TestSdkVersion:
+    def test_returns_none_when_package_missing(self) -> None:
+        from importlib.metadata import PackageNotFoundError
+
+        from helpers import sdk_version  # type: ignore[import-not-found]
+
+        def _raise(_: str) -> None:
+            raise PackageNotFoundError("onekommafive")
+
+        with patch("importlib.metadata.version", side_effect=_raise):
+            assert sdk_version() is None
+
+
+# ----------------------------------------------------------------------------
+# Naive-datetime + malformed-key branches
+# ----------------------------------------------------------------------------
+
+
+class TestNaiveTimestamps:
+    def test_get_current_price_replaces_naive_tzinfo(self) -> None:
+        """Keys without ``Z`` / offset produce naive datetimes; they get UTC-tagged."""
+        prices = {"2026-04-26T10:45:00": 0.30}
+        with patch("helpers.datetime") as mock_dt:
+            mock_dt.datetime.now.return_value = _at(2026, 4, 26, 10, 36)
+            mock_dt.datetime.fromisoformat = datetime.datetime.fromisoformat
+            mock_dt.UTC = datetime.UTC
+            mock_dt.timedelta = datetime.timedelta
+            assert get_current_price(prices) == 0.30
+
+    def test_build_forecast_handles_naive_and_invalid_keys(self) -> None:
+        prices = {
+            "2026-04-26T11:00:00": 0.30,  # naive → UTC-tagged
+            "not-a-timestamp": 0.99,  # malformed → skipped
+        }
+        with patch("helpers.datetime") as mock_dt:
+            mock_dt.datetime.now.return_value = _at(2026, 4, 26, 10, 36)
+            mock_dt.datetime.fromisoformat = datetime.datetime.fromisoformat
+            mock_dt.UTC = datetime.UTC
+            mock_dt.timedelta = datetime.timedelta
+            slots = build_forecast(prices, horizon_hours=24)
+        assert len(slots) == 1
+        assert slots[0]["price"] == 0.30
+
+    def test_active_optimization_event_utc_tags_naive_from_and_end(self) -> None:
+        """Naive ISO strings without ``Z`` still resolve to an active event."""
+
+        @dataclass
+        class _Ev:
+            asset: str
+            from_time: str
+            end_time: str | None = None
+
+        events = [
+            _Ev(asset="BATTERY", from_time="2026-04-26T10:00:00", end_time="2026-04-26T11:00:00")
+        ]
+        now = _at(2026, 4, 26, 10, 30)
+        result = active_optimization_event(events, asset="BATTERY", now=now)
+        assert result is events[0]

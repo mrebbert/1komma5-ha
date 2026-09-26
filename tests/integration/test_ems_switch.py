@@ -66,6 +66,43 @@ async def test_1k5_install_skips_switch(hass: HomeAssistant, mock_system_factory
     assert _switch_entity_id(hass) is None
 
 
+async def test_gridx_switch_toggles_call_sdk(hass: HomeAssistant, mock_system_factory) -> None:
+    """`async_turn_on/off` calls ``system.set_ems_mode(True/False)`` and refreshes."""
+    system = mock_system_factory(system_id="sys-1")
+    entry = await _setup(hass, system)
+    entity_id = _switch_entity_id(hass)
+    assert entity_id is not None
+
+    await hass.services.async_call("switch", "turn_on", {"entity_id": entity_id}, blocking=True)
+    system.set_ems_mode.assert_awaited_with(True)
+
+    system.set_ems_mode.reset_mock()
+    await hass.services.async_call("switch", "turn_off", {"entity_id": entity_id}, blocking=True)
+    system.set_ems_mode.assert_awaited_with(False)
+    # The switch is coordinator-driven; a request-refresh follows every write.
+    assert entry.runtime_data.live_coordinator.last_update_success is True
+
+
+async def test_switch_state_is_none_when_ems_settings_missing(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """When the live payload carries no ``ems_settings`` the switch reads as ``None``."""
+    system = mock_system_factory(system_id="sys-1")
+    entry = await _setup(hass, system)
+    entity_id = _switch_entity_id(hass)
+    assert entity_id is not None
+
+    # Force a coordinator refresh that returns without EMS settings — mirrors
+    # the runtime path where ``get_ems_settings()`` failed.
+    entry.runtime_data.live_coordinator.data.ems_settings = None
+    entry.runtime_data.live_coordinator.async_update_listeners()
+    await hass.async_block_till_done()
+
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == "unavailable"
+
+
 async def test_1k5_install_removes_stale_gridx_switch(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
