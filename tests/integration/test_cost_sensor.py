@@ -71,7 +71,7 @@ async def _setup_with_price(
     price: float | None,
     initial_power: float = 1000.0,
 ) -> tuple[MockConfigEntry, MagicMock]:
-    """Set up the integration. Returns (entry, system) — caller controls power afterwards."""
+    """Set up the integration; returns (entry, system) for later power control."""
     system = mock_system_factory(
         system_id="sys-1",
         live_overview=_live_overview(initial_power),
@@ -318,7 +318,7 @@ async def test_consumer_cost_proportional_allocation(
 async def test_consumer_cost_skips_when_no_consumption(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
-    """consumption_power=0 → no allocation possible → all four stay at 0, no crash."""
+    """consumption_power=0: no allocation possible; all four stay at 0."""
     freezer.move_to("2026-05-08T12:00:00+00:00")
     entry, system = await _setup_with_price(
         hass, mock_system_factory, price=0.30, initial_power=0.0

@@ -141,7 +141,8 @@ async def test_missing_customer_id_no_sensor(
     system = mock_system_factory(
         system_id="sys-1",
         details=details,
-        price_guarantee=_guarantee(),  # even if stubbed, extraction skips w/o customer_id
+        # even if stubbed, extraction skips w/o customer_id
+        price_guarantee=_guarantee(),
     )
     await _setup(hass, system)
     assert _sensor_entity_id(hass) is None

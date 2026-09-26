@@ -121,7 +121,7 @@ async def test_healthy_install_never_fires_issue(
 async def test_1k5_backend_never_fires_issue(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """emp_type=1K5 has no GridX EMS endpoint — skip the repair-issue path entirely."""
+    """emp_type=1K5 has no GridX EMS endpoint; skip the repair-issue path."""
     system = mock_system_factory(
         system_id="sys-1",
         details=MagicMock(

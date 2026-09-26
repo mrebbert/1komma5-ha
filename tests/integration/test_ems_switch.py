@@ -98,7 +98,7 @@ async def test_gridx_switch_toggles_call_sdk(
 async def test_switch_state_is_none_when_ems_settings_missing(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """When the live payload carries no ``ems_settings`` the switch reads as ``None``."""
+    """A live payload without ``ems_settings`` makes the switch read ``None``."""
     system = mock_system_factory(system_id="sys-1")
     entry = await _setup(hass, system)
     entity_id = _switch_entity_id(hass)

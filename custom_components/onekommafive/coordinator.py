@@ -161,8 +161,9 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
             async with asyncio.timeout(self._fetch_timeout_seconds):
                 data = await self._fetch()
         except TimeoutError as err:
+            secs = self._fetch_timeout_seconds
             raise UpdateFailed(
-                f"Timeout after {self._fetch_timeout_seconds:g}s fetching {self._data_label}"
+                f"Timeout after {secs:g}s fetching {self._data_label}"
             ) from err
         except ApiError as err:
             raise UpdateFailed(f"API error fetching {self._data_label}: {err}") from err
@@ -376,7 +377,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     async def _fetch_today_and_tomorrow(
         self, now: datetime.datetime
     ) -> tuple[MarketPrices, dict[str, float]]:
-        """Fetch today's price slots and — best-effort — tomorrow's, merged into one dict."""
+        """Fetch today's price slots plus tomorrow's (best-effort), merged."""
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
         market_prices = await self._system.get_prices(
@@ -405,7 +406,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         self._fire_negative_price_edge_events(data)
 
     def _fire_negative_price_edge_events(self, data: PriceData) -> None:
-        """Fire negative-price edge events. Granularity = coordinator refresh interval."""
+        """Fire negative-price edge events (granularity = refresh interval)."""
         if data.current_price is None:
             return
         is_negative_now = data.current_price <= 0
@@ -454,7 +455,7 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
         self._fire_new_decision_events(data.events)
 
     def _fire_new_decision_events(self, events: list[OptimizationEvent]) -> None:
-        """Fire onekommafive_optimization_decision for each event newer than the last seen.
+        """Fire onekommafive_optimization_decision for each event newer than last seen.
 
         On the very first refresh after Home Assistant starts, only the most
         recent decision is fired (so the user gets immediate confirmation the
@@ -471,7 +472,7 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
         if self._last_fired_from_time is None:
             events_to_fire = [sorted_events[-1]]
             _LOGGER.debug(
-                "First refresh — firing 1 event for the latest decision (from_time=%s)",
+                "First refresh: one event for latest decision (from_time=%s)",
                 latest_from_time,
             )
         else:

@@ -207,11 +207,13 @@ async def test_vehicle_parents_under_paired_wallbox(
     vehicle_b = devices["sys-1_ev-b"]
 
     identifiers_by_id = {d.id: next(iter(d.identifiers))[1] for d in devices.values()}
+    parent_a = identifiers_by_id.get(vehicle_a.via_device_id, vehicle_a.via_device_id)
+    parent_b = identifiers_by_id.get(vehicle_b.via_device_id, vehicle_b.via_device_id)
     assert vehicle_a.via_device_id == wb_a.id, (
-        f"vehicle A parents on {identifiers_by_id.get(vehicle_a.via_device_id, vehicle_a.via_device_id)!r}, expected wb-a"
+        f"vehicle A parents on {parent_a!r}, expected wb-a"
     )
     assert vehicle_b.via_device_id == wb_b.id, (
-        f"vehicle B parents on {identifiers_by_id.get(vehicle_b.via_device_id, vehicle_b.via_device_id)!r}, expected wb-b"
+        f"vehicle B parents on {parent_b!r}, expected wb-b"
     )
 
 

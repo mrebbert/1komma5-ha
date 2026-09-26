@@ -164,7 +164,7 @@ async def async_setup_entry(
 class OneKomma5CheapElectricitySensor(
     QuarterHourUpdateMixin, OneKomma5PriceEntity, BinarySensorEntity
 ):
-    """Binary sensor that is ON when the current electricity price is below the daily average."""
+    """Binary sensor that is ON when the current price is below the daily average."""
 
     _attr_translation_key = "cheap_electricity"
 
@@ -204,7 +204,7 @@ class OneKomma5CheapElectricitySensor(
 class OneKomma5CheapestHourNowSensor(
     QuarterHourUpdateMixin, OneKomma5PriceEntity, BinarySensorEntity
 ):
-    """Binary sensor that is ON when the current 15-min slot is the cheapest in the next 24h."""
+    """Binary sensor ON when the current 15-min slot is cheapest in the next 24h."""
 
     _attr_translation_key = "cheapest_hour_now"
 
@@ -356,7 +356,7 @@ class OneKomma5OptimizationDecisionSensor(
 
 
 class OneKomma5SiteConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
-    """Binary sensor reflecting whether the 1KOMMA5° cloud sees the site as CONNECTED."""
+    """Binary sensor: whether the 1KOMMA5° API sees the site as CONNECTED."""
 
     _attr_translation_key = "site_connected"
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY

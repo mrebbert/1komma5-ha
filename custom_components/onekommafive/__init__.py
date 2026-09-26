@@ -95,7 +95,7 @@ class OneKomma5Data:
     device_gateways: list[DeviceGateway]  # Heartbeat gateways, surfaces in diagnostics
 
     def named_coordinators(self) -> dict[str, DataUpdateCoordinator[Any]]:
-        """Return the seven coordinators keyed by the label used in services / diagnostics.
+        """Return the seven coordinators keyed by their service/diagnostics label.
 
         Single source of truth: adding an eighth coordinator now updates
         ``services.refresh_now``, the diagnostics dump and the system-health
@@ -206,7 +206,7 @@ def _setup_wallbox_sub_devices(
     wallboxes: list[Wallbox],
     system_status_coordinator: OneKomma5SystemStatusCoordinator,
 ) -> dict[str, str]:
-    """Pre-create one HA sub-device per physical wallbox and return ``{Wallbox.id: device_id}``.
+    """Pre-create one HA sub-device per wallbox; returns ``{Wallbox.id: device_id}``.
 
     Multi-wallbox setups get one sub-device per Wallbox with its own
     manufacturer / model / firmware and ``Wallbox.name`` as label. Single-
@@ -403,7 +403,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
 async def _async_options_updated(
     hass: HomeAssistant, entry: OneKomma5ConfigEntry
 ) -> None:
-    """Reload the integration when options change so option-driven entities re-instantiate."""
+    """Reload the integration on options change so option-driven entities re-init."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
