@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+if TYPE_CHECKING:
+    from onekommafive.system import System
 
 from .const import (
     CONF_CHARGING_WINDOW_DURATION_MINUTES,
@@ -224,7 +227,7 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
             raise CannotConnect from err
 
 
-async def _async_system_title(system: Any) -> str:
+async def _async_system_title(system: System) -> str:
     """Build a human-readable title from the async SDK."""
     info = await system.info()
     if info.name:

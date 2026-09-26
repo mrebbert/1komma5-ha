@@ -54,9 +54,8 @@ asyncio_mode = "auto"
 [tool.mypy]
 python_version = "3.13"
 # The 1KOMMA5° SDK ships py.typed since v1.0.1, so mypy sees full SDK types.
+strict = true
 ignore_missing_imports = true
-check_untyped_defs = true
-warn_unused_ignores = true
 files = ["custom_components/onekommafive"]
 
 [tool.ruff]

@@ -50,7 +50,7 @@ async def async_setup_entry(
     data = entry.runtime_data
     system_id = data.system.id()
     assets_by_type = resolve_assets_by_type(data)
-    entities: list = [
+    entities: list[BinarySensorEntity] = [
         OneKomma5CheapElectricitySensor(
             data.price_coordinator,
             system_id,
@@ -333,7 +333,7 @@ class OneKomma5OptimizationDecisionSensor(
         event = self._active_event()
         if event is None:
             return False
-        return event.decision == self._spec.decision
+        return bool(event.decision == self._spec.decision)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
@@ -499,7 +499,7 @@ class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySens
         asset = self._matching_asset()
         if asset is None:
             return None
-        return asset.connection_status == "CONNECTED"
+        return bool(asset.connection_status == "CONNECTED")
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

@@ -218,7 +218,7 @@ def _setup_wallbox_sub_devices(
     return wallbox_device_ids
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     """Register integration-wide services once on HA startup."""
     async_setup_services(hass)
     return True

@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from homeassistant.components.weather import (
+from homeassistant.components.weather import (  # type: ignore[attr-defined]
     Forecast,
     WeatherEntity,
-    WeatherEntityFeature,
+    WeatherEntityFeature,  # HA re-exports via __init__ but not __all__
 )
 from homeassistant.const import (
     UnitOfPrecipitationDepth,

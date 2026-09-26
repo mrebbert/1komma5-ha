@@ -10,7 +10,7 @@ import datetime as _dt
 import logging
 from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from onekommafive.ev_charger import EVCharger
@@ -82,7 +82,7 @@ class _DescriptionValueSensor:
         data = self.coordinator.data  # type: ignore[attr-defined]
         if attr_fn is None or data is None:
             return None
-        return attr_fn(data)
+        return cast(dict[str, Any] | None, attr_fn(data))
 
 
 class OneKomma5LiveSensor(_DescriptionValueSensor, OneKomma5Entity, SensorEntity):
@@ -515,7 +515,7 @@ class OneKomma5EnergySensor(OneKomma5AccumulatingSensor):
         self._attr_translation_key = f"{description.key}_energy"
 
     def _get_power_w(self, data: LiveData) -> float | None:
-        return self._power_fn(data)
+        return cast(float | None, self._power_fn(data))
 
 
 class OneKomma5StablePriceSensor(QuarterHourUpdateMixin, OneKomma5PriceEntity, RestoreSensor):
@@ -682,7 +682,7 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
         grid = lo.grid_consumption_power
         if consumer_power is None or grid is None:
             return None
-        return grid * (consumer_power / total)
+        return float(grid) * (float(consumer_power) / float(total))
 
     def _get_kwh_multiplier(self) -> float | None:
         return self._stable_price()
@@ -916,7 +916,7 @@ class OneKomma5DailySavingsSensor(OneKomma5EnergyEntity, SensorEntity):
         savings = getattr(self.coordinator.data.energy, "savings_eur", None)
         if savings is None:
             return None
-        return round(savings, 2)
+        return round(float(savings), 2)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
