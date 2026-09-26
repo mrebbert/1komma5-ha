@@ -8,11 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.65] - 2026-10-11
 
 ### Changed
-- Migrated to the async `onekommafive` SDK v1.0.1. Every 1KOMMA5° API call now runs on Home Assistant's aiohttp loop; the previous `hass.async_add_executor_job` wraps around SDK calls are gone. The integration shares HA's global aiohttp session via `homeassistant.helpers.aiohttp_client.async_get_clientsession`, so a single connection pool serves both HA and the 1KOMMA5° API. No user-visible change to entities, services, or blueprints.
+- Migrated to the async `onekommafive` SDK v1.0.2. Every 1KOMMA5° API call now runs on Home Assistant's aiohttp loop; the previous `hass.async_add_executor_job` wraps around SDK calls are gone. The integration shares HA's global aiohttp session via `homeassistant.helpers.aiohttp_client.async_get_clientsession`, so a single connection pool serves both HA and the 1KOMMA5° API. No user-visible change to entities, services, or blueprints.
 - All seven data coordinators, both service handlers (`refresh_now`, `get_heartbeat_metrics`, `assign_ev_to_wallbox`, `get_cheapest_window`, `get_most_expensive_window`), the four write-path platforms (switch, select, number, time), the diagnostics dump and the config-flow authentication path all run natively async against the new SDK.
 - Setup now uses the SDK's first-class `get_price_guarantee(customer_id)` endpoint instead of iterating the subscriptions list; behaviour unchanged.
 - SDK type annotations replace the previous `Any` placeholders on the SDK boundary. The `py.typed`-marked SDK gives mypy the full model surface; the integration's own dataclasses (`OneKomma5Data`, `LiveData`, `PriceData`, `SystemStatusData`, `OptimizationData`, `NotificationsData`, `EnergyTodayData`, `WeatherData`) now carry concrete SDK types.
-- Bumped the `onekommafive` SDK pin to `>=1.0.1,<2` (from `>=0.5.0,<0.6`). Home Assistant installs the new SDK on first reload after the update.
+- Bumped the `onekommafive` SDK pin to `>=1.0.2,<2` (from `>=0.5.0,<0.6`). v1.0.2 loosens the aiohttp constraint to `>=3.10,<4`, matching Home Assistant's own aiohttp 3.13.3 requirement. Home Assistant installs the new SDK on first reload after the update.
 
 ## [0.1.63] - 2026-09-27
 
