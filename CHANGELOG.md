@@ -5,32 +5,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.65] - 2026-10-11
+## [0.1.65] - 2026-09-27
+
+Consolidates the v0.1.63-armed feature work with the SDK v1.0.2 async migration; the v0.1.63 tag was skipped so both stories ship together.
+
+### Added
+- **`select.<sys>_<wallbox>_assigned_vehicle`** — bind a vehicle profile to a wallbox from Home Assistant (feature request #24). Options are the site's vehicles; selecting flips the assignment via the SDK's async `EVCharger.assign_charger`. 1:1 exclusive per 1KOMMA5°'s model — the previously bound vehicle is released automatically. Single-vehicle sites see the entity but have nothing to switch.
+- **Service `onekommafive.assign_ev_to_wallbox`** — id-addressed counterpart to the select entity for scripts. Schema: `wallbox_id`, `ev_id` (both required); returns `{success, previous_ev_id}`.
+- **Automation blueprint `vehicle_at_wallbox.yaml`** — one automation per vehicle. Trigger = the vehicle's plug-in binary sensor; action = flip the wallbox select.
+- Example dashboards (`dashboard.yaml`, `dashboard-showcase.yaml`) gain a *Wallbox → Fahrzeug* card in the EV view.
+- Live coordinator surfaces the wallbox inventory with live `assigned_ev_id` at the 30-second cadence, so App→HA assignment changes reach HA within one tick instead of five minutes.
+
+### Fixed
+- `sensor.<sys>_optimization_event_count` counts logical 15-minute slots instead of API event objects. The `/heartbeat-ai/optimizations` endpoint aggregates consecutive same-decision slots into a single event, so counting objects silently under-reported the day's decision volume by up to a factor of four.
+- `binary_sensor.<sys>_optimization_battery_grid_charge` and `binary_sensor.<sys>_heatpump_recommendation` stay `on` for the full aggregated slot span (uses SDK `end_time`; falls back to `to_time` on older payloads).
 
 ### Changed
-- Migrated to the async `onekommafive` SDK v1.0.2. Every 1KOMMA5° API call now runs on Home Assistant's aiohttp loop; the previous `hass.async_add_executor_job` wraps around SDK calls are gone. The integration shares HA's global aiohttp session via `homeassistant.helpers.aiohttp_client.async_get_clientsession`, so a single connection pool serves both HA and the 1KOMMA5° API. No user-visible change to entities, services, or blueprints.
+- **Migrated to the async `onekommafive` SDK v1.0.2.** Every 1KOMMA5° API call now runs on Home Assistant's aiohttp loop; the previous `hass.async_add_executor_job` wraps around SDK calls are gone. The integration shares HA's global aiohttp session via `homeassistant.helpers.aiohttp_client.async_get_clientsession`, so a single connection pool serves both HA and the 1KOMMA5° API. No user-visible change to entities, services, or blueprints.
 - All seven data coordinators, both service handlers (`refresh_now`, `get_heartbeat_metrics`, `assign_ev_to_wallbox`, `get_cheapest_window`, `get_most_expensive_window`), the four write-path platforms (switch, select, number, time), the diagnostics dump and the config-flow authentication path all run natively async against the new SDK.
 - Setup now uses the SDK's first-class `get_price_guarantee(customer_id)` endpoint instead of iterating the subscriptions list; behaviour unchanged.
 - SDK type annotations replace the previous `Any` placeholders on the SDK boundary. The `py.typed`-marked SDK gives mypy the full model surface; the integration's own dataclasses (`OneKomma5Data`, `LiveData`, `PriceData`, `SystemStatusData`, `OptimizationData`, `NotificationsData`, `EnergyTodayData`, `WeatherData`) now carry concrete SDK types.
-- Bumped the `onekommafive` SDK pin to `>=1.0.2,<2` (from `>=0.5.0,<0.6`). v1.0.2 loosens the aiohttp constraint to `>=3.10,<4`, matching Home Assistant's own aiohttp 3.13.3 requirement. Home Assistant installs the new SDK on first reload after the update.
-
-## [0.1.63] - 2026-09-27
-
-### Added
-- **`select.<sys>_<wallbox>_assigned_vehicle`** — one select per wallbox to bind a vehicle profile to the wallbox from Home Assistant (feature request #24). Options are the site's vehicles; selecting an option calls the 1KOMMA5° API's assignment endpoint (SDK ≥ 0.5.0). The 1KOMMA5° model is 1:1 exclusive; the previously bound vehicle is released automatically by the backend in the same call. Sites with a single vehicle see the entity but have nothing to switch (no UI breakage, just an inert control).
-- **Service `onekommafive.assign_ev_to_wallbox`** — id-addressed counterpart to the select entity for automations that carry the vehicle and wallbox as data. Schema: `wallbox_id`, `ev_id` (both required); returns `{success, previous_ev_id}` so automations can log the swap.
-- **Automation blueprint `vehicle_at_wallbox.yaml`** — one automation per vehicle. Trigger = the vehicle's plug-in binary sensor (from any other integration) goes `on`, action = the assignment select flips to the vehicle's option. Turns "car plugs in" into "1KOMMA5° binds the right profile" without hand-crafting the automation.
-- Example dashboards (`dashboard.yaml`, `dashboard-showcase.yaml`) gain a *Wallbox → Fahrzeug* card in the EV view.
-- System-status coordinator now surfaces the wallbox inventory with live `assigned_ev_id` (5-minute cadence) — needed to drive the assignment select without a dedicated coordinator.
-
-### Fixed
-- `sensor.<sys>_optimization_event_count` now counts logical 15-minute slots instead of API event objects. The `/heartbeat-ai/optimizations` endpoint aggregates consecutive same-decision slots within a one-hour bucket into a single event, so counting objects was silently under-reporting by up to a factor of four. Existing installs will see the sensor step up on the first refresh after the update; the new value is correct, the previous one was too low.
-- `binary_sensor.<sys>_optimization_battery_grid_charge` and `binary_sensor.<sys>_heatpump_recommendation` stay `on` for the full aggregated slot span instead of dropping back to `off` at the 15-minute mark of a multi-slot decision. Uses the SDK's new `OptimizationEvent.end_time` property; falls back to `to_time` on older payloads.
-
-### Changed
-- `attributes.to` on `sensor.<sys>_optimization_last_decision` and on the `decisions[]` entries under `sensor.<sys>_optimization_event_count` now reflects the aggregated slot-span end (was: the end of the first slot). New `slot_count` attribute exposes how many 15-min slots the decision covers.
+- Bumped the `onekommafive` SDK pin to `>=1.0.2,<2` (from `>=0.5.0,<0.6`). v1.0.2 loosens the aiohttp constraint to `>=3.10,<4`, matching Home Assistant's own aiohttp 3.13.3 requirement.
+- `attributes.to` on `sensor.<sys>_optimization_last_decision` and on the `decisions[]` entries under `sensor.<sys>_optimization_event_count` now reflects the aggregated slot-span end. New `slot_count` attribute exposes how many 15-min slots the decision covers.
 - Bus event `onekommafive_optimization_decision` gains `end` (aggregated span end) and `slot_count` fields alongside the existing `to` (first-slot end, kept for compatibility).
-- Bump the `onekommafive` SDK pin to `>=0.5.0,<0.6` (from `>=0.4.0,<0.5`). Upstream `0.4.1` is contributor-tooling only (uv lockfile in the repo, Dependabot switched to the uv ecosystem, second CI job that runs `uv sync --frozen && uv run pytest`). `0.4.2` documents the aggregated optimization-events semantics and adds the `slot_count` / `end_time` accessors that back the optimization fixes above. `0.5.0` adds `EVCharger.assign_charger(charger_id)` — the write path that backs the assignment surface.
+
+## [0.1.63] - never tagged
+
+The v0.1.63 armed work (wallbox → vehicle assignment, live-coordinator wallbox fetch, optimization slot-count fix) was consolidated into v0.1.65 and shipped there on 2026-09-27; see the [0.1.65] entry above.
 
 ## [0.1.61] - 2026-09-24
 
