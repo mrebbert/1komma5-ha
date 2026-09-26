@@ -433,5 +433,34 @@
       "title": "Ajustes del EMS no disponibles",
       "description": "El backend de 1KOMMA5° lleva varias actualizaciones sin devolver los ajustes del EMS. El interruptor de modo automático del EMS y los campos de diagnóstico relacionados permanecerán como `unavailable`. Causa más probable: tu instalación no tiene DeviceGateway — es decir, no hay caja HEMS exponiendo los ajustes del EMS. Si es así, puedes ignorar este aviso — el resto de la integración funciona con normalidad. Si sí hay un HEMS instalado, consulta el estado del sistema en la app 1KOMMA5°."
     }
+  },
+  "exceptions": {
+    "no_integration_configured": {
+      "message": "No hay ninguna integración 1KOMMA5° configurada."
+    },
+    "config_entry_not_found": {
+      "message": "Entrada de configuración '{config_entry_id}' no encontrada."
+    },
+    "multiple_entries_ambiguous": {
+      "message": "Hay varias integraciones 1KOMMA5° configuradas; indica config_entry_id."
+    },
+    "duration_too_short": {
+      "message": "duration_minutes debe ser al menos 15."
+    },
+    "no_price_forecast": {
+      "message": "Aún no hay pronóstico de precios disponible."
+    },
+    "forecast_too_short": {
+      "message": "El pronóstico incluye {available} intervalos, se necesitan {needed}."
+    },
+    "live_data_not_ready": {
+      "message": "El coordinador Live aún no tiene datos; vuelve a intentarlo tras la primera actualización."
+    },
+    "vehicle_not_found": {
+      "message": "Vehículo '{ev_id}' no encontrado."
+    },
+    "wallbox_not_found": {
+      "message": "Wallbox '{wallbox_id}' no encontrada."
+    }
   }
 }

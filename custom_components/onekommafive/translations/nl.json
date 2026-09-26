@@ -433,5 +433,34 @@
       "title": "EMS-instellingen niet beschikbaar",
       "description": "De 1KOMMA5°-backend heeft al meerdere updates lang geen EMS-instellingen meer geleverd. De EMS-automatische schakelaar en bijbehorende diagnose-velden blijven daarom `unavailable`. Meest waarschijnlijke oorzaak: je installatie heeft geen DeviceGateway — d.w.z. geen HEMS-box die EMS-instellingen blootstelt. Als dat klopt, kun je deze melding negeren — de rest van de integratie werkt normaal. Als er wel een HEMS is geïnstalleerd, controleer de status van de installatie in de 1KOMMA5°-app."
     }
+  },
+  "exceptions": {
+    "no_integration_configured": {
+      "message": "Geen 1KOMMA5°-integratie geconfigureerd."
+    },
+    "config_entry_not_found": {
+      "message": "Configuratie-invoer '{config_entry_id}' niet gevonden."
+    },
+    "multiple_entries_ambiguous": {
+      "message": "Er zijn meerdere 1KOMMA5°-systemen geconfigureerd; geef config_entry_id op."
+    },
+    "duration_too_short": {
+      "message": "duration_minutes moet minstens 15 zijn."
+    },
+    "no_price_forecast": {
+      "message": "Nog geen prijsvoorspelling beschikbaar."
+    },
+    "forecast_too_short": {
+      "message": "Voorspelling omvat {available} slots, {needed} nodig."
+    },
+    "live_data_not_ready": {
+      "message": "Live-coördinator heeft nog geen gegevens; probeer het na de eerste update opnieuw."
+    },
+    "vehicle_not_found": {
+      "message": "Voertuig '{ev_id}' niet gevonden."
+    },
+    "wallbox_not_found": {
+      "message": "Wallbox '{wallbox_id}' niet gevonden."
+    }
   }
 }

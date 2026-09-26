@@ -433,5 +433,34 @@
       "title": "EMS settings unavailable",
       "description": "The 1KOMMA5° backend hasn't returned EMS settings for several refreshes. The EMS auto-mode switch and related diagnostic fields will stay `unavailable`. Most likely cause: your installation has no DeviceGateway — i.e. no HEMS box exposing EMS settings. If that's correct, you can ignore this notice — the rest of the integration runs normally. If a HEMS is in fact installed, check the system status in the 1KOMMA5° app."
     }
+  },
+  "exceptions": {
+    "no_integration_configured": {
+      "message": "No 1KOMMA5° integration configured."
+    },
+    "config_entry_not_found": {
+      "message": "Config entry '{config_entry_id}' not found."
+    },
+    "multiple_entries_ambiguous": {
+      "message": "Multiple 1KOMMA5° entries configured; specify config_entry_id."
+    },
+    "duration_too_short": {
+      "message": "duration_minutes must be at least 15."
+    },
+    "no_price_forecast": {
+      "message": "No price forecast available yet."
+    },
+    "forecast_too_short": {
+      "message": "Forecast covers {available} slots, need {needed}."
+    },
+    "live_data_not_ready": {
+      "message": "Live coordinator has no data yet; retry after the first refresh."
+    },
+    "vehicle_not_found": {
+      "message": "Vehicle '{ev_id}' not found."
+    },
+    "wallbox_not_found": {
+      "message": "Wallbox '{wallbox_id}' not found."
+    }
   }
 }

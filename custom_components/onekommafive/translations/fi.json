@@ -433,5 +433,34 @@
       "title": "EMS-asetukset eivät käytettävissä",
       "description": "1KOMMA5°-taustajärjestelmä ei ole palauttanut EMS-asetuksia useaan päivitykseen. EMS:n automaattitilan kytkin ja siihen liittyvät diagnostiikkakentät pysyvät tilassa `unavailable`. Todennäköisin syy: asennuksessasi ei ole DeviceGatewayta — eli HEMS-laatikkoa, joka tarjoaa EMS-asetukset. Jos näin on, voit jättää tämän huomautuksen huomiotta — muu integraatio toimii normaalisti. Jos HEMS kuitenkin on asennettu, tarkista järjestelmän tila 1KOMMA5°-sovelluksesta."
     }
+  },
+  "exceptions": {
+    "no_integration_configured": {
+      "message": "1KOMMA5°-integraatiota ei ole määritetty."
+    },
+    "config_entry_not_found": {
+      "message": "Määrittelymerkintää '{config_entry_id}' ei löytynyt."
+    },
+    "multiple_entries_ambiguous": {
+      "message": "Useita 1KOMMA5°-järjestelmiä on määritetty; anna config_entry_id."
+    },
+    "duration_too_short": {
+      "message": "duration_minutes on oltava vähintään 15."
+    },
+    "no_price_forecast": {
+      "message": "Hintaennuste ei ole vielä saatavilla."
+    },
+    "forecast_too_short": {
+      "message": "Ennuste kattaa {available} jaksoa, tarvitaan {needed}."
+    },
+    "live_data_not_ready": {
+      "message": "Live-koordinaattorilla ei ole vielä tietoja; yritä uudelleen ensimmäisen päivityksen jälkeen."
+    },
+    "vehicle_not_found": {
+      "message": "Ajoneuvoa '{ev_id}' ei löytynyt."
+    },
+    "wallbox_not_found": {
+      "message": "Wallboxia '{wallbox_id}' ei löytynyt."
+    }
   }
 }

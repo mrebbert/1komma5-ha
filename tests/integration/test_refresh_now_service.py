@@ -131,7 +131,7 @@ async def test_no_entries_raises(hass: HomeAssistant) -> None:
     from custom_components.onekommafive.services import async_setup_services
 
     async_setup_services(hass)
-    with pytest.raises(HomeAssistantError, match="No 1KOMMA5° integration configured"):
+    with pytest.raises(HomeAssistantError) as excinfo:
         await hass.services.async_call(
             DOMAIN,
             "refresh_now",
@@ -139,6 +139,7 @@ async def test_no_entries_raises(hass: HomeAssistant) -> None:
             blocking=True,
             return_response=True,
         )
+    assert excinfo.value.translation_key == "no_integration_configured"
 
 
 async def test_unknown_coordinator_value_rejected_by_schema(

@@ -183,11 +183,6 @@ class OneKomma5CheapElectricitySensor(
         return current < average
 
     @property
-    def icon(self) -> str:
-        """Return icon reflecting cheap/expensive state."""
-        return "mdi:lightning-bolt" if self.is_on else "mdi:lightning-bolt-off"
-
-    @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Expose current price, average and their difference."""
         if self.coordinator.data is None:
@@ -234,11 +229,6 @@ class OneKomma5CheapestHourNowSensor(
         return abs(current - cheapest) < 1e-9
 
     @property
-    def icon(self) -> str:
-        """Return icon reflecting state."""
-        return "mdi:cash-clock" if self.is_on else "mdi:cash-off"
-
-    @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Expose current price, cheapest price and the cheapest slot start."""
         if self.coordinator.data is None:
@@ -261,15 +251,14 @@ class OptimizationDecisionSpec:
 
     ``asset`` is the SDK optimization-event asset string ("BATTERY" / "HEATPUMP");
     ``decision`` is the exact decision-string that flips this sensor ON. ``key``
-    doubles as translation key and unique_id suffix.
+    doubles as translation key and unique_id suffix. Icons live in
+    ``icons.json``, keyed by ``key``.
     """
 
     key: str
     asset: str
     decision: str
     device_key: str
-    icon_on: str
-    icon_off: str
     include_soc: bool = False
 
 
@@ -279,8 +268,6 @@ OPTIMIZATION_DECISION_SENSORS: tuple[OptimizationDecisionSpec, ...] = (
         asset="BATTERY",
         decision="BATTERY_CHARGE_FROM_GRID",
         device_key="inverter",
-        icon_on="mdi:battery-arrow-up",
-        icon_off="mdi:battery-arrow-up-outline",
         include_soc=True,
     ),
     OptimizationDecisionSpec(
@@ -288,8 +275,6 @@ OPTIMIZATION_DECISION_SENSORS: tuple[OptimizationDecisionSpec, ...] = (
         asset="HEATPUMP",
         decision="HEATPUMP_RECOMMEND_ON",
         device_key="heat_pump",
-        icon_on="mdi:heat-pump",
-        icon_off="mdi:heat-pump-outline",
     ),
 )
 
@@ -346,11 +331,6 @@ class OneKomma5OptimizationDecisionSensor(
         if event is None:
             return False
         return event.decision == self._spec.decision
-
-    @property
-    def icon(self) -> str:
-        """Return icon reflecting state."""
-        return self._spec.icon_on if self.is_on else self._spec.icon_off
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

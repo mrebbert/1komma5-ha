@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 
-from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME
+from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME, DOMAIN
 from .coordinator import (
     OneKomma5EnergyCoordinator,
     OneKomma5LiveCoordinator,
@@ -123,6 +123,43 @@ def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuara
             return None
         return PriceGuarantee(value_eur_per_kwh=value_eur_per_kwh, version=version)
     return None
+
+
+def _remove_stale_wallbox_devices(
+    *,
+    device_registry: dr.DeviceRegistry,
+    entry_id: str,
+    system_id: str,
+    wallboxes: list[Any],
+) -> None:
+    """Delete wallbox sub-devices whose id is no longer reported by the API.
+
+    Covers three drift cases: (a) a physical wallbox was removed from the site,
+    (b) the account transitioned from single-wallbox (identifier
+    ``(DOMAIN, f"{system_id}_wallbox")``) to multi-wallbox
+    (per-wb ``_wallbox_<id>``), (c) the reverse transition. Anything under this
+    entry whose identifier starts with ``f"{system_id}_wallbox"`` but does not
+    match one of the currently-valid keys is removed from the device registry.
+    """
+    from .entity import wallbox_sub_device_key
+
+    keep = {
+        f"{system_id}_{wallbox_sub_device_key(wb.id, len(wallboxes))}"
+        for wb in wallboxes
+        if getattr(wb, "id", None)
+    }
+    stale_prefix = f"{system_id}_wallbox"
+    for device in list(device_registry.devices.values()):
+        if entry_id not in device.config_entries:
+            continue
+        our_ids = [ident for ident in device.identifiers if ident[0] == DOMAIN]
+        if not our_ids:
+            continue
+        suffix = our_ids[0][1]
+        if not suffix.startswith(stale_prefix) or suffix in keep:
+            continue
+        _LOGGER.info("Removing stale wallbox sub-device %s", suffix)
+        device_registry.async_remove_device(device.id)
 
 
 def _setup_wallbox_sub_devices(
@@ -266,7 +303,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     from .entity import get_emp_type, is_1k5_backend
 
     emp_type = get_emp_type(details)
-    live_coordinator = OneKomma5LiveCoordinator(hass, system, is_1k5=is_1k5_backend(emp_type))
+    live_coordinator = OneKomma5LiveCoordinator(
+        hass, system, is_1k5=is_1k5_backend(emp_type), entry_id=entry.entry_id
+    )
     price_coordinator = OneKomma5PriceCoordinator(hass, system)
     optimization_coordinator = OneKomma5OptimizationCoordinator(hass, system)
     weather_coordinator = OneKomma5WeatherCoordinator(hass, system)
@@ -309,6 +348,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         parent_device_id=parent_device.id,
         wallboxes=wallboxes,
         system_status_coordinator=system_status_coordinator,
+    )
+    _remove_stale_wallbox_devices(
+        device_registry=device_registry,
+        entry_id=entry.entry_id,
+        system_id=system_id,
+        wallboxes=wallboxes,
     )
     entry.runtime_data = OneKomma5Data(
         live_coordinator=live_coordinator,

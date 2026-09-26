@@ -433,5 +433,34 @@
       "title": "EMS-Einstellungen nicht verfügbar",
       "description": "Das 1KOMMA5°-Backend liefert seit mehreren Aktualisierungen keine EMS-Einstellungen mehr. Damit bleiben der EMS-Automatik-Schalter und die zugehörigen Diagnose-Felder als `unavailable` markiert. Häufigste Ursache: Deine Anlage hat keinen DeviceGateway, also keine HEMS-Box, die EMS-Settings exponiert. Wenn dem so ist, kannst du diesen Hinweis ignorieren – die übrigen Entitäten arbeiten normal weiter. Sollte das HEMS doch installiert sein, prüfe den Status der Anlage in der 1KOMMA5°-App."
     }
+  },
+  "exceptions": {
+    "no_integration_configured": {
+      "message": "Kein 1KOMMA5°-System konfiguriert."
+    },
+    "config_entry_not_found": {
+      "message": "Config-Eintrag '{config_entry_id}' nicht gefunden."
+    },
+    "multiple_entries_ambiguous": {
+      "message": "Mehrere 1KOMMA5°-Systeme konfiguriert; bitte config_entry_id angeben."
+    },
+    "duration_too_short": {
+      "message": "duration_minutes muss mindestens 15 sein."
+    },
+    "no_price_forecast": {
+      "message": "Noch keine Strompreisprognose verfügbar."
+    },
+    "forecast_too_short": {
+      "message": "Prognose enthält {available} Slots, benötigt werden {needed}."
+    },
+    "live_data_not_ready": {
+      "message": "Live-Coordinator hat noch keine Daten; nach der ersten Aktualisierung erneut versuchen."
+    },
+    "vehicle_not_found": {
+      "message": "Fahrzeug '{ev_id}' nicht gefunden."
+    },
+    "wallbox_not_found": {
+      "message": "Wallbox '{wallbox_id}' nicht gefunden."
+    }
   }
 }

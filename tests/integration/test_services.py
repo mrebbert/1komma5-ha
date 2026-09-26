@@ -110,7 +110,7 @@ async def test_get_cheapest_window_without_entry_raises(
 
     async_setup_services(hass)
 
-    with pytest.raises(HomeAssistantError, match="No 1KOMMA5° integration configured"):
+    with pytest.raises(HomeAssistantError) as excinfo:
         await hass.services.async_call(
             DOMAIN,
             "get_cheapest_window",
@@ -118,6 +118,7 @@ async def test_get_cheapest_window_without_entry_raises(
             blocking=True,
             return_response=True,
         )
+    assert excinfo.value.translation_key == "no_integration_configured"
 
 
 async def test_get_cheapest_window_validation_rejects_short_duration(

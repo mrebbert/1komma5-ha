@@ -192,7 +192,7 @@ async def test_assign_ev_service_unknown_ev(hass: HomeAssistant, mock_system_fac
     )
     await _setup(hass, system)
 
-    with pytest.raises(HomeAssistantError, match="Vehicle 'ev-missing' not found"):
+    with pytest.raises(HomeAssistantError) as excinfo:
         await hass.services.async_call(
             DOMAIN,
             "assign_ev_to_wallbox",
@@ -200,6 +200,8 @@ async def test_assign_ev_service_unknown_ev(hass: HomeAssistant, mock_system_fac
             blocking=True,
             return_response=True,
         )
+    assert excinfo.value.translation_key == "vehicle_not_found"
+    assert excinfo.value.translation_placeholders == {"ev_id": "ev-missing"}
 
 
 async def test_assign_ev_service_unknown_wallbox(hass: HomeAssistant, mock_system_factory) -> None:
@@ -212,7 +214,7 @@ async def test_assign_ev_service_unknown_wallbox(hass: HomeAssistant, mock_syste
     )
     await _setup(hass, system)
 
-    with pytest.raises(HomeAssistantError, match="Wallbox 'wb-missing' not found"):
+    with pytest.raises(HomeAssistantError) as excinfo:
         await hass.services.async_call(
             DOMAIN,
             "assign_ev_to_wallbox",
@@ -220,4 +222,6 @@ async def test_assign_ev_service_unknown_wallbox(hass: HomeAssistant, mock_syste
             blocking=True,
             return_response=True,
         )
+    assert excinfo.value.translation_key == "wallbox_not_found"
+    assert excinfo.value.translation_placeholders == {"wallbox_id": "wb-missing"}
     ev_a.assign_charger.assert_not_called()

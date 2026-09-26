@@ -183,7 +183,13 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     _EMS_FAILURE_THRESHOLD = 5
     _EMS_ISSUE_ID = "ems_settings_unavailable"
 
-    def __init__(self, hass: HomeAssistant, system: Any, is_1k5: bool = False) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        system: Any,
+        is_1k5: bool = False,
+        entry_id: str | None = None,
+    ) -> None:
         super().__init__(hass, system)
         self._ems_failure_count = 0
         self._ems_issue_active = False
@@ -193,6 +199,13 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         # One-shot flag so we clear a stale Repair from a previous GRIDX
         # run exactly once when a 1K5 install first reloads.
         self._ems_stale_cleanup_done = False
+        # Config entry id, needed for the dynamic-devices reload when the
+        # wallbox inventory changes between refreshes.
+        self._entry_id = entry_id
+        # Baseline captured after the first successful fetch; a later mismatch
+        # triggers exactly one reload. Reload rebuilds the coordinator, so the
+        # baseline resets naturally.
+        self._known_wallbox_ids: frozenset[str] | None = None
 
     def _fetch(self) -> LiveData:
         """Fetch all live data synchronously."""
@@ -223,8 +236,35 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         )
 
     async def _on_data(self, data: LiveData) -> None:
-        """Track EMS availability for the repair issue after every successful fetch."""
+        """Post-fetch hook: EMS repair-issue tracking + wallbox-inventory reload."""
         self._update_ems_repair_issue(data.ems_settings is not None)
+        self._maybe_reload_on_wallbox_change(data)
+
+    def _maybe_reload_on_wallbox_change(self, data: LiveData) -> None:
+        """Reload the config entry when the wallbox inventory drifts.
+
+        HA does not surface new hardware without reloading the config entry:
+        sub-devices are pre-registered in ``async_setup_entry`` and platform
+        entities enumerate the wallbox list once at setup. Comparing the
+        current id-set against the last observed one keeps that inexpensive
+        for the steady state, and issues one reload when a physical wallbox
+        appears or disappears.
+        """
+        if self._entry_id is None:
+            return
+        current = frozenset(wb.id for wb in data.wallboxes if getattr(wb, "id", None) is not None)
+        if self._known_wallbox_ids is None:
+            self._known_wallbox_ids = current
+            return
+        if current == self._known_wallbox_ids:
+            return
+        _LOGGER.info(
+            "Wallbox inventory changed (%s → %s), reloading entry",
+            sorted(self._known_wallbox_ids),
+            sorted(current),
+        )
+        self._known_wallbox_ids = current
+        self.hass.async_create_task(self.hass.config_entries.async_reload(self._entry_id))
 
     def _update_ems_repair_issue(self, ems_available: bool) -> None:
         """Track consecutive EMS failures and create / delete the repair issue."""

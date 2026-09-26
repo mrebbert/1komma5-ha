@@ -176,7 +176,7 @@ def active_optimization_event(
             continue
         from_raw = getattr(event, "from_time", None)
         end_raw = getattr(event, "end_time", None) or getattr(event, "to_time", None)
-        if not from_raw or not end_raw:
+        if not isinstance(from_raw, str) or not isinstance(end_raw, str):
             continue
         try:
             from_dt = datetime.datetime.fromisoformat(from_raw.replace("Z", "+00:00"))

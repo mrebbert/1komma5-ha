@@ -87,15 +87,25 @@ def _resolve_config_entry(hass: HomeAssistant, call: ServiceCall) -> Any:
     config_entry_id = call.data.get("config_entry_id")
     entries = hass.config_entries.async_entries(DOMAIN)
     if not entries:
-        raise HomeAssistantError("No 1KOMMA5° integration configured")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="no_integration_configured",
+        )
     if config_entry_id is not None:
         entry = next((e for e in entries if e.entry_id == config_entry_id), None)
         if entry is None:
-            raise HomeAssistantError(f"Config entry '{config_entry_id}' not found")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="config_entry_not_found",
+                translation_placeholders={"config_entry_id": config_entry_id},
+            )
         return entry
     if len(entries) == 1:
         return entries[0]
-    raise HomeAssistantError("Multiple 1KOMMA5° entries configured — specify config_entry_id")
+    raise HomeAssistantError(
+        translation_domain=DOMAIN,
+        translation_key="multiple_entries_ambiguous",
+    )
 
 
 def _ensure_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -116,7 +126,10 @@ def _resolve_window_inputs(
     duration_minutes: int = call.data["duration_minutes"]
     slot_count_needed = duration_minutes // 15
     if slot_count_needed < 1:
-        raise HomeAssistantError("duration_minutes must be at least 15")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="duration_too_short",
+        )
 
     earliest_start = call.data.get("earliest_start")
     latest_end = call.data.get("latest_end")
@@ -128,11 +141,21 @@ def _resolve_window_inputs(
     entry = _resolve_config_entry(hass, call)
     coordinator = entry.runtime_data.price_coordinator
     if coordinator.data is None or not coordinator.data.forecast:
-        raise HomeAssistantError("No price forecast available yet")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="no_price_forecast",
+        )
 
     forecast = coordinator.data.forecast
     if len(forecast) < slot_count_needed:
-        raise HomeAssistantError(f"Forecast covers {len(forecast)} slots, need {slot_count_needed}")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="forecast_too_short",
+            translation_placeholders={
+                "available": str(len(forecast)),
+                "needed": str(slot_count_needed),
+            },
+        )
 
     return forecast, slot_count_needed, earliest_start, latest_end
 
@@ -260,10 +283,17 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
         live = data.live_coordinator.data
         if live is None:
-            raise HomeAssistantError("Live coordinator has no data yet; retry after first refresh")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="live_data_not_ready",
+            )
         target_ev = next((ev for ev in live.ev_chargers if ev.id() == ev_id), None)
         if target_ev is None:
-            raise HomeAssistantError(f"Vehicle '{ev_id}' not found")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="vehicle_not_found",
+                translation_placeholders={"ev_id": ev_id},
+            )
 
         known_wallbox_ids: set[str] = set()
         previous_ev_id: str | None = None
@@ -274,7 +304,11 @@ def async_setup_services(hass: HomeAssistant) -> None:
             if wb_id == wallbox_id:
                 previous_ev_id = getattr(wb, "assigned_ev_id", None)
         if known_wallbox_ids and wallbox_id not in known_wallbox_ids:
-            raise HomeAssistantError(f"Wallbox '{wallbox_id}' not found")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="wallbox_not_found",
+                translation_placeholders={"wallbox_id": wallbox_id},
+            )
 
         await hass.async_add_executor_job(target_ev.assign_charger, wallbox_id)
         await data.live_coordinator.async_request_refresh()

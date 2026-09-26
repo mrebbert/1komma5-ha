@@ -1,0 +1,30 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "cheap_electricity": {
+        "default": "mdi:lightning-bolt-off",
+        "state": {
+          "on": "mdi:lightning-bolt"
+        }
+      },
+      "cheapest_hour_now": {
+        "default": "mdi:cash-off",
+        "state": {
+          "on": "mdi:cash-clock"
+        }
+      },
+      "optimization_battery_grid_charge": {
+        "default": "mdi:battery-arrow-up-outline",
+        "state": {
+          "on": "mdi:battery-arrow-up"
+        }
+      },
+      "optimization_heat_pump_recommended": {
+        "default": "mdi:heat-pump-outline",
+        "state": {
+          "on": "mdi:heat-pump"
+        }
+      }
+    }
+  }
+}

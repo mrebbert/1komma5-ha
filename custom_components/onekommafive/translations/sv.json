@@ -433,5 +433,34 @@
       "title": "EMS-inställningar inte tillgängliga",
       "description": "1KOMMA5°-backend har inte returnerat EMS-inställningar på flera uppdateringar. EMS-knappen för automatiskt läge och relaterade diagnostiska fält förblir `unavailable`. Mest sannolika orsak: din installation har ingen DeviceGateway — d.v.s. ingen HEMS-box som exponerar EMS-inställningar. Om så är fallet kan du ignorera denna avisering — resten av integrationen fungerar normalt. Om en HEMS faktiskt är installerad, kontrollera systemets status i 1KOMMA5°-appen."
     }
+  },
+  "exceptions": {
+    "no_integration_configured": {
+      "message": "Ingen 1KOMMA5°-integration är konfigurerad."
+    },
+    "config_entry_not_found": {
+      "message": "Konfigurationsposten '{config_entry_id}' hittades inte."
+    },
+    "multiple_entries_ambiguous": {
+      "message": "Flera 1KOMMA5°-system är konfigurerade; ange config_entry_id."
+    },
+    "duration_too_short": {
+      "message": "duration_minutes måste vara minst 15."
+    },
+    "no_price_forecast": {
+      "message": "Ingen prisprognos är tillgänglig ännu."
+    },
+    "forecast_too_short": {
+      "message": "Prognosen omfattar {available} intervall, {needed} krävs."
+    },
+    "live_data_not_ready": {
+      "message": "Live-koordinatorn har ännu inga data; försök igen efter första uppdateringen."
+    },
+    "vehicle_not_found": {
+      "message": "Fordon '{ev_id}' hittades inte."
+    },
+    "wallbox_not_found": {
+      "message": "Wallbox '{wallbox_id}' hittades inte."
+    }
   }
 }

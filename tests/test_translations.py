@@ -54,3 +54,26 @@ def test_strings_json_is_valid_json() -> None:
 def test_translation_locale_is_valid_json(locale_path: Path) -> None:
     """Sanity check — every translation locale must be parseable JSON."""
     _load(locale_path)
+
+
+def test_icons_json_keys_match_binary_sensor_translations() -> None:
+    """Every translation_key in icons.json must have a matching entity name."""
+    icons = _load(_ROOT / "icons.json")
+    strings = _load(_STRINGS)
+
+    icon_keys = set(icons["entity"]["binary_sensor"].keys())
+    binary_sensor_names = set(strings["entity"]["binary_sensor"].keys())
+
+    missing = icon_keys - binary_sensor_names
+    assert not missing, f"icons.json refers to unknown binary_sensor keys: {sorted(missing)}"
+
+
+def test_exception_translation_keys_are_referenced_from_services() -> None:
+    """Every exceptions.* key in strings.json must appear in services.py."""
+    exception_keys = set(_load(_STRINGS)["exceptions"].keys())
+    services_source = (_ROOT / "services.py").read_text(encoding="utf-8")
+
+    for key in exception_keys:
+        assert key in services_source, (
+            f"exceptions.{key} declared in strings.json but not raised in services.py"
+        )
