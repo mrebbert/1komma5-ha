@@ -439,7 +439,7 @@
       "message": "Kein 1KOMMA5°-System konfiguriert."
     },
     "config_entry_not_found": {
-      "message": "Config-Eintrag '{config_entry_id}' nicht gefunden."
+      "message": "Config-Eintrag {config_entry_id} nicht gefunden."
     },
     "multiple_entries_ambiguous": {
       "message": "Mehrere 1KOMMA5°-Systeme konfiguriert; bitte config_entry_id angeben."
@@ -457,10 +457,10 @@
       "message": "Live-Coordinator hat noch keine Daten; nach der ersten Aktualisierung erneut versuchen."
     },
     "vehicle_not_found": {
-      "message": "Fahrzeug '{ev_id}' nicht gefunden."
+      "message": "Fahrzeug {ev_id} nicht gefunden."
     },
     "wallbox_not_found": {
-      "message": "Wallbox '{wallbox_id}' nicht gefunden."
+      "message": "Wallbox {wallbox_id} nicht gefunden."
     }
   }
 }

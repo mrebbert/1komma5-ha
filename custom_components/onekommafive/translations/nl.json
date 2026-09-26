@@ -439,7 +439,7 @@
       "message": "Geen 1KOMMA5°-integratie geconfigureerd."
     },
     "config_entry_not_found": {
-      "message": "Configuratie-invoer '{config_entry_id}' niet gevonden."
+      "message": "Configuratie-invoer {config_entry_id} niet gevonden."
     },
     "multiple_entries_ambiguous": {
       "message": "Er zijn meerdere 1KOMMA5°-systemen geconfigureerd; geef config_entry_id op."
@@ -457,10 +457,10 @@
       "message": "Live-coördinator heeft nog geen gegevens; probeer het na de eerste update opnieuw."
     },
     "vehicle_not_found": {
-      "message": "Voertuig '{ev_id}' niet gevonden."
+      "message": "Voertuig {ev_id} niet gevonden."
     },
     "wallbox_not_found": {
-      "message": "Wallbox '{wallbox_id}' niet gevonden."
+      "message": "Wallbox {wallbox_id} niet gevonden."
     }
   }
 }

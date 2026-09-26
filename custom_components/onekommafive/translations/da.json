@@ -439,7 +439,7 @@
       "message": "Ingen 1KOMMA5°-integration er konfigureret."
     },
     "config_entry_not_found": {
-      "message": "Konfigurationspost '{config_entry_id}' blev ikke fundet."
+      "message": "Konfigurationspost {config_entry_id} blev ikke fundet."
     },
     "multiple_entries_ambiguous": {
       "message": "Flere 1KOMMA5°-systemer er konfigureret; angiv config_entry_id."
@@ -457,10 +457,10 @@
       "message": "Live-koordinatoren har endnu ingen data; prøv igen efter den første opdatering."
     },
     "vehicle_not_found": {
-      "message": "Køretøj '{ev_id}' blev ikke fundet."
+      "message": "Køretøj {ev_id} blev ikke fundet."
     },
     "wallbox_not_found": {
-      "message": "Wallbox '{wallbox_id}' blev ikke fundet."
+      "message": "Wallbox {wallbox_id} blev ikke fundet."
     }
   }
 }
