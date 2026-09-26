@@ -41,6 +41,13 @@ from .entity import (
     QuarterHourUpdateMixin,
     SystemEntityBase,
 )
+
+if TYPE_CHECKING:
+    from homeassistant.helpers.update_coordinator import CoordinatorEntity as _CoordEntBase
+
+    _DescriptionSensorBase = _CoordEntBase[DataUpdateCoordinator[Any]]
+else:
+    _DescriptionSensorBase = object
 from .helpers import find_cheapest_window, get_current_price, trapezoidal_delta_kwh
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
@@ -58,20 +65,24 @@ def currency_per_kwh(currency: str) -> str:
     return f"{currency}/kWh"
 
 
-class _DescriptionValueSensor:
+class _DescriptionValueSensor(_DescriptionSensorBase):
     """Mixin: read native_value (and optional extra attrs) from the description.
 
     Coordinators that ship a `value_fn`-carrying SensorEntityDescription can
     reuse this instead of hand-rolling the same null-guard + call. Descriptions
     that also carry `attr_fn` (see Optimization) get extra_state_attributes for
     free; descriptions without one return None from that property.
+
+    Typing note: at runtime this is a bare mixin, but under ``TYPE_CHECKING``
+    it inherits from ``CoordinatorEntity`` so mypy resolves ``self.coordinator``
+    without ``# type: ignore[attr-defined]``.
     """
 
     entity_description: Any  # SensorEntityDescription subclass with value_fn
 
     @property
     def native_value(self) -> Any:
-        data = self.coordinator.data  # type: ignore[attr-defined]
+        data = self.coordinator.data
         if data is None:
             return None
         return self.entity_description.value_fn(data)
@@ -79,7 +90,7 @@ class _DescriptionValueSensor:
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         attr_fn = getattr(self.entity_description, "attr_fn", None)
-        data = self.coordinator.data  # type: ignore[attr-defined]
+        data = self.coordinator.data
         if attr_fn is None or data is None:
             return None
         return cast(dict[str, Any] | None, attr_fn(data))

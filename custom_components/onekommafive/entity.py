@@ -426,7 +426,15 @@ def apply_stable_entity_ids(entities: Any, platform: str) -> None:
         entity.entity_id = f"{platform}.{entity._stable_object_id}"
 
 
-class QuarterHourUpdateMixin:
+if TYPE_CHECKING:
+    from homeassistant.helpers.entity import Entity
+
+    _MixinBase = Entity
+else:
+    _MixinBase = object
+
+
+class QuarterHourUpdateMixin(_MixinBase):
     """Mixin: subscribe an entity to quarter-hour boundary state updates.
 
     Use ``self._async_register_quarter_hour_update()`` from
@@ -435,12 +443,15 @@ class QuarterHourUpdateMixin:
 
     Useful for entities whose state depends on the active 15-minute price
     slot but whose data coordinator updates less frequently.
+
+    Typing note: the mixin only exists on classes that also inherit from HA's
+    ``Entity`` (via ``CoordinatorEntity``). Declaring ``Entity`` as the mixin
+    base under ``TYPE_CHECKING`` gives mypy the ``hass`` / ``async_on_remove``
+    / ``async_write_ha_state`` bindings without changing runtime MRO.
     """
 
-    hass: Any  # provided by HA Entity base class
-
     def _async_register_quarter_hour_update(self) -> None:
-        self.async_on_remove(  # type: ignore[attr-defined]
+        self.async_on_remove(
             async_track_time_change(
                 self.hass,
                 self._quarter_hour_update,
@@ -452,4 +463,4 @@ class QuarterHourUpdateMixin:
     @callback
     def _quarter_hour_update(self, _now: datetime) -> None:
         """Re-evaluate state at quarter-hour boundaries."""
-        self.async_write_ha_state()  # type: ignore[attr-defined]
+        self.async_write_ha_state()

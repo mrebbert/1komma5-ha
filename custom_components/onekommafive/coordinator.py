@@ -306,6 +306,26 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             self._ems_issue_active = True
 
 
+def _price_statistics(all_in_prices: dict[str, float], today: datetime.date) -> dict[str, Any]:
+    """Compute the per-day price summary used by the price sensors."""
+    today_prices, tomorrow_prices = split_prices_by_date(
+        all_in_prices, today, today + datetime.timedelta(days=1)
+    )
+    stats: dict[str, Any] = {
+        "negative_price_slots_today": sum(1 for p in today_prices if p < 0),
+        "negative_price_slots_tomorrow": None,
+        "tomorrow_average": None,
+        "tomorrow_lowest": None,
+        "tomorrow_highest": None,
+    }
+    if tomorrow_prices:
+        stats["negative_price_slots_tomorrow"] = sum(1 for p in tomorrow_prices if p < 0)
+        stats["tomorrow_average"] = sum(tomorrow_prices) / len(tomorrow_prices)
+        stats["tomorrow_lowest"] = min(tomorrow_prices)
+        stats["tomorrow_highest"] = max(tomorrow_prices)
+    return stats
+
+
 class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     """Coordinator for electricity market price data."""
 
@@ -325,59 +345,45 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         that case.
         """
         now = datetime.datetime.now()
-        window_end = now + datetime.timedelta(hours=24)
-
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
-
-        market_prices = await self._system.get_prices(today_start, today_end, resolution="15m")
-        all_in_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs_and_vat)
-
-        # Always try to fetch tomorrow's prices to maximise the forecast horizon
-        if window_end.date() > now.date():
-            tomorrow_start = (now + datetime.timedelta(days=1)).replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
-            tomorrow_end = tomorrow_start.replace(hour=23, minute=59, second=59)
-            try:
-                tomorrow_prices = await self._system.get_prices(
-                    tomorrow_start, tomorrow_end, resolution="15m"
-                )
-                all_in_prices.update(tomorrow_prices.prices_with_grid_costs_and_vat)
-            except Exception:
-                _LOGGER.debug("Tomorrow's prices not yet available")
-
+        market_prices, all_in_prices = await self._fetch_today_and_tomorrow(now)
         current_price = get_current_price(all_in_prices)
         forecast = build_forecast(all_in_prices, horizon_hours=30)
-
-        # Price statistics: split by date
-        today_prices, tomorrow_prices_list = split_prices_by_date(
-            all_in_prices, now.date(), now.date() + datetime.timedelta(days=1)
-        )
-
-        negative_price_slots_today = sum(1 for p in today_prices if p < 0)
-
-        tomorrow_average = None
-        tomorrow_lowest = None
-        tomorrow_highest = None
-        negative_slots_tomorrow: int | None = None
-        if tomorrow_prices_list:
-            tomorrow_average = sum(tomorrow_prices_list) / len(tomorrow_prices_list)
-            tomorrow_lowest = min(tomorrow_prices_list)
-            tomorrow_highest = max(tomorrow_prices_list)
-            negative_slots_tomorrow = sum(1 for p in tomorrow_prices_list if p < 0)
+        stats = _price_statistics(all_in_prices, now.date())
 
         return PriceData(
             market_prices=market_prices,
             current_price=current_price,
             forecast=forecast,
             all_in_prices=all_in_prices,
-            negative_price_slots_today=negative_price_slots_today,
-            negative_price_slots_tomorrow=negative_slots_tomorrow,
-            tomorrow_average_price=tomorrow_average,
-            tomorrow_lowest_price=tomorrow_lowest,
-            tomorrow_highest_price=tomorrow_highest,
+            negative_price_slots_today=stats["negative_price_slots_today"],
+            negative_price_slots_tomorrow=stats["negative_price_slots_tomorrow"],
+            tomorrow_average_price=stats["tomorrow_average"],
+            tomorrow_lowest_price=stats["tomorrow_lowest"],
+            tomorrow_highest_price=stats["tomorrow_highest"],
         )
+
+    async def _fetch_today_and_tomorrow(
+        self, now: datetime.datetime
+    ) -> tuple[MarketPrices, dict[str, float]]:
+        """Fetch today's price slots and — best-effort — tomorrow's, merged into one dict."""
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
+        market_prices = await self._system.get_prices(today_start, today_end, resolution="15m")
+        all_in_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs_and_vat)
+
+        # Tomorrow's prices are best-effort — often not yet available in the morning.
+        tomorrow_start = (now + datetime.timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        tomorrow_end = tomorrow_start.replace(hour=23, minute=59, second=59)
+        try:
+            tomorrow_prices = await self._system.get_prices(
+                tomorrow_start, tomorrow_end, resolution="15m"
+            )
+            all_in_prices.update(tomorrow_prices.prices_with_grid_costs_and_vat)
+        except Exception:
+            _LOGGER.debug("Tomorrow's prices not yet available")
+        return market_prices, all_in_prices
 
     async def _on_data(self, data: PriceData) -> None:
         """Fire HA bus events for negative-price edge transitions."""
