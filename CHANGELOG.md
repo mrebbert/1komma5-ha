@@ -29,6 +29,10 @@ Consolidates the v0.1.63-armed feature work with the SDK v1.0.2 async migration;
 - `attributes.to` on `sensor.<sys>_optimization_last_decision` and on the `decisions[]` entries under `sensor.<sys>_optimization_event_count` now reflects the aggregated slot-span end. New `slot_count` attribute exposes how many 15-min slots the decision covers.
 - Bus event `onekommafive_optimization_decision` gains `end` (aggregated span end) and `slot_count` fields alongside the existing `to` (first-slot end, kept for compatibility).
 
+### Quality-scale hardening
+- Combined test coverage lifted from 93 % to 95.4 % (292 tests, +25). CI `--cov-fail-under` gate raised from 90 to 95; helpers.py, system_health.py and diagnostics.py reach 100 %.
+- `pyproject.toml [tool.mypy]` switches to `strict = true`. Eleven remaining strict errors resolved (typed generics, explicit `bool` / `float | None` casts on properties, HA-stub `# type: ignore[attr-defined]` markers for `WeatherEntityFeature` and switch `DOMAIN`).
+
 ## [0.1.63] - never tagged
 
 The v0.1.63 armed work (wallbox → vehicle assignment, live-coordinator wallbox fetch, optimization slot-count fix) was consolidated into v0.1.65 and shipped there on 2026-09-27; see the [0.1.65] entry above.
