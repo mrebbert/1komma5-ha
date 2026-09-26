@@ -51,6 +51,14 @@ The `.venv/` directory is gitignored — it stays local.
 
 Why `pre-commit run` over plain `ruff`? The pre-commit config pins a specific ruff version; CI uses the same. Calling `ruff` from a fresh `pip install` may format slightly differently and create churn.
 
+### Ignoring reformat commits in `git blame`
+
+Pure formatting commits (e.g. the 2026-09-26 line-length sweep from 100 to 88) live in `.git-blame-ignore-revs` so authorship on individual lines stays traceable to the substantive change. GitHub honours the file automatically. To pick it up in local `git blame`, once per clone:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
 ## Testing
 
 Tier 1 tests cover the pure helpers in `custom_components/onekommafive/helpers.py` (price slot lookup, forecast building, optimization aggregation, cheapest/most-expensive-window search, trapezoidal integration, active-event lookup). They run in milliseconds and don't require Home Assistant to be installed.

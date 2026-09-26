@@ -1,0 +1,12 @@
+# Reformat commits skipped by `git blame`.
+#
+# GitHub honours this file automatically. To pick it up locally once:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# One commit SHA per line, oldest first.
+
+# 2026-09-26: ruff line-length lowered from 100 to 88.
+# Commit 1: pyproject.toml switch + `ruff format` over 54 files.
+2a0aff85f0923365091e7752053ad1d1f583a4c7
+# Commit 2: manual cleanups for the 41 lines ruff-format could not break.
+6951140a32f657d3720985cf350617f7da755926
