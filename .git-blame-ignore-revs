@@ -5,8 +5,8 @@
 #
 # One commit SHA per line, oldest first.
 
-# 2026-09-26: ruff line-length lowered from 100 to 88.
+# 2026-09-26: ruff line-length lowered from 100 to 88 (PR #25).
 # Commit 1: pyproject.toml switch + `ruff format` over 54 files.
-2a0aff85f0923365091e7752053ad1d1f583a4c7
+3bb51f4d2072445a94a210fbf4743912ba1c479e
 # Commit 2: manual cleanups for the 41 lines ruff-format could not break.
-6951140a32f657d3720985cf350617f7da755926
+cb421b9b30b671b01ef194e28e893b977fbd3c07
