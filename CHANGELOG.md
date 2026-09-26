@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.65] - 2026-09-27
+## [0.1.65] - 2026-09-26
 
 Consolidates the v0.1.63-armed feature work with the SDK v1.0.2 async migration; the v0.1.63 tag was skipped so both stories ship together.
 
@@ -35,7 +35,7 @@ Consolidates the v0.1.63-armed feature work with the SDK v1.0.2 async migration;
 
 ## [0.1.63] - never tagged
 
-The v0.1.63 armed work (wallbox → vehicle assignment, live-coordinator wallbox fetch, optimization slot-count fix) was consolidated into v0.1.65 and shipped there on 2026-09-27; see the [0.1.65] entry above.
+The v0.1.63 armed work (wallbox → vehicle assignment, live-coordinator wallbox fetch, optimization slot-count fix) was consolidated into v0.1.65 and shipped there on 2026-09-26; see the [0.1.65] entry above.
 
 ## [0.1.61] - 2026-09-24
 
