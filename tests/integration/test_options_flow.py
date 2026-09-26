@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import voluptuous as vol
@@ -31,8 +31,8 @@ async def _setup(hass: HomeAssistant, system) -> MockConfigEntry:
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     return entry
@@ -60,8 +60,8 @@ async def test_options_flow_persists_new_tariff(hass: HomeAssistant, mock_system
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
 
         result = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import fields
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import voluptuous as vol
@@ -61,8 +61,8 @@ async def integration(hass: HomeAssistant, mock_system_factory):
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     return entry
@@ -132,8 +132,8 @@ async def test_absent_window_returns_available_false(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 

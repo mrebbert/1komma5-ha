@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_CHARGING_WINDOW_DURATION_MINUTES,
@@ -34,13 +35,16 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 
 @dataclass
 class _SystemEntry:
-    """System with pre-fetched title (title requires a blocking API call)."""
+    """System with pre-fetched title. ``system_id`` is captured up front so
+    later steps do not have to touch the SDK for identity lookups.
+    """
 
     system: Any
+    system_id: str
     title: str
 
     def id(self) -> str:
-        return self.system.id()
+        return self.system_id
 
 
 class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -200,28 +204,29 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _async_get_systems(self, username: str, password: str) -> list[_SystemEntry]:
-        """Authenticate, fetch systems, and pre-fetch their titles in the executor."""
+        """Authenticate against the async SDK and materialise per-system titles."""
         from onekommafive.client import Client
         from onekommafive.errors import AuthenticationError, RequestError
         from onekommafive.systems import Systems
 
-        def _fetch() -> list[_SystemEntry]:
-            client = Client(username, password)
-            systems = Systems(client).get_systems()
-            # system.info() makes a blocking HTTP call — must stay in the executor
-            return [_SystemEntry(system=s, title=_system_title(s)) for s in systems]
-
+        session = async_get_clientsession(self.hass)
+        client = Client(username, password, session=session)
         try:
-            return await self.hass.async_add_executor_job(_fetch)
+            systems = await Systems(client).get_systems()
+            entries: list[_SystemEntry] = []
+            for s in systems:
+                title = await _async_system_title(s)
+                entries.append(_SystemEntry(system=s, system_id=s.id(), title=title))
+            return entries
         except AuthenticationError as err:
             raise InvalidAuth from err
         except RequestError as err:
             raise CannotConnect from err
 
 
-def _system_title(system: Any) -> str:
-    """Build a human-readable title. Must be called from the executor thread."""
-    info = system.info()
+async def _async_system_title(system: Any) -> str:
+    """Build a human-readable title from the async SDK."""
+    info = await system.info()
     if info.name:
         return info.name
     if info.address_city:

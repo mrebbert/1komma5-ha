@@ -127,10 +127,9 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
     _data_label: str = "data"
     _coordinator_name: str = "1KOMMA5°"
     _interval_seconds: int = 60
-    # Hard ceiling on a single fetch. All SDK calls are synchronous HTTP run in
-    # the executor; without this a hung request would keep the coordinator
-    # (and one executor thread) stuck indefinitely, since DataUpdateCoordinator
-    # imposes no timeout of its own.
+    # Hard ceiling on a single fetch. ``asyncio.timeout`` cooperatively cancels
+    # the coroutine when the SDK stalls; without it a hung request would keep
+    # the coordinator stuck since DataUpdateCoordinator imposes no timeout.
     _fetch_timeout_seconds: float = 30.0
 
     def __init__(self, hass: HomeAssistant, system: Any) -> None:
@@ -144,15 +143,11 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
         self._system = system
 
     async def _async_update_data(self) -> T:
-        """Fetch data via the executor, wrapping errors and timeouts as UpdateFailed."""
+        """Await the async SDK fetch, wrapping errors and timeouts as UpdateFailed."""
         try:
             async with asyncio.timeout(self._fetch_timeout_seconds):
-                data = await self.hass.async_add_executor_job(self._fetch)
+                data = await self._fetch()
         except TimeoutError as err:
-            # The executor thread running _fetch keeps going until the SDK call
-            # returns (threads can't be cancelled), but the coordinator itself
-            # no longer hangs — it fails this cycle and retries on the next
-            # interval instead of pinning forever on a stuck request.
             raise UpdateFailed(
                 f"Timeout after {self._fetch_timeout_seconds:g}s fetching {self._data_label}"
             ) from err
@@ -163,8 +158,8 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
         await self._on_data(data)
         return data
 
-    def _fetch(self) -> T:
-        """Synchronous fetch implementation. Override in subclasses."""
+    async def _fetch(self) -> T:
+        """Async fetch implementation. Override in subclasses."""
         raise NotImplementedError
 
     async def _on_data(self, data: T) -> None:
@@ -207,16 +202,16 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         # baseline resets naturally.
         self._known_wallbox_ids: frozenset[str] | None = None
 
-    def _fetch(self) -> LiveData:
-        """Fetch all live data synchronously."""
-        live_overview = self._system.get_live_overview()
-        ev_chargers = self._system.get_ev_chargers()
+    async def _fetch(self) -> LiveData:
+        """Fetch all live data via the async SDK."""
+        live_overview = await self._system.get_live_overview()
+        ev_chargers = await self._system.get_ev_chargers()
         if self._ems_repair_disabled:
             # Known to fail on 1K5; skip the round-trip.
             ems_settings = None
         else:
             try:
-                ems_settings = self._system.get_ems_settings()
+                ems_settings = await self._system.get_ems_settings()
             except Exception:
                 _LOGGER.debug("EMS settings not available (no DeviceGateway?), skipping")
                 ems_settings = None
@@ -224,7 +219,7 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         # empty list so the assignment select renders `unknown` instead of the
         # entity dropping to `unavailable`.
         try:
-            wallboxes = list(self._system.get_wallboxes() or [])
+            wallboxes = list(await self._system.get_wallboxes() or [])
         except Exception as err:
             _LOGGER.debug("Wallbox inventory fetch failed: %s", err)
             wallboxes = []
@@ -305,8 +300,8 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     # None on the first refresh primes the tracker without firing an event.
     _last_active_was_negative: bool | None = None
 
-    def _fetch(self) -> PriceData:
-        """Fetch price data synchronously.
+    async def _fetch(self) -> PriceData:
+        """Fetch price data via the async SDK.
 
         Always fetches today and tomorrow so the forecast covers up to 30 hours
         (e.g. 16:00 today → 23:59 tomorrow).  Tomorrow's prices may not yet be
@@ -319,7 +314,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
 
-        market_prices = self._system.get_prices(today_start, today_end, resolution="15m")
+        market_prices = await self._system.get_prices(today_start, today_end, resolution="15m")
         all_in_prices: dict[str, float] = dict(market_prices.prices_with_grid_costs_and_vat)
 
         # Always try to fetch tomorrow's prices to maximise the forecast horizon
@@ -329,7 +324,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             )
             tomorrow_end = tomorrow_start.replace(hour=23, minute=59, second=59)
             try:
-                tomorrow_prices = self._system.get_prices(
+                tomorrow_prices = await self._system.get_prices(
                     tomorrow_start, tomorrow_end, resolution="15m"
                 )
                 all_in_prices.update(tomorrow_prices.prices_with_grid_costs_and_vat)
@@ -403,13 +398,13 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
     # None on the first refresh primes without firing (no N-event replay at startup).
     _last_fired_from_time: str | None = None
 
-    def _fetch(self) -> OptimizationData:
-        """Fetch today's optimization events synchronously."""
+    async def _fetch(self) -> OptimizationData:
+        """Fetch today's optimization events via the async SDK."""
         now = datetime.datetime.now()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
 
-        result = self._system.get_optimizations(today_start, today_end)
+        result = await self._system.get_optimizations(today_start, today_end)
         agg = aggregate_optimization_events(result.events)
         return OptimizationData(events=result.events, **agg)
 
@@ -477,9 +472,9 @@ class OneKomma5WeatherCoordinator(OneKomma5BaseCoordinator[WeatherData]):
     _coordinator_name = "1KOMMA5° Weather"
     _interval_seconds = WEATHER_UPDATE_INTERVAL_SECONDS
 
-    def _fetch(self) -> WeatherData:
-        """Fetch weather data synchronously."""
-        return WeatherData(weather=self._system.get_weather())
+    async def _fetch(self) -> WeatherData:
+        """Fetch weather data via the async SDK."""
+        return WeatherData(weather=await self._system.get_weather())
 
 
 class OneKomma5EnergyCoordinator(OneKomma5BaseCoordinator[EnergyTodayData]):
@@ -489,9 +484,9 @@ class OneKomma5EnergyCoordinator(OneKomma5BaseCoordinator[EnergyTodayData]):
     _coordinator_name = "1KOMMA5° Energy"
     _interval_seconds = ENERGY_UPDATE_INTERVAL_SECONDS
 
-    def _fetch(self) -> EnergyTodayData:
-        """Fetch today's energy aggregation synchronously."""
-        return EnergyTodayData(energy=self._system.get_energy_today())
+    async def _fetch(self) -> EnergyTodayData:
+        """Fetch today's energy aggregation via the async SDK."""
+        return EnergyTodayData(energy=await self._system.get_energy_today())
 
 
 class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData]):
@@ -517,12 +512,12 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
         super().__init__(hass, system)
         self._customer_id = customer_id
 
-    def _fetch(self) -> SystemStatusData:
-        site = self._system.get_status_and_assets()
+    async def _fetch(self) -> SystemStatusData:
+        site = await self._system.get_status_and_assets()
         features: list[str] = []
         if self._customer_id:
             try:
-                features = list(self._system.get_active_features(self._customer_id))
+                features = list(await self._system.get_active_features(self._customer_id))
             except Exception as err:
                 _LOGGER.debug("Active features fetch failed: %s", err)
         assets = list(site.assets or [])
@@ -572,9 +567,9 @@ class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsDa
         self._last_seen_created_at: str | None = None
         self._hydrated = False
 
-    def _fetch(self) -> NotificationsData:
-        """Fetch the latest notifications batch synchronously."""
-        result = self._system.get_notifications()
+    async def _fetch(self) -> NotificationsData:
+        """Fetch the latest notifications batch via the async SDK."""
+        result = await self._system.get_notifications()
         return NotificationsData(notifications=list(result.notifications))
 
     async def _on_data(self, data: NotificationsData) -> None:

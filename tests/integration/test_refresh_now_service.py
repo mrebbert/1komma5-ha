@@ -31,8 +31,8 @@ async def integration(hass: HomeAssistant, mock_system_factory):
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     return entry

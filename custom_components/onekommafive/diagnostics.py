@@ -190,7 +190,7 @@ async def _wallbox_snapshot(
     1K5 backend (transient issue or unexpected routing).
     """
     try:
-        wallboxes = await hass.async_add_executor_job(system.get_wallboxes)
+        wallboxes = await system.get_wallboxes()
     except Exception as err:
         entry: dict[str, Any] = {"error": repr(err)}
         emp_type = get_emp_type(details)

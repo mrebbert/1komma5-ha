@@ -11,7 +11,7 @@ Two pieces:
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -60,6 +60,12 @@ def _ev(*, id_: str, name: str, assigned_charger_id: str | None = None) -> Magic
     ev.capacity_wh.return_value = 42000.0
     ev.primary_schedule_departure_soc.return_value = 80.0
     ev.primary_schedule_departure_time.return_value = "07:00"
+    # Write-path methods are async in SDK v1.0.1.
+    ev.assign_charger = AsyncMock(return_value=None)
+    ev.set_charging_mode = AsyncMock(return_value=None)
+    ev.set_current_soc = AsyncMock(return_value=None)
+    ev.set_target_soc = AsyncMock(return_value=None)
+    ev.set_primary_departure_time = AsyncMock(return_value=None)
     return ev
 
 
@@ -74,8 +80,8 @@ async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     return entry

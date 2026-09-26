@@ -9,7 +9,7 @@ accidentally firing at midnight on yesterday's window.
 from __future__ import annotations
 
 import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant, State
 from pytest_homeassistant_custom_component.common import (
@@ -75,8 +75,8 @@ async def test_cheapest_window_picks_lowest_four_consecutive_slots(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -108,8 +108,8 @@ async def test_cheapest_window_returns_unknown_when_no_forecast_today(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -155,8 +155,8 @@ async def test_cheapest_window_clips_at_end_of_today_local(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -193,8 +193,8 @@ async def test_cheapest_window_locks_in_across_time_advance(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -258,8 +258,8 @@ async def test_cheapest_window_restores_valid_previous_state(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -308,8 +308,8 @@ async def test_cheapest_window_ignores_restored_state_after_expiry(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -347,8 +347,8 @@ async def test_cheapest_window_honours_configured_duration(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -385,8 +385,8 @@ async def test_cheapest_window_reloads_on_options_change(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -442,8 +442,8 @@ async def test_tomorrow_window_picks_cheapest_tomorrow_slot(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -479,8 +479,8 @@ async def test_tomorrow_window_unknown_without_tomorrow_forecast(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -517,8 +517,8 @@ async def test_tomorrow_window_honours_configured_duration(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 

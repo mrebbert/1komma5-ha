@@ -7,7 +7,7 @@ end-to-end.
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
@@ -114,8 +114,8 @@ async def test_user_flow_single_system_creates_entry(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems.return_value = [system]
-        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -146,8 +146,8 @@ async def test_user_flow_multiple_systems_shows_picker(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems.return_value = [system_a, system_b]
-        mock_systems_cls.return_value.get_system.return_value = system_b
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system_a, system_b])
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system_b)
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}

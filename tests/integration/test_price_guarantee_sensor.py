@@ -1,13 +1,17 @@
 """Tier-2 tests for the Dynamic-Pulse price-guarantee sensor.
 
-Sensor is instantiated only when the account has a DYNAMIC_PULSE subscription
-with a populated ``price_guarantee_value``. Value is normalized to EUR/kWh
-regardless of the SDK's returned unit (``ct/kWh`` is divided by 100).
+Sensor is instantiated only when the account has a DYNAMIC_PULSE guarantee
+with a populated ``value``. Value is normalized to EUR/kWh regardless of the
+SDK's returned unit (``ct/kWh`` is divided by 100).
+
+Since SDK v1.0.1 the guarantee comes from ``system.get_price_guarantee``
+(``PriceGuarantee(value, unit, version, raw)``) rather than iterating
+subscriptions.
 """
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.components.sensor import SensorStateClass
 from homeassistant.core import HomeAssistant
@@ -22,20 +26,13 @@ from custom_components.onekommafive.const import (
 )
 
 
-def _dp_sub(
+def _guarantee(
     value: float | int | None = 12,
     unit: str | None = "ct/kWh",
     version: str | None = "DE_PRICE_GUARANTEE_V2",
 ) -> MagicMock:
-    """Build a mock DYNAMIC_PULSE Subscription with price-guarantee fields."""
-    return MagicMock(
-        type="DYNAMIC_PULSE",
-        status="ACTIVE",
-        price_eur=0,
-        price_guarantee_value=value,
-        price_guarantee_unit=unit,
-        price_guarantee_version=version,
-    )
+    """Build a mock ``PriceGuarantee`` payload the SDK endpoint returns."""
+    return MagicMock(value=value, unit=unit, version=version)
 
 
 async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:
@@ -49,8 +46,8 @@ async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     return entry
@@ -67,7 +64,7 @@ async def test_dp_subscription_with_ct_kwh_converts_to_eur_kwh(
 ) -> None:
     system = mock_system_factory(
         system_id="sys-1",
-        subscriptions=[_dp_sub(value=12, unit="ct/kWh")],
+        price_guarantee=_guarantee(value=12, unit="ct/kWh"),
     )
     await _setup(hass, system)
 
@@ -90,7 +87,7 @@ async def test_dp_subscription_with_eur_kwh_passthrough(
     """Defensive: if SDK ever returns EUR/kWh directly, no ÷100 applied."""
     system = mock_system_factory(
         system_id="sys-1",
-        subscriptions=[_dp_sub(value=0.12, unit="EUR/kWh")],
+        price_guarantee=_guarantee(value=0.12, unit="EUR/kWh"),
     )
     await _setup(hass, system)
 
@@ -101,13 +98,10 @@ async def test_dp_subscription_with_eur_kwh_passthrough(
 
 
 async def test_no_dp_subscription_no_sensor(hass: HomeAssistant, mock_system_factory) -> None:
-    """Account with no DYNAMIC_PULSE contract → sensor not registered."""
+    """Guarantee endpoint returns empty payload → sensor not registered."""
     system = mock_system_factory(
         system_id="sys-1",
-        subscriptions=[
-            MagicMock(type="SMART_METER", status="ACTIVE"),
-            MagicMock(type="ENERGY_TRADER", status="ACTIVE"),
-        ],
+        price_guarantee=_guarantee(value=None),
     )
     await _setup(hass, system)
     assert _sensor_entity_id(hass) is None
@@ -119,14 +113,14 @@ async def test_dp_subscription_with_none_value_no_sensor(
     """DP subscription present but empty guarantee → sensor not registered."""
     system = mock_system_factory(
         system_id="sys-1",
-        subscriptions=[_dp_sub(value=None)],
+        price_guarantee=_guarantee(value=None),
     )
     await _setup(hass, system)
     assert _sensor_entity_id(hass) is None
 
 
 async def test_missing_customer_id_no_sensor(hass: HomeAssistant, mock_system_factory) -> None:
-    """No customer_id on details → subscriptions fetch skipped → no sensor."""
+    """No customer_id on details → guarantee fetch skipped → no sensor."""
     details = MagicMock(
         customer_id=None,
         emp_type=None,
@@ -143,7 +137,7 @@ async def test_missing_customer_id_no_sensor(hass: HomeAssistant, mock_system_fa
     system = mock_system_factory(
         system_id="sys-1",
         details=details,
-        subscriptions=[_dp_sub()],  # even if returned, extraction skips w/o customer_id
+        price_guarantee=_guarantee(),  # even if stubbed, extraction skips w/o customer_id
     )
     await _setup(hass, system)
     assert _sensor_entity_id(hass) is None
@@ -152,8 +146,8 @@ async def test_missing_customer_id_no_sensor(hass: HomeAssistant, mock_system_fa
 async def test_subscriptions_endpoint_failure_no_sensor(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """Subscriptions endpoint raising is non-fatal — sensor not created."""
+    """Guarantee endpoint raising is non-fatal — sensor not created."""
     system = mock_system_factory(system_id="sys-1")
-    system.get_subscriptions.side_effect = RuntimeError("boom")
+    system.get_price_guarantee = AsyncMock(side_effect=RuntimeError("boom"))
     await _setup(hass, system)
     assert _sensor_entity_id(hass) is None

@@ -93,10 +93,10 @@ class OneKomma5EMSSwitch(OneKomma5Entity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Enable EMS auto mode."""
-        await self.hass.async_add_executor_job(self._system.set_ems_mode, True)
+        await self._system.set_ems_mode(True)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Disable EMS auto mode (switch to manual)."""
-        await self.hass.async_add_executor_job(self._system.set_ems_mode, False)
+        await self._system.set_ems_mode(False)
         await self.coordinator.async_request_refresh()

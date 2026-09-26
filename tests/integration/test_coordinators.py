@@ -8,7 +8,7 @@ Focus on the production bugs we shipped patches for:
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -49,8 +49,8 @@ async def test_setup_succeeds_when_ems_gateway_missing(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
 
         assert await hass.config_entries.async_setup(entry.entry_id) is True
         await hass.async_block_till_done()
@@ -76,8 +76,8 @@ async def test_setup_succeeds_when_price_first_refresh_rate_limited(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
 
         # Setup must still return True even though price fetch failed
         assert await hass.config_entries.async_setup(entry.entry_id) is True
@@ -102,8 +102,8 @@ async def test_setup_succeeds_when_optimization_first_refresh_fails(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
 
         assert await hass.config_entries.async_setup(entry.entry_id) is True
         await hass.async_block_till_done()

@@ -16,10 +16,19 @@ Then run only the integration tests::
 
 from __future__ import annotations
 
-from collections.abc import Generator
-from unittest.mock import MagicMock
+from collections.abc import Awaitable, Callable, Generator
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.onekommafive.const import (
+    CONF_PASSWORD,
+    CONF_SYSTEM_ID,
+    CONF_USERNAME,
+    DOMAIN,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -38,9 +47,11 @@ def auto_enable_custom_integrations(
 def mock_system_factory():
     """Build mock ``onekommafive.system.System`` objects.
 
-    Returns a factory so each test can shape the system the way it needs:
-    the system id, the live overview, EV chargers, EMS, prices and
-    optimization events are all individually overridable.
+    Every SDK method that is async in v1.0.1 is wired as an ``AsyncMock`` so
+    ``await system.get_live_overview()`` yields the payload the test supplies.
+    ``system.id()`` stays sync (per SDK v1.0.1). Data-container mocks (assets,
+    wallboxes, EVs, market prices, ...) remain plain ``MagicMock`` because the
+    integration reads them as attributes, not as awaitables.
     """
 
     def _factory(
@@ -64,14 +75,16 @@ def mock_system_factory():
         subscriptions: list | None = None,
         heartbeat_prices: MagicMock | None = None,
         impact: MagicMock | None = None,
+        price_guarantee: MagicMock | None = None,
     ) -> MagicMock:
         system = MagicMock()
+        # ``System.id()`` is sync in the SDK; keep MagicMock semantics.
         system.id.return_value = system_id
 
         info = MagicMock()
         info.name = name
         info.address_city = None
-        system.info.return_value = info
+        system.info = AsyncMock(return_value=info)
 
         # Live overview defaults to all-zero so sensor coercion doesn't trip.
         if live_overview is None:
@@ -89,15 +102,16 @@ def mock_system_factory():
                 acs_power=0.0,
                 self_sufficiency=0.0,
             )
-        system.get_live_overview.return_value = live_overview
+        system.get_live_overview = AsyncMock(return_value=live_overview)
 
-        system.get_ev_chargers.return_value = ev_chargers or []
-        system.get_wallboxes.return_value = wallboxes or []
-        system.get_device_gateways.return_value = device_gateways or []
+        system.get_ev_chargers = AsyncMock(return_value=ev_chargers or [])
+        system.get_wallboxes = AsyncMock(return_value=wallboxes or [])
+        system.get_device_gateways = AsyncMock(return_value=device_gateways or [])
 
         if ems_settings is None:
             ems_settings = MagicMock(auto_mode=True)
-        system.get_ems_settings.return_value = ems_settings
+        system.get_ems_settings = AsyncMock(return_value=ems_settings)
+        system.set_ems_mode = AsyncMock(return_value=None)
 
         if prices is None:
             prices = MagicMock(
@@ -107,11 +121,11 @@ def mock_system_factory():
                 lowest_price_all_in=None,
                 highest_price_all_in=None,
             )
-        system.get_prices.return_value = prices
+        system.get_prices = AsyncMock(return_value=prices)
 
         if optimizations is None:
             optimizations = MagicMock(events=[])
-        system.get_optimizations.return_value = optimizations
+        system.get_optimizations = AsyncMock(return_value=optimizations)
 
         if weather is None:
             weather = MagicMock(
@@ -127,7 +141,7 @@ def mock_system_factory():
                 ),
                 forecasts=[],
             )
-        system.get_weather.return_value = weather
+        system.get_weather = AsyncMock(return_value=weather)
 
         if energy is None:
             energy = MagicMock(
@@ -135,7 +149,7 @@ def mock_system_factory():
                 self_sufficiency=0.0,
                 updated_at=None,
             )
-        system.get_energy_today.return_value = energy
+        system.get_energy_today = AsyncMock(return_value=energy)
 
         if details is None:
             details = MagicMock(
@@ -151,7 +165,7 @@ def mock_system_factory():
                 updated_at="2026-05-01T00:00:00Z",
                 device_gateways=[],
             )
-        system.get_details.return_value = details
+        system.get_details = AsyncMock(return_value=details)
 
         # Default to a fully-equipped install (all four asset types present)
         # so entities aren't disabled-by-default. Tests that exercise the
@@ -171,36 +185,89 @@ def mock_system_factory():
                 for t in ("HYBRID", "HEAT_PUMP", "METER", "EV_CHARGER")
             ]
         site = MagicMock(status=site_status, assets=assets)
-        system.get_status_and_assets.return_value = site
+        system.get_status_and_assets = AsyncMock(return_value=site)
 
-        system.get_active_features.return_value = list(active_features or [])
+        system.get_active_features = AsyncMock(return_value=list(active_features or []))
 
         # Notifications bridge (v0.1.52) — SDK returns NotificationsList with
         # a `.notifications: list[Notification]` attribute. Empty by default so
         # tests that don't care about notifications don't need to stub anything.
-        system.get_notifications.return_value = MagicMock(notifications=list(notifications or []))
-
-        # Subscriptions inventory (v0.1.53) — SDK returns SubscriptionsList with
-        # a `.subscriptions: list[Subscription]` attribute. Empty by default so
-        # tests that don't care get no DP price-guarantee sensor.
-        system.get_subscriptions.return_value = MagicMock(
-            subscriptions=list(subscriptions or []),
-            total_items=len(subscriptions or []),
+        system.get_notifications = AsyncMock(
+            return_value=MagicMock(notifications=list(notifications or []))
         )
+
+        # Subscriptions inventory still stubbed for backward-compat with tests
+        # that address it directly; the integration no longer consumes it.
+        system.get_subscriptions = AsyncMock(
+            return_value=MagicMock(
+                subscriptions=list(subscriptions or []),
+                total_items=len(subscriptions or []),
+            )
+        )
+
+        # Price-guarantee endpoint (SDK v1.0.1 first-class method). Default to
+        # ``None`` value/unit/version so ``_extract_price_guarantee`` returns
+        # ``None`` unless a test explicitly stubs the model.
+        if price_guarantee is None:
+            price_guarantee = MagicMock(value=None, unit=None, version=None)
+        system.get_price_guarantee = AsyncMock(return_value=price_guarantee)
 
         # HeartbeatPrices (v0.1.53) — SDK returns HeartbeatPrices with 5 named
         # window attributes; default to all-None so absent windows return
         # gracefully. Tests that need populated data pass an explicit stub.
         if heartbeat_prices is None:
             heartbeat_prices = MagicMock(day=None, week=None, month=None, half_year=None, year=None)
-        system.get_heartbeat_prices.return_value = heartbeat_prices
+        system.get_heartbeat_prices = AsyncMock(return_value=heartbeat_prices)
 
         # ImpactOverview (v0.1.53) — SDK exposes `co2_savings_kg: float | None`.
         # Default to a stub whose value is None so the attribute is absent.
         if impact is None:
             impact = MagicMock(co2_savings_kg=None)
-        system.get_impact_overview.return_value = impact
+        system.get_impact_overview = AsyncMock(return_value=impact)
 
         return system
 
     return _factory
+
+
+@pytest.fixture
+def setup_integration(
+    hass: HomeAssistant,
+) -> Callable[..., Awaitable[MockConfigEntry]]:
+    """Wire a mocked System object into a MockConfigEntry and boot the integration.
+
+    Consolidates the 29 duplicated ``_setup`` / ``_setup_entry`` helpers that
+    each test module used to carry. Callers pass the system mock they built
+    via ``mock_system_factory`` and get back a fully-set-up ``MockConfigEntry``
+    for further assertions or state reads.
+    """
+
+    async def _setup(
+        system: MagicMock,
+        *,
+        system_id: str = "sys-1",
+        username: str = "u@x.de",
+        password: str = "pw",
+        unique_id: str | None = None,
+    ) -> MockConfigEntry:
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id=unique_id or system_id,
+            data={
+                CONF_USERNAME: username,
+                CONF_PASSWORD: password,
+                CONF_SYSTEM_ID: system_id,
+            },
+        )
+        entry.add_to_hass(hass)
+        with (
+            patch("onekommafive.systems.Systems") as mock_systems_cls,
+            patch("onekommafive.client.Client"),
+        ):
+            mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+            mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+        return entry
+
+    return _setup

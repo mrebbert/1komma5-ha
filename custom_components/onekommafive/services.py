@@ -251,7 +251,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         """
         entry = _resolve_config_entry(hass, call)
         window = call.data["window"]
-        prices = await hass.async_add_executor_job(entry.runtime_data.system.get_heartbeat_prices)
+        prices = await entry.runtime_data.system.get_heartbeat_prices()
         win = getattr(prices, window, None)
         if win is None:
             return cast(ServiceResponse, {"window": window, "available": False})
@@ -310,7 +310,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 translation_placeholders={"wallbox_id": wallbox_id},
             )
 
-        await hass.async_add_executor_job(target_ev.assign_charger, wallbox_id)
+        await target_ev.assign_charger(wallbox_id)
         await data.live_coordinator.async_request_refresh()
         return cast(
             ServiceResponse,

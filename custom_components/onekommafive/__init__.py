@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,6 +12,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME, DOMAIN
 from .coordinator import (
@@ -81,18 +82,18 @@ class OneKomma5Data:
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
 
 
-def _safe_fetch[T](label: str, fn: Callable[[], T]) -> T | None:
-    """Run a setup-time SDK call; log and swallow any failure."""
+async def _safe_afetch[T](label: str, factory: Callable[[], Awaitable[T]]) -> T | None:
+    """Await a setup-time SDK coroutine; log and swallow any failure."""
     try:
-        return fn()
+        return await factory()
     except Exception as err:
         _LOGGER.warning("%s fetch failed: %s", label, err)
         return None
 
 
-def _extract_co2_saved(system: Any) -> float | None:
+async def _extract_co2_saved(system: Any) -> float | None:
     """Return lifetime CO2 saved in kg from get_impact_overview, or None on failure."""
-    impact = _safe_fetch("Impact overview", system.get_impact_overview)
+    impact = await _safe_afetch("Impact overview", system.get_impact_overview)
     if impact is None:
         return None
     value = getattr(impact, "co2_savings_kg", None)
@@ -102,27 +103,30 @@ def _extract_co2_saved(system: Any) -> float | None:
         return None
 
 
-def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuarantee | None:
-    """Return DP price-guarantee (ct/kWh → EUR/kWh) or None on any failure."""
+async def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuarantee | None:
+    """Return DP price-guarantee (ct/kWh → EUR/kWh) or None on any failure.
+
+    Uses the SDK v1.0.1 ``get_price_guarantee`` endpoint which surfaces the DP
+    subscription's guarantee directly. Value is normalised to EUR/kWh via the
+    reported ``unit`` (``ct`` or ``ct/kWh`` scale by 1/100).
+    """
     if customer_id is None:
         return None
-    subs = _safe_fetch("Subscriptions", lambda: system.get_subscriptions(customer_id))
-    if subs is None:
+    guarantee = await _safe_afetch(
+        "Price guarantee", lambda: system.get_price_guarantee(customer_id)
+    )
+    if guarantee is None:
         return None
-    for sub in getattr(subs, "subscriptions", []) or []:
-        if getattr(sub, "type", None) != "DYNAMIC_PULSE":
-            continue
-        raw_value = getattr(sub, "price_guarantee_value", None)
-        if raw_value is None:
-            return None
-        unit = (getattr(sub, "price_guarantee_unit", None) or "").lower()
-        version = getattr(sub, "price_guarantee_version", None)
-        try:
-            value_eur_per_kwh = float(raw_value) / 100 if "ct" in unit else float(raw_value)
-        except (TypeError, ValueError):
-            return None
-        return PriceGuarantee(value_eur_per_kwh=value_eur_per_kwh, version=version)
-    return None
+    raw_value = getattr(guarantee, "value", None)
+    if raw_value is None:
+        return None
+    unit = (getattr(guarantee, "unit", None) or "").lower()
+    version = getattr(guarantee, "version", None)
+    try:
+        value_eur_per_kwh = float(raw_value) / 100 if "ct" in unit else float(raw_value)
+    except (TypeError, ValueError):
+        return None
+    return PriceGuarantee(value_eur_per_kwh=value_eur_per_kwh, version=version)
 
 
 def _remove_stale_wallbox_devices(
@@ -231,65 +235,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     password: str = entry.data[CONF_PASSWORD]
     system_id: str = entry.data[CONF_SYSTEM_ID]
 
+    session = async_get_clientsession(hass)
+    client = Client(username, password, session=session)
     try:
-
-        def _fetch_system() -> tuple[
-            object,
-            str,
-            object | None,
-            PriceGuarantee | None,
-            float | None,
-            str | None,
-            list[Any],
-            list[Any],
-        ]:
-            client = Client(username, password)
-            system = Systems(client).get_system(system_id)
-            # system.info() makes a blocking HTTP call — keep it in the executor
-            info = system.info()
-            name = (
-                info.name
-                or (f"1KOMMA5° {info.address_city}" if info.address_city else None)
-                or f"1KOMMA5° {system.id()[:8]}"
-            )
-            # SystemDetails is rarely-changing metadata — fetched once at setup
-            # and cached. Failure is non-fatal: it only means the diagnostics
-            # dump lacks the extra fields and the active-features endpoint
-            # is skipped (customer_id is required for that call).
-            details = _safe_fetch("System details", system.get_details)
-            cust_id = getattr(details, "customer_id", None) if details else None
-            price_guarantee = _extract_price_guarantee(system, cust_id)
-            co2_saved_kg = _extract_co2_saved(system)
-            sdk_version = _read_sdk_version()
-            # Wallbox inventory rarely changes; reload picks up hardware
-            # additions. Failure is non-fatal (e.g. transient upstream error);
-            # empty list means multi-wallbox sub-devices are skipped this run.
-            wallboxes = _safe_fetch("Wallboxes", system.get_wallboxes) or []
-            # Heartbeat gateways (SDK v0.4.0). 1K5-backend installs return
-            # an empty list here; GRIDX installs return one gateway per
-            # HEMS box. Non-fatal on failure.
-            device_gateways = _safe_fetch("Device gateways", system.get_device_gateways) or []
-            return (
-                system,
-                name,
-                details,
-                price_guarantee,
-                co2_saved_kg,
-                sdk_version,
-                wallboxes,
-                device_gateways,
-            )
-
-        (
-            system,
-            system_name,
-            details,
-            price_guarantee,
-            co2_saved_kg,
-            sdk_version,
-            wallboxes,
-            device_gateways,
-        ) = await hass.async_add_executor_job(_fetch_system)
+        system = await Systems(client).get_system(system_id)
+        info = await system.info()
+        name = (
+            info.name
+            or (f"1KOMMA5° {info.address_city}" if info.address_city else None)
+            or f"1KOMMA5° {system.id()[:8]}"
+        )
+        # SystemDetails is rarely-changing metadata — fetched once at setup
+        # and cached. Failure is non-fatal: it only means the diagnostics
+        # dump lacks the extra fields and the active-features endpoint
+        # is skipped (customer_id is required for that call).
+        details = await _safe_afetch("System details", system.get_details)
+        cust_id = getattr(details, "customer_id", None) if details else None
+        price_guarantee = await _extract_price_guarantee(system, cust_id)
+        co2_saved_kg = await _extract_co2_saved(system)
+        # importlib.metadata reads distribution files — stays in the executor.
+        sdk_version = await hass.async_add_executor_job(_read_sdk_version)
+        # Wallbox inventory rarely changes; reload picks up hardware
+        # additions. Failure is non-fatal (e.g. transient upstream error);
+        # empty list means multi-wallbox sub-devices are skipped this run.
+        wallboxes = await _safe_afetch("Wallboxes", system.get_wallboxes) or []
+        # Heartbeat gateways (SDK v0.4.0+). 1K5-backend installs return
+        # an empty list here; GRIDX installs return one gateway per
+        # HEMS box. Non-fatal on failure.
+        device_gateways = await _safe_afetch("Device gateways", system.get_device_gateways) or []
+        system_name = name
     except AuthenticationError as err:
         raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
     except RequestError as err:

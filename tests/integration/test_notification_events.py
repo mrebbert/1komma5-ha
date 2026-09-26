@@ -81,8 +81,8 @@ async def _setup_entry(
         patch("onekommafive.client.Client"),
         patch("custom_components.onekommafive.coordinator.Store") as mock_store_cls,
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         # Fresh Store-backed sentinel — stored=None means "cold start, no
         # persisted state"; stored={...} pre-seeds the sentinel.
         store_instance = MagicMock()

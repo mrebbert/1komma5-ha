@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -31,7 +31,7 @@ class OneKomma5EVNumberDescription(NumberEntityDescription):
     """Number entity description for EV-related sliders."""
 
     value_fn: Callable[[Any], float | None]
-    set_fn: Callable[[Any, float], None]  # called via executor
+    set_fn: Callable[[Any, float], Awaitable[None]]
     available_fn: Callable[[Any], bool] = lambda _: True
 
 
@@ -150,5 +150,5 @@ class OneKomma5EVNumber(OneKomma5EVEntity, NumberEntity):
                 self.entity_description.key,
             )
             return
-        await self.hass.async_add_executor_job(self.entity_description.set_fn, ev, value)
+        await self.entity_description.set_fn(ev, value)
         await self.coordinator.async_request_refresh()

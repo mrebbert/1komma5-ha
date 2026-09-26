@@ -129,7 +129,7 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         if ev is None:
             _LOGGER.warning("EV charger %s not found, cannot set charging mode", self._ev_id)
             return
-        await self.hass.async_add_executor_job(ev.set_charging_mode, mode)
+        await ev.set_charging_mode(mode)
         await self.coordinator.async_request_refresh()
 
 
@@ -211,5 +211,5 @@ class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinato
                 self._wallbox_id,
             )
             return
-        await self.hass.async_add_executor_job(target_ev.assign_charger, self._wallbox_id)
+        await target_ev.assign_charger(self._wallbox_id)
         await self.coordinator.async_request_refresh()

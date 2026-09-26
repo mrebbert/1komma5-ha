@@ -86,7 +86,5 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
         if ev is None:
             _LOGGER.warning("EV charger %s not found, cannot set departure time", self._ev_id)
             return
-        await self.hass.async_add_executor_job(
-            ev.set_primary_departure_time, value.strftime("%H:%M")
-        )
+        await ev.set_primary_departure_time(value.strftime("%H:%M"))
         await self.coordinator.async_request_refresh()

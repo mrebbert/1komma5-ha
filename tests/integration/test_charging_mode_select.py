@@ -8,7 +8,7 @@ a regression here would silently send the wrong format to the API.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -33,6 +33,12 @@ def _ev_charger() -> MagicMock:
     ev.target_soc.return_value = 80.0
     ev.current_soc.return_value = 50.0
     ev.primary_schedule_departure_time.return_value = "07:00"
+    # Write-path methods are async in SDK v1.0.1.
+    ev.set_charging_mode = AsyncMock(return_value=None)
+    ev.set_current_soc = AsyncMock(return_value=None)
+    ev.set_target_soc = AsyncMock(return_value=None)
+    ev.set_primary_departure_time = AsyncMock(return_value=None)
+    ev.assign_charger = AsyncMock(return_value=None)
     return ev
 
 
@@ -56,8 +62,8 @@ async def test_charging_mode_select_translates_lowercase_option_to_enum(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_system.return_value = system
-        mock_systems_cls.return_value.get_systems.return_value = [system]
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -43,8 +43,8 @@ async def test_reauth_updates_credentials(hass: HomeAssistant, mock_system_facto
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems.return_value = [system]
-        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
 
         result = await entry.start_reauth_flow(hass)
         assert result["type"] == "form"
@@ -98,7 +98,7 @@ async def test_reauth_system_no_longer_present_errors(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems.return_value = [different_system]
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[different_system])
 
         result = await entry.start_reauth_flow(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -125,8 +125,8 @@ async def test_reconfigure_updates_credentials(hass: HomeAssistant, mock_system_
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems.return_value = [system]
-        mock_systems_cls.return_value.get_system.return_value = system
+        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[system])
+        mock_systems_cls.return_value.get_system = AsyncMock(return_value=system)
 
         result = await entry.start_reconfigure_flow(hass)
         assert result["type"] == "form"
