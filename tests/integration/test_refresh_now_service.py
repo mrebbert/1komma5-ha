@@ -38,7 +38,9 @@ async def integration(hass: HomeAssistant, mock_system_factory):
     return entry
 
 
-async def test_default_refreshes_live_coordinator(hass: HomeAssistant, integration) -> None:
+async def test_default_refreshes_live_coordinator(
+    hass: HomeAssistant, integration
+) -> None:
     """Omitting the `coordinator` field defaults to refreshing 'live'."""
     live = integration.runtime_data.live_coordinator
     price = integration.runtime_data.price_coordinator
@@ -78,7 +80,9 @@ async def test_explicit_coordinator(hass: HomeAssistant, integration) -> None:
     assert response["refreshed"] == ["weather"]
 
 
-async def test_all_refreshes_every_coordinator(hass: HomeAssistant, integration) -> None:
+async def test_all_refreshes_every_coordinator(
+    hass: HomeAssistant, integration
+) -> None:
     """`coordinator: all` refreshes every coordinator."""
     rd = integration.runtime_data
     all_coords = {

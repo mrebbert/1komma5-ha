@@ -82,9 +82,13 @@ class OneKomma5Data:
     currency: str  # ISO 4217 code derived from details.address_country (default EUR)
     price_guarantee: PriceGuarantee | None
     co2_saved_kg: float | None  # lifetime CO2 saved (kg), captured once at setup
-    system_device_id: str  # device_registry ID of the system parent device (via_device_id)
+    system_device_id: (
+        str  # device_registry ID of the system parent device (via_device_id)
+    )
     emp_type: str | None  # SystemDetails.emp_type, e.g. "GRIDX" or "1K5"
-    sdk_version: str | None  # installed onekommafive SDK version; cached to keep diag async-safe
+    sdk_version: (
+        str | None
+    )  # installed onekommafive SDK version; cached to keep diag async-safe
     wallboxes: list[Wallbox]  # physical wallboxes, drives multi-wallbox sub-devices
     # {Wallbox.id: device_registry id}; used to via_device the paired EV
     wallbox_device_ids: dict[str, str]
@@ -214,7 +218,9 @@ def _setup_wallbox_sub_devices(
     """
     ev_charger_assets: list[Any] = []
     if system_status_coordinator.data is not None:
-        ev_charger_assets = system_status_coordinator.data.assets_by_type_list.get("EV_CHARGER", [])
+        ev_charger_assets = system_status_coordinator.data.assets_by_type_list.get(
+            "EV_CHARGER", []
+        )
     wallbox_device_ids: dict[str, str] = {}
     wallbox_count = len(wallboxes)
     for wallbox in wallboxes:
@@ -226,7 +232,11 @@ def _setup_wallbox_sub_devices(
         # the one EV_CHARGER asset (implicit pairing, no name lookup).
         if wallbox_count > 1:
             matching_asset = next(
-                (a for a in ev_charger_assets if getattr(a, "name", None) == wallbox.name),
+                (
+                    a
+                    for a in ev_charger_assets
+                    if getattr(a, "name", None) == wallbox.name
+                ),
                 None,
             )
             explicit_name = wallbox.name
@@ -235,9 +245,15 @@ def _setup_wallbox_sub_devices(
             explicit_name = None
         key = wallbox_sub_device_key(wb_id, wallbox_count)
         di = asset_device_info(
-            system_id, key, matching_asset, parent_device_id, explicit_name=explicit_name
+            system_id,
+            key,
+            matching_asset,
+            parent_device_id,
+            explicit_name=explicit_name,
         )
-        wallbox_device = device_registry.async_get_or_create(config_entry_id=entry.entry_id, **di)
+        wallbox_device = device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id, **di
+        )
         wallbox_device_ids[wb_id] = wallbox_device.id
     return wallbox_device_ids
 
@@ -285,7 +301,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         # Heartbeat gateways (SDK v0.4.0+). 1K5-backend installs return
         # an empty list here; GRIDX installs return one gateway per
         # HEMS box. Non-fatal on failure.
-        device_gateways = await _safe_afetch("Device gateways", system.get_device_gateways) or []
+        device_gateways = (
+            await _safe_afetch("Device gateways", system.get_device_gateways) or []
+        )
         system_name = name
     except AuthenticationError as err:
         raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
@@ -293,7 +311,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         raise ConfigEntryNotReady(f"Cannot connect to 1KOMMA5° API: {err}") from err
 
     customer_id = getattr(details, "customer_id", None) if details else None
-    currency = resolve_currency(getattr(details, "address_country", None) if details else None)
+    currency = resolve_currency(
+        getattr(details, "address_country", None) if details else None
+    )
 
     emp_type = get_emp_type(details)
     live_coordinator = OneKomma5LiveCoordinator(
@@ -302,9 +322,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     price_coordinator = OneKomma5PriceCoordinator(hass, system)
     optimization_coordinator = OneKomma5OptimizationCoordinator(hass, system)
     weather_coordinator = OneKomma5WeatherCoordinator(hass, system)
-    system_status_coordinator = OneKomma5SystemStatusCoordinator(hass, system, customer_id)
+    system_status_coordinator = OneKomma5SystemStatusCoordinator(
+        hass, system, customer_id
+    )
     energy_coordinator = OneKomma5EnergyCoordinator(hass, system)
-    notifications_coordinator = OneKomma5NotificationsCoordinator(hass, system, entry.entry_id)
+    notifications_coordinator = OneKomma5NotificationsCoordinator(
+        hass, system, entry.entry_id
+    )
 
     await live_coordinator.async_config_entry_first_refresh()
 
@@ -376,7 +400,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     return True
 
 
-async def _async_options_updated(hass: HomeAssistant, entry: OneKomma5ConfigEntry) -> None:
+async def _async_options_updated(
+    hass: HomeAssistant, entry: OneKomma5ConfigEntry
+) -> None:
     """Reload the integration when options change so option-driven entities re-instantiate."""
     await hass.config_entries.async_reload(entry.entry_id)
 

@@ -68,7 +68,9 @@ async def integration(hass: HomeAssistant, mock_system_factory):
     return entry
 
 
-async def test_month_window_returns_populated_dict(hass: HomeAssistant, integration) -> None:
+async def test_month_window_returns_populated_dict(
+    hass: HomeAssistant, integration
+) -> None:
     response = await hass.services.async_call(
         DOMAIN,
         "get_heartbeat_metrics",
@@ -83,7 +85,9 @@ async def test_month_window_returns_populated_dict(hass: HomeAssistant, integrat
     assert response["vat"] == 0.19
 
 
-async def test_each_window_dispatches_correctly(hass: HomeAssistant, integration) -> None:
+async def test_each_window_dispatches_correctly(
+    hass: HomeAssistant, integration
+) -> None:
     """All 5 windows return their own PV value (proving getattr dispatch works)."""
     expected = {
         "day": 34.93,
@@ -105,7 +109,9 @@ async def test_each_window_dispatches_correctly(hass: HomeAssistant, integration
         assert response["pv_produced_kwh"] == pv, window
 
 
-async def test_invalid_window_rejected_by_schema(hass: HomeAssistant, integration) -> None:
+async def test_invalid_window_rejected_by_schema(
+    hass: HomeAssistant, integration
+) -> None:
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(
             DOMAIN,

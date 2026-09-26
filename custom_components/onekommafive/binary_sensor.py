@@ -74,7 +74,9 @@ async def async_setup_entry(
     # systems without e.g. a heat pump.
     status_data = data.system_status_coordinator.data
     observed_types: set[str] = (
-        {a.type for a in status_data.assets} if status_data and status_data.assets else set()
+        {a.type for a in status_data.assets}
+        if status_data and status_data.assets
+        else set()
     )
     for device_key, translation_key in ASSET_CONNECTIVITY_SENSORS:
         candidate_types = ASSET_TYPES_BY_DEVICE_KEY[device_key]
@@ -378,7 +380,9 @@ class OneKomma5SiteConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorE
         }
 
 
-class OneKomma5AssetTypeConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+class OneKomma5AssetTypeConnectivitySensor(
+    OneKomma5SystemStatusEntity, BinarySensorEntity
+):
     """Per-asset-type connectivity binary sensor.
 
     AND-logic: ``is_on`` is True only when **every** asset of the configured
@@ -431,7 +435,9 @@ class OneKomma5AssetTypeConnectivitySensor(OneKomma5SystemStatusEntity, BinarySe
             return None
         return {
             "count": len(assets),
-            "connected_count": sum(1 for a in assets if a.connection_status == "CONNECTED"),
+            "connected_count": sum(
+                1 for a in assets if a.connection_status == "CONNECTED"
+            ),
             "assets": [asset_redacted_dict(a) for a in assets],
         }
 
@@ -444,7 +450,9 @@ ASSET_CONNECTIVITY_SENSORS = (
 )
 
 
-class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+class OneKomma5WallboxConnectivitySensor(
+    OneKomma5SystemStatusEntity, BinarySensorEntity
+):
     """Per-wallbox connectivity sensor (only on multi-wallbox setups).
 
     Reflects the connection status of one specific physical wallbox — matched
@@ -480,7 +488,9 @@ class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySens
         # Re-attach to the wallbox sub-device that setup pre-registered; that
         # device carries the manufacturer / model / firmware / via_device
         # already, so we just declare its identifier.
-        self._attr_device_info = attach_to_wallbox_sub_device(system_id, wallbox.id, wallbox_count)
+        self._attr_device_info = attach_to_wallbox_sub_device(
+            system_id, wallbox.id, wallbox_count
+        )
 
     def _matching_asset(self) -> Any | None:
         if self.coordinator.data is None:
@@ -508,7 +518,9 @@ class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySens
         }
 
 
-class OneKomma5ActiveFeatureBinarySensor(OneKomma5SystemStatusEntity, BinarySensorEntity):
+class OneKomma5ActiveFeatureBinarySensor(
+    OneKomma5SystemStatusEntity, BinarySensorEntity
+):
     """Binary sensor reflecting whether a specific feature flag is active.
 
     Splits the `aktive_funktionen` counter sensor (which exposes only a list

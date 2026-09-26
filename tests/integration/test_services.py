@@ -42,7 +42,9 @@ async def integration_with_prices(hass: HomeAssistant, mock_system_factory):
     # Round up to the next 15-min boundary to keep slot ends > now.
     future = now + datetime.timedelta(minutes=15 - (now.minute % 15))
     slots = {
-        (future + datetime.timedelta(minutes=15 * i)).isoformat().replace("+00:00", "Z"): price
+        (future + datetime.timedelta(minutes=15 * i))
+        .isoformat()
+        .replace("+00:00", "Z"): price
         for i, price in enumerate([0.30, 0.10, 0.05, 0.40])
     }
     prices = _make_market_prices(slots)

@@ -25,7 +25,9 @@ from custom_components.onekommafive import (
 class TestExtractCo2Saved:
     async def test_returns_float_when_impact_populated(self) -> None:
         system = MagicMock()
-        system.get_impact_overview = AsyncMock(return_value=MagicMock(co2_savings_kg=1234.5))
+        system.get_impact_overview = AsyncMock(
+            return_value=MagicMock(co2_savings_kg=1234.5)
+        )
         assert await _extract_co2_saved(system) == 1234.5
 
     async def test_returns_none_when_impact_fetch_raises(self) -> None:

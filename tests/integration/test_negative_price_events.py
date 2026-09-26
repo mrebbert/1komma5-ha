@@ -76,7 +76,9 @@ async def test_first_refresh_does_not_fire_events(
     started = _capture_events(hass, EVENT_NEGATIVE_PRICE_STARTED)
     ended = _capture_events(hass, EVENT_NEGATIVE_PRICE_ENDED)
 
-    await _setup_with_prices(hass, mock_system_factory, prices=prices, system_id="sys-prime")
+    await _setup_with_prices(
+        hass, mock_system_factory, prices=prices, system_id="sys-prime"
+    )
     assert started == []
     assert ended == []
 
@@ -138,7 +140,9 @@ async def test_negative_to_positive_fires_ended(
     assert ended[0].data["price"] == 0.15
 
 
-async def test_no_transition_no_event(hass: HomeAssistant, mock_system_factory, freezer) -> None:
+async def test_no_transition_no_event(
+    hass: HomeAssistant, mock_system_factory, freezer
+) -> None:
     await hass.config.async_set_time_zone("UTC")
     freezer.move_to("2026-06-15T12:00:00+00:00")
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)

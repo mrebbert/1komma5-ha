@@ -104,7 +104,9 @@ async def test_issue_auto_resolves_when_ems_recovers(
     assert _issue(hass) is None
 
 
-async def test_healthy_install_never_fires_issue(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_healthy_install_never_fires_issue(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """The happy-path install (EMS always present) never triggers the issue."""
     system = mock_system_factory(system_id="sys-1")
     entry = await _setup(hass, system)
@@ -116,7 +118,9 @@ async def test_healthy_install_never_fires_issue(hass: HomeAssistant, mock_syste
     assert _issue(hass) is None
 
 
-async def test_1k5_backend_never_fires_issue(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_1k5_backend_never_fires_issue(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """emp_type=1K5 has no GridX EMS endpoint — skip the repair-issue path entirely."""
     system = mock_system_factory(
         system_id="sys-1",
@@ -127,7 +131,9 @@ async def test_1k5_backend_never_fires_issue(hass: HomeAssistant, mock_system_fa
             address_country="DE",
         ),
     )
-    system.get_ems_settings.side_effect = RuntimeError('error_code:30401 "DeviceGateway not found"')
+    system.get_ems_settings.side_effect = RuntimeError(
+        'error_code:30401 "DeviceGateway not found"'
+    )
     entry = await _setup(hass, system)
 
     for _ in range(10):

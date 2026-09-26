@@ -88,8 +88,14 @@ async def test_scheduled_departure_soc_is_distinct_from_target(
     assert float(target.state) == 80.0
 
 
-async def test_missing_values_are_unknown(hass: HomeAssistant, mock_system_factory) -> None:
-    await _setup(hass, _ev_charger(capacity_wh=None, departure_soc=None), mock_system_factory)
+async def test_missing_values_are_unknown(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    await _setup(
+        hass, _ev_charger(capacity_wh=None, departure_soc=None), mock_system_factory
+    )
 
     assert hass.states.get(_resolve(hass, "ev_battery_capacity")).state == "unknown"
-    assert hass.states.get(_resolve(hass, "ev_scheduled_departure_soc")).state == "unknown"
+    assert (
+        hass.states.get(_resolve(hass, "ev_scheduled_departure_soc")).state == "unknown"
+    )

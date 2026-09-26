@@ -64,7 +64,9 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
         self._password: str = ""
         self._systems: list[_SystemEntry] = []
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Handle the initial step where user enters credentials."""
         errors: dict[str, str] = {}
 
@@ -74,7 +76,9 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 # Titles are pre-fetched inside the executor to avoid blocking calls
-                self._systems = await self._async_get_systems(self._username, self._password)
+                self._systems = await self._async_get_systems(
+                    self._username, self._password
+                )
             except InvalidAuth:
                 errors["base"] = "invalid_auth"
             except CannotConnect:
@@ -181,7 +185,9 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_system(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_system(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Handle system selection when the account has multiple systems."""
         if user_input is not None:
             system_id = user_input[CONF_SYSTEM_ID]
@@ -200,10 +206,14 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
         system_options = {e.system_id: e.title for e in self._systems}
         return self.async_show_form(
             step_id="system",
-            data_schema=vol.Schema({vol.Required(CONF_SYSTEM_ID): vol.In(system_options)}),
+            data_schema=vol.Schema(
+                {vol.Required(CONF_SYSTEM_ID): vol.In(system_options)}
+            ),
         )
 
-    async def _async_get_systems(self, username: str, password: str) -> list[_SystemEntry]:
+    async def _async_get_systems(
+        self, username: str, password: str
+    ) -> list[_SystemEntry]:
         """Authenticate against the async SDK and materialise per-system titles."""
         from onekommafive.client import Client
         from onekommafive.errors import AuthenticationError, RequestError
@@ -244,12 +254,16 @@ class OneKomma5OptionsFlow(OptionsFlow):
         """Store the config entry for use in the options steps."""
         self._config_entry = config_entry
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Show the options form."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
-        current_tariff = self._config_entry.options.get(CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF)
+        current_tariff = self._config_entry.options.get(
+            CONF_FEED_IN_TARIFF, DEFAULT_FEED_IN_TARIFF
+        )
         current_duration = self._config_entry.options.get(
             CONF_CHARGING_WINDOW_DURATION_MINUTES,
             DEFAULT_CHARGING_WINDOW_DURATION_MINUTES,

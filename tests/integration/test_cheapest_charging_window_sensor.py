@@ -164,7 +164,9 @@ async def test_cheapest_window_clips_at_end_of_today_local(
     # All windows that fit today consist of 0.30 slots — sensor must pick one.
     assert state.attributes["average_price"] == 0.30
     end_dt = datetime.datetime.fromisoformat(state.attributes["end"])
-    assert end_dt <= datetime.datetime(2026, 6, 15, 23, 59, 59, 999999, tzinfo=datetime.UTC)
+    assert end_dt <= datetime.datetime(
+        2026, 6, 15, 23, 59, 59, 999999, tzinfo=datetime.UTC
+    )
 
 
 async def test_cheapest_window_locks_in_across_time_advance(
@@ -179,7 +181,10 @@ async def test_cheapest_window_locks_in_across_time_advance(
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
     slot = datetime.timedelta(minutes=15)
     # Slots 8-11 form the only cheap 60-min block; everything else is flat.
-    prices = {base + slot * (i + 1): (0.10 if i in (8, 9, 10, 11) else 0.50) for i in range(16)}
+    prices = {
+        base + slot * (i + 1): (0.10 if i in (8, 9, 10, 11) else 0.50)
+        for i in range(16)
+    }
 
     system = mock_system_factory(prices=_market_prices(prices))
     entry = MockConfigEntry(
@@ -225,7 +230,9 @@ async def test_cheapest_window_restores_valid_previous_state(
     slot = datetime.timedelta(minutes=15)
     # Fresh forecast: slots 0-3 are now the cheapest — but the restored
     # window points elsewhere, so the lock-in must keep the restored pick.
-    prices = {base + slot * (i + 1): (0.10 if i in (0, 1, 2, 3) else 0.50) for i in range(16)}
+    prices = {
+        base + slot * (i + 1): (0.10 if i in (0, 1, 2, 3) else 0.50) for i in range(16)
+    }
 
     restored_start = "2026-06-15T14:15:00+00:00"  # slot-8 start
     restored_end = "2026-06-15T15:15:00+00:00"  # slot-12 end
@@ -250,7 +257,11 @@ async def test_cheapest_window_restores_valid_previous_state(
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="sys-restore",
-        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-restore"},
+        data={
+            CONF_USERNAME: "u@x.de",
+            CONF_PASSWORD: "pw",
+            CONF_SYSTEM_ID: "sys-restore",
+        },
     )
     entry.add_to_hass(hass)
 
@@ -276,7 +287,9 @@ async def test_cheapest_window_ignores_restored_state_after_expiry(
     base = datetime.datetime(2026, 6, 15, 18, 15, tzinfo=datetime.UTC)
     slot = datetime.timedelta(minutes=15)
     # Slots 0-3 are the only cheap 60-min block in the remaining day.
-    prices = {base + slot * (i + 1): (0.10 if i in (0, 1, 2, 3) else 0.50) for i in range(16)}
+    prices = {
+        base + slot * (i + 1): (0.10 if i in (0, 1, 2, 3) else 0.50) for i in range(16)
+    }
 
     # Restored window ended at 11:00 UTC — well before now (18:00 UTC).
     mock_restore_cache(
@@ -300,7 +313,11 @@ async def test_cheapest_window_ignores_restored_state_after_expiry(
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="sys-expired",
-        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-expired"},
+        data={
+            CONF_USERNAME: "u@x.de",
+            CONF_PASSWORD: "pw",
+            CONF_SYSTEM_ID: "sys-expired",
+        },
     )
     entry.add_to_hass(hass)
 
@@ -323,7 +340,9 @@ async def test_cheapest_window_honours_configured_duration(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
     """A 30-min duration option = 2 slots; the picked window matches."""
-    from custom_components.onekommafive.const import CONF_CHARGING_WINDOW_DURATION_MINUTES
+    from custom_components.onekommafive.const import (
+        CONF_CHARGING_WINDOW_DURATION_MINUTES,
+    )
 
     freezer.move_to("2026-06-15T12:00:00+00:00")
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
@@ -364,7 +383,9 @@ async def test_cheapest_window_reloads_on_options_change(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
     """Updating the duration via options-flow reloads the entry; sensor picks up the new duration."""
-    from custom_components.onekommafive.const import CONF_CHARGING_WINDOW_DURATION_MINUTES
+    from custom_components.onekommafive.const import (
+        CONF_CHARGING_WINDOW_DURATION_MINUTES,
+    )
 
     freezer.move_to("2026-06-15T12:00:00+00:00")
     base = datetime.datetime(2026, 6, 15, 12, 15, tzinfo=datetime.UTC)
@@ -376,7 +397,11 @@ async def test_cheapest_window_reloads_on_options_change(
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="sys-reload",
-        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-reload"},
+        data={
+            CONF_USERNAME: "u@x.de",
+            CONF_PASSWORD: "pw",
+            CONF_SYSTEM_ID: "sys-reload",
+        },
         options={},  # default 60 min
     )
     entry.add_to_hass(hass)
@@ -417,7 +442,9 @@ async def test_tomorrow_window_picks_cheapest_tomorrow_slot(
 ) -> None:
     """Tomorrow-window sensor selects the cheapest 60-min run from tomorrow's slots."""
     await hass.config.async_set_time_zone("UTC")
-    freezer.move_to("2026-06-15T22:00:00+00:00")  # Late evening; tomorrow's prices loaded.
+    freezer.move_to(
+        "2026-06-15T22:00:00+00:00"
+    )  # Late evening; tomorrow's prices loaded.
     # Tomorrow starts at 2026-06-16T00:00 UTC. Build 16 tomorrow-slots with a min run.
     tomorrow_base = datetime.datetime(2026, 6, 16, 0, 15, tzinfo=datetime.UTC)
     slot = datetime.timedelta(minutes=15)
@@ -472,7 +499,11 @@ async def test_tomorrow_window_unknown_without_tomorrow_forecast(
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="sys-no-tmrw",
-        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-no-tmrw"},
+        data={
+            CONF_USERNAME: "u@x.de",
+            CONF_PASSWORD: "pw",
+            CONF_SYSTEM_ID: "sys-no-tmrw",
+        },
     )
     entry.add_to_hass(hass)
     with (
@@ -493,7 +524,9 @@ async def test_tomorrow_window_honours_configured_duration(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
     """The tomorrow sensor uses the same options-flow duration as the today twin."""
-    from custom_components.onekommafive.const import CONF_CHARGING_WINDOW_DURATION_MINUTES
+    from custom_components.onekommafive.const import (
+        CONF_CHARGING_WINDOW_DURATION_MINUTES,
+    )
 
     await hass.config.async_set_time_zone("UTC")
     freezer.move_to("2026-06-15T22:00:00+00:00")
@@ -509,7 +542,11 @@ async def test_tomorrow_window_honours_configured_duration(
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="sys-tmrw-30",
-        data={CONF_USERNAME: "u@x.de", CONF_PASSWORD: "pw", CONF_SYSTEM_ID: "sys-tmrw-30"},
+        data={
+            CONF_USERNAME: "u@x.de",
+            CONF_PASSWORD: "pw",
+            CONF_SYSTEM_ID: "sys-tmrw-30",
+        },
         options={CONF_CHARGING_WINDOW_DURATION_MINUTES: 30},
     )
     entry.add_to_hass(hass)

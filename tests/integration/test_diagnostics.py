@@ -182,7 +182,9 @@ async def test_diagnostics_system_block_excludes_pii_and_secrets(
         assert needle not in serialised, f"sensitive value leaked: {needle!r}"
 
 
-async def test_diagnostics_is_json_serialisable(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_diagnostics_is_json_serialisable(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """HA serialises diagnostics to JSON when the user downloads them."""
     system = mock_system_factory(system_id="sys-1")
     entry = await _setup(hass, system)

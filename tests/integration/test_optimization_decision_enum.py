@@ -101,7 +101,9 @@ async def test_unknown_decision_coerces_to_unknown_state(
     assert state.state == "unknown"
 
 
-async def test_battery_discharge_to_grid_is_known(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_battery_discharge_to_grid_is_known(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Regression for issue #23 (2026-09-22): the cloud started emitting
     ``BATTERY_DISCHARGE_TO_GRID`` (battery trades energy back to the grid at
     high spot prices). The value must coerce to its lowercase key and land

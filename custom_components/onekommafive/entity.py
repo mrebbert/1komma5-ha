@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_time_change
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 from homeassistant.util import slugify
 
 from .const import DOMAIN
@@ -116,10 +119,17 @@ def resolve_assets_by_type(data: Any) -> dict[str, Any]:
 
 # Base fields that are always safe to surface from an Asset. Never includes
 # `id`, `name`, `serial_number`, or `network_address` (PII / secrets).
-_ASSET_SAFE_FIELDS: tuple[str, ...] = ("manufacturer", "model", "firmware", "connection_status")
+_ASSET_SAFE_FIELDS: tuple[str, ...] = (
+    "manufacturer",
+    "model",
+    "firmware",
+    "connection_status",
+)
 
 
-def asset_redacted_dict(asset: Any, *, extra_keys: tuple[str, ...] = ()) -> dict[str, Any]:
+def asset_redacted_dict(
+    asset: Any, *, extra_keys: tuple[str, ...] = ()
+) -> dict[str, Any]:
     """Return a PII-safe dict view of ``asset`` for diagnostics / attributes.
 
     Always exposes ``manufacturer``, ``model``, ``firmware`` and
@@ -231,7 +241,9 @@ def attach_to_wallbox_sub_device(
     not add ``via_device`` here — that would raise
     ``HomeAssistantError: A device can not be its own via device``.
     """
-    return DeviceInfo(identifiers={wallbox_identifier(system_id, wallbox_id, wallbox_count)})
+    return DeviceInfo(
+        identifiers={wallbox_identifier(system_id, wallbox_id, wallbox_count)}
+    )
 
 
 def ev_wallbox_parent(
@@ -312,7 +324,9 @@ class SystemEntityBase[C: DataUpdateCoordinator[Any]](CoordinatorEntity[C]):
         self._stable_object_id = f"{slugify(system_name)}_{unique_id_suffix}"
         key = device_key if device_key is not None else self._device_key
         if key is not None and asset is not None:
-            self._attr_device_info = asset_device_info(system_id, key, asset, parent_device_id)
+            self._attr_device_info = asset_device_info(
+                system_id, key, asset, parent_device_id
+            )
         else:
             self._attr_device_info = system_device_info(system_id, system_name)
             # Asked for a sub-device but the hardware isn't reported by the
@@ -385,10 +399,14 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         self._ev_id = ev.id()
         self._attr_unique_id = f"{system_id}_{self._ev_id}_{unique_id_suffix}"
         # ev_id in the object_id so multi-vehicle installs don't collide.
-        self._stable_object_id = f"{slugify(system_name)}_{slugify(self._ev_id)}_{unique_id_suffix}"
+        self._stable_object_id = (
+            f"{slugify(system_name)}_{slugify(self._ev_id)}_{unique_id_suffix}"
+        )
         wallbox_device_id, wallbox_parent_identifier = ev_wallbox_parent(ev, data)
         via_device_id = (
-            wallbox_device_id if wallbox_device_id is not None else data.system_device_id
+            wallbox_device_id
+            if wallbox_device_id is not None
+            else data.system_device_id
         )
         self._attr_device_info = _set_via(
             DeviceInfo(

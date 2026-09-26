@@ -53,7 +53,11 @@ async def test_state_is_feature_count_and_list_in_attribute(
 ) -> None:
     system = mock_system_factory(
         system_id="sys-1",
-        active_features=["DYNAMIC_TARIFF", "TIME_OF_USE_OPTIMIZATION", "SMART_CHARGING"],
+        active_features=[
+            "DYNAMIC_TARIFF",
+            "TIME_OF_USE_OPTIMIZATION",
+            "SMART_CHARGING",
+        ],
     )
     await _setup(hass, system)
 
@@ -66,7 +70,9 @@ async def test_state_is_feature_count_and_list_in_attribute(
     ]
 
 
-async def test_state_zero_when_no_features(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_state_zero_when_no_features(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(system_id="sys-1", active_features=[])
     await _setup(hass, system)
 
@@ -75,7 +81,9 @@ async def test_state_zero_when_no_features(hass: HomeAssistant, mock_system_fact
     assert state.attributes["features"] == []
 
 
-async def test_entity_category_is_diagnostic(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_entity_category_is_diagnostic(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(system_id="sys-1", active_features=["DYNAMIC_TARIFF"])
     await _setup(hass, system)
 

@@ -94,7 +94,9 @@ def test_available_false_when_ev_missing() -> None:
     assert entity.available is False
 
 
-async def test_async_set_native_value_skips_when_ev_missing(hass: HomeAssistant, caplog) -> None:
+async def test_async_set_native_value_skips_when_ev_missing(
+    hass: HomeAssistant, caplog
+) -> None:
     ev = _ev()
     entity = _build_entity(ev)
     entity.hass = hass

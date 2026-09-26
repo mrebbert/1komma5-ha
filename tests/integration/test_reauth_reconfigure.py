@@ -34,7 +34,9 @@ def _make_entry(hass: HomeAssistant, system_id: str = "sys-1") -> MockConfigEntr
 # ----------------------------------------------------------------------------
 
 
-async def test_reauth_updates_credentials(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_reauth_updates_credentials(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """A successful reauth replaces username/password but keeps system_id."""
     system = mock_system_factory(system_id="sys-1")
     entry = _make_entry(hass)
@@ -73,7 +75,9 @@ async def test_reauth_invalid_credentials_shows_error(hass: HomeAssistant) -> No
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems.side_effect = AuthenticationError("still bad")
+        mock_systems_cls.return_value.get_systems.side_effect = AuthenticationError(
+            "still bad"
+        )
 
         result = await entry.start_reauth_flow(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -98,7 +102,9 @@ async def test_reauth_system_no_longer_present_errors(
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
     ):
-        mock_systems_cls.return_value.get_systems = AsyncMock(return_value=[different_system])
+        mock_systems_cls.return_value.get_systems = AsyncMock(
+            return_value=[different_system]
+        )
 
         result = await entry.start_reauth_flow(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -116,7 +122,9 @@ async def test_reauth_system_no_longer_present_errors(
 # ----------------------------------------------------------------------------
 
 
-async def test_reconfigure_updates_credentials(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_reconfigure_updates_credentials(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """A successful reconfigure replaces username/password and keeps system_id."""
     system = mock_system_factory(system_id="sys-1")
     entry = _make_entry(hass)

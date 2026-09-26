@@ -9,7 +9,12 @@ from dataclasses import asdict
 from typing import Any, cast
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 
@@ -68,7 +73,9 @@ ASSIGN_EV_SCHEMA = vol.Schema(
 
 WINDOW_SERVICE_SCHEMA = vol.Schema(
     {
-        vol.Required("duration_minutes"): vol.All(vol.Coerce(int), vol.Range(min=15, max=1800)),
+        vol.Required("duration_minutes"): vol.All(
+            vol.Coerce(int), vol.Range(min=15, max=1800)
+        ),
         vol.Optional("earliest_start"): cv.datetime,
         vol.Optional("latest_end"): cv.datetime,
         vol.Optional("config_entry_id"): cv.string,
@@ -117,7 +124,9 @@ def _ensure_aware(dt: datetime.datetime) -> datetime.datetime:
 
 def _resolve_window_inputs(
     hass: HomeAssistant, call: ServiceCall
-) -> tuple[list[dict[str, Any]], int, datetime.datetime | None, datetime.datetime | None]:
+) -> tuple[
+    list[dict[str, Any]], int, datetime.datetime | None, datetime.datetime | None
+]:
     """Resolve service call inputs into forecast + constraints.
 
     Returns ``(forecast, slot_count, earliest_start, latest_end)`` or raises
@@ -219,7 +228,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         )
         refreshed: list[str] = []
         failed: list[str] = []
-        for name, coord, result in zip(selected, selected.values(), results, strict=True):
+        for name, coord, result in zip(
+            selected, selected.values(), results, strict=True
+        ):
             if isinstance(result, BaseException) or not coord.last_update_success:
                 failed.append(name)
             else:

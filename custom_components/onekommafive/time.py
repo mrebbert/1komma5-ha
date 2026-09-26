@@ -69,7 +69,9 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
         data: OneKomma5Data,
     ) -> None:
         """Initialize the time entity."""
-        super().__init__(coordinator, system_id, system_name, ev, "departure_time", data)
+        super().__init__(
+            coordinator, system_id, system_name, ev, "departure_time", data
+        )
 
     @property
     def native_value(self) -> datetime.time | None:
@@ -90,7 +92,9 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
         """Send the new departure time to the API."""
         ev = self._get_ev()
         if ev is None:
-            _LOGGER.warning("EV charger %s not found, cannot set departure time", self._ev_id)
+            _LOGGER.warning(
+                "EV charger %s not found, cannot set departure time", self._ev_id
+            )
             return
         await ev.set_primary_departure_time(value.strftime("%H:%M"))
         await self.coordinator.async_request_refresh()

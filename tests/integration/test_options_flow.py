@@ -38,7 +38,9 @@ async def _setup(hass: HomeAssistant, system) -> MockConfigEntry:
     return entry
 
 
-async def test_options_flow_shows_current_tariff(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_options_flow_shows_current_tariff(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Opening the options form pre-fills the current feed-in tariff."""
     entry = await _setup(hass, mock_system_factory(system_id="sys-1"))
 
@@ -51,7 +53,9 @@ async def test_options_flow_shows_current_tariff(hass: HomeAssistant, mock_syste
     assert schema_keys[CONF_FEED_IN_TARIFF] == DEFAULT_FEED_IN_TARIFF
 
 
-async def test_options_flow_persists_new_tariff(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_options_flow_persists_new_tariff(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Submitting a new tariff persists it on the config entry."""
     system = mock_system_factory(system_id="sys-1")
     entry = await _setup(hass, system)

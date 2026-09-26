@@ -118,7 +118,9 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         data: OneKomma5Data,
     ) -> None:
         """Initialize the select entity."""
-        super().__init__(coordinator, system_id, system_name, ev, "charging_mode_select", data)
+        super().__init__(
+            coordinator, system_id, system_name, ev, "charging_mode_select", data
+        )
 
     @property
     def current_option(self) -> str | None:
@@ -133,13 +135,17 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         mode = ChargingMode(option.upper())
         ev = self._get_ev()
         if ev is None:
-            _LOGGER.warning("EV charger %s not found, cannot set charging mode", self._ev_id)
+            _LOGGER.warning(
+                "EV charger %s not found, cannot set charging mode", self._ev_id
+            )
             return
         await ev.set_charging_mode(mode)
         await self.coordinator.async_request_refresh()
 
 
-class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinator], SelectEntity):
+class OneKomma5WallboxAssignmentSelect(
+    CoordinatorEntity[OneKomma5LiveCoordinator], SelectEntity
+):
     """Select entity that binds a vehicle profile to a wallbox.
 
     Rides the 30-second live coordinator so app-side assignment changes

@@ -49,10 +49,14 @@ def _resolve(hass: HomeAssistant) -> str:
     return entity_id
 
 
-async def test_state_reflects_savings_eur(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_state_reflects_savings_eur(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(
         system_id="sys-1",
-        energy=MagicMock(savings_eur=5.41, self_sufficiency=0.95, updated_at="2026-07-12T14:00Z"),
+        energy=MagicMock(
+            savings_eur=5.41, self_sufficiency=0.95, updated_at="2026-07-12T14:00Z"
+        ),
     )
     await _setup(hass, system)
 
@@ -73,7 +77,9 @@ async def test_rounds_to_two_decimals(hass: HomeAssistant, mock_system_factory) 
     assert state.state == "5.41"
 
 
-async def test_none_savings_is_unknown(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_none_savings_is_unknown(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(
         system_id="sys-1",
         energy=MagicMock(savings_eur=None, self_sufficiency=None, updated_at=None),
@@ -111,7 +117,9 @@ async def test_co2_saved_attribute_absent_when_missing(
     assert "co2_saved_kg" not in state.attributes
 
 
-async def test_last_reset_is_local_midnight(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_last_reset_is_local_midnight(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     system = mock_system_factory(
         system_id="sys-1",
         energy=MagicMock(savings_eur=1.23, self_sufficiency=0.5, updated_at=None),

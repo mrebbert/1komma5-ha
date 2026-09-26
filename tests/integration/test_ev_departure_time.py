@@ -90,7 +90,9 @@ def test_native_value_logs_and_returns_none_on_invalid_string(caplog) -> None:
     assert "Could not parse departure time" in caplog.text
 
 
-async def test_async_set_value_skips_when_ev_missing(hass: HomeAssistant, caplog) -> None:
+async def test_async_set_value_skips_when_ev_missing(
+    hass: HomeAssistant, caplog
+) -> None:
     ev = _ev()
     entity = _build_entity(ev)
     entity.hass = hass

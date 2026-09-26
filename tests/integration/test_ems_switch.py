@@ -41,17 +41,23 @@ async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:
 
 
 def _switch_entity_id(hass: HomeAssistant) -> str | None:
-    return er.async_get(hass).async_get_entity_id("switch", DOMAIN, "sys-1_ems_auto_mode")
+    return er.async_get(hass).async_get_entity_id(
+        "switch", DOMAIN, "sys-1_ems_auto_mode"
+    )
 
 
-async def test_gridx_install_creates_switch(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_gridx_install_creates_switch(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """GRIDX backend: the EMS switch entity is created."""
     system = mock_system_factory(system_id="sys-1")
     await _setup(hass, system)
     assert _switch_entity_id(hass) is not None
 
 
-async def test_1k5_install_skips_switch(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_1k5_install_skips_switch(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """1K5 backend: the EMS switch entity is NOT created."""
     system = mock_system_factory(
         system_id="sys-1",
@@ -66,18 +72,24 @@ async def test_1k5_install_skips_switch(hass: HomeAssistant, mock_system_factory
     assert _switch_entity_id(hass) is None
 
 
-async def test_gridx_switch_toggles_call_sdk(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_gridx_switch_toggles_call_sdk(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """`async_turn_on/off` calls ``system.set_ems_mode(True/False)`` and refreshes."""
     system = mock_system_factory(system_id="sys-1")
     entry = await _setup(hass, system)
     entity_id = _switch_entity_id(hass)
     assert entity_id is not None
 
-    await hass.services.async_call("switch", "turn_on", {"entity_id": entity_id}, blocking=True)
+    await hass.services.async_call(
+        "switch", "turn_on", {"entity_id": entity_id}, blocking=True
+    )
     system.set_ems_mode.assert_awaited_with(True)
 
     system.set_ems_mode.reset_mock()
-    await hass.services.async_call("switch", "turn_off", {"entity_id": entity_id}, blocking=True)
+    await hass.services.async_call(
+        "switch", "turn_off", {"entity_id": entity_id}, blocking=True
+    )
     system.set_ems_mode.assert_awaited_with(False)
     # The switch is coordinator-driven; a request-refresh follows every write.
     assert entry.runtime_data.live_coordinator.last_update_success is True
@@ -111,7 +123,10 @@ async def test_1k5_install_removes_stale_gridx_switch(
     # forever if the setup path just returns without cleanup.
     registry = er.async_get(hass)
     registry.async_get_or_create(
-        "switch", DOMAIN, "sys-1_ems_auto_mode", suggested_object_id="test_home_ems_auto_mode"
+        "switch",
+        DOMAIN,
+        "sys-1_ems_auto_mode",
+        suggested_object_id="test_home_ems_auto_mode",
     )
     assert _switch_entity_id(hass) is not None  # stale entry exists
 

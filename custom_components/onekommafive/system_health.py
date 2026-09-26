@@ -31,7 +31,9 @@ def async_register(hass: HomeAssistant, register: SystemHealthRegistration) -> N
 async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
     """Return health diagnostics for the System Information panel."""
     info: dict[str, Any] = {
-        "can_reach_api": async_check_can_reach_url(hass, "https://heartbeat.1komma5grad.com"),
+        "can_reach_api": async_check_can_reach_url(
+            hass, "https://heartbeat.1komma5grad.com"
+        ),
         "sdk_version": _sdk_version(),
     }
 

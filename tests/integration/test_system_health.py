@@ -94,7 +94,9 @@ async def test_health_info_includes_expected_fields(
     assert info["config_entries"] == 1
 
 
-async def test_health_info_excludes_pii(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_health_info_excludes_pii(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Customer / system identifiers must never leak into the panel."""
     leaky = MagicMock(
         first_name="Erika",
@@ -141,7 +143,9 @@ async def test_health_info_excludes_pii(hass: HomeAssistant, mock_system_factory
         assert needle not in serialised, f"sensitive value leaked: {needle!r}"
 
 
-async def test_async_register_wires_info_callback(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_async_register_wires_info_callback(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """async_register hands the info callback to the registration object."""
     from homeassistant.setup import async_setup_component
 
@@ -153,7 +157,9 @@ async def test_async_register_wires_info_callback(hass: HomeAssistant, mock_syst
     # No assertion needed — completing the call without exception is the test.
 
 
-async def test_health_info_skips_entry_without_runtime_data(hass: HomeAssistant) -> None:
+async def test_health_info_skips_entry_without_runtime_data(
+    hass: HomeAssistant,
+) -> None:
     """Config entries whose setup failed carry no ``runtime_data``; the panel skips them."""
     entry = MockConfigEntry(
         domain=DOMAIN,

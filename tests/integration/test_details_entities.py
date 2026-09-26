@@ -38,21 +38,29 @@ async def _setup(hass: HomeAssistant, system: MagicMock) -> MockConfigEntry:
 
 
 def _resolve(hass: HomeAssistant, domain: str, suffix: str) -> str:
-    entity_id = er.async_get(hass).async_get_entity_id(domain, "onekommafive", f"sys-1_{suffix}")
+    entity_id = er.async_get(hass).async_get_entity_id(
+        domain, "onekommafive", f"sys-1_{suffix}"
+    )
     assert entity_id is not None, f"{domain}.<sys-1_{suffix}> not in registry"
     return entity_id
 
 
-async def test_energy_trader_active_on(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_energy_trader_active_on(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Binary sensor reflects `details.energy_trader_active=True`."""
-    system = mock_system_factory(system_id="sys-1")  # default fixture has energy_trader_active=True
+    system = mock_system_factory(
+        system_id="sys-1"
+    )  # default fixture has energy_trader_active=True
     await _setup(hass, system)
     state = hass.states.get(_resolve(hass, "binary_sensor", "energy_trader_active"))
     assert state is not None
     assert state.state == "on"
 
 
-async def test_energy_trader_active_off(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_energy_trader_active_off(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Binary sensor reflects `details.energy_trader_active=False`."""
     details = MagicMock(
         customer_id="cust-uuid-1",
@@ -73,7 +81,9 @@ async def test_energy_trader_active_off(hass: HomeAssistant, mock_system_factory
     assert state.state == "off"
 
 
-async def test_dynamic_pulse_compatible_on(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_dynamic_pulse_compatible_on(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Binary sensor reflects `details.dynamic_pulse_compatible=True`."""
     system = mock_system_factory(system_id="sys-1")
     await _setup(hass, system)
@@ -120,7 +130,9 @@ async def test_system_age_days_diagnostic_category(
     assert entry.entity_category is EntityCategory.DIAGNOSTIC
 
 
-async def test_details_none_yields_unknown(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_details_none_yields_unknown(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """All three entities return ``unknown`` when details fetch failed (details=None)."""
     system = mock_system_factory(system_id="sys-1")
     system.get_details.side_effect = RuntimeError("simulated details fetch failure")
@@ -135,7 +147,9 @@ async def test_details_none_yields_unknown(hass: HomeAssistant, mock_system_fact
         assert state.state == "unknown", f"{domain}.<sys-1_{suffix}> should be unknown"
 
 
-async def test_system_age_days_invalid_earliest(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_system_age_days_invalid_earliest(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """Garbage in `earliest_measurement` → state is `unknown`, no exception bubbles."""
     details = MagicMock(
         customer_id="cust-uuid-1",
@@ -156,7 +170,9 @@ async def test_system_age_days_invalid_earliest(hass: HomeAssistant, mock_system
     assert state.state == "unknown"
 
 
-async def test_clamped_to_zero_if_future_date(hass: HomeAssistant, mock_system_factory) -> None:
+async def test_clamped_to_zero_if_future_date(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
     """earliest_measurement in the future (clock skew) → 0, not negative."""
     future = (dt_util.now().date() + timedelta(days=10)).isoformat()
     details = MagicMock(
