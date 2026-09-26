@@ -111,7 +111,7 @@ async def test_all_refreshes_every_coordinator(
 
 
 async def test_failed_refresh_is_reported(hass: HomeAssistant, integration) -> None:
-    """When a coordinator's refresh leaves `last_update_success=False`, it lands in 'failed'."""
+    """A refresh leaving `last_update_success=False` lands in 'failed'."""
     live = integration.runtime_data.live_coordinator
 
     async def _fail() -> None:

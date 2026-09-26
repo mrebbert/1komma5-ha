@@ -31,7 +31,7 @@ def _flatten_keys(obj: dict, prefix: str = "") -> set[str]:
     "locale_path", sorted(_TRANSLATIONS.glob("*.json")), ids=lambda p: p.stem
 )
 def test_translation_keys_match_strings(locale_path: Path) -> None:
-    """Every key in strings.json must exist in each translation locale, and vice versa."""
+    """Every key in strings.json must exist in each locale, and vice versa."""
     strings = _flatten_keys(_load(_STRINGS))
     locale = _flatten_keys(_load(locale_path))
 
@@ -43,7 +43,8 @@ def test_translation_keys_match_strings(locale_path: Path) -> None:
         f"{sorted(missing_in_locale)}"
     )
     assert not extra_in_locale, (
-        f"Keys present in {locale_path.name} but missing in strings.json: {sorted(extra_in_locale)}"
+        f"Keys present in {locale_path.name} but missing in strings.json: "
+        f"{sorted(extra_in_locale)}"
     )
 
 

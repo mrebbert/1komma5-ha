@@ -94,7 +94,7 @@ async def test_reauth_invalid_credentials_shows_error(hass: HomeAssistant) -> No
 async def test_reauth_system_no_longer_present_errors(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """If the existing system_id is missing from the new account → system_not_found."""
+    """Missing existing system_id in the new account: system_not_found."""
     different_system = mock_system_factory(system_id="sys-OTHER")
     entry = _make_entry(hass, system_id="sys-1")
 

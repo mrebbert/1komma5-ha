@@ -356,7 +356,7 @@ class OneKomma5CheapestChargingWindowSensor(_ChargingWindowBase, RestoreSensor):
 
 
 class OneKomma5CheapestChargingWindowTomorrowSensor(_ChargingWindowBase):
-    """Cheapest N-min charging window in tomorrow's forecast (HA-local time, no lock-in)."""
+    """Cheapest N-min window in tomorrow's forecast (HA-local time, no lock-in)."""
 
     _attr_translation_key = "cheapest_charging_window_tomorrow"
 
@@ -421,7 +421,7 @@ class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
 
 
 class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
-    """Base class for sensors that accumulate via trapezoidal integration of a power signal.
+    """Base class for accumulator sensors via trapezoidal power-signal integration.
 
     Subclasses provide:
     - ``_get_power_w(data)`` — the power value in W to integrate
@@ -475,7 +475,7 @@ class OneKomma5AccumulatingSensor(OneKomma5Entity, RestoreSensor):
         raise NotImplementedError
 
     def _get_kwh_multiplier(self) -> float | None:
-        """Return the multiplier applied to delta_kWh. Return None to skip the sample."""
+        """Return the multiplier applied to delta_kWh (None skips the sample)."""
         return 1.0
 
     @callback
@@ -579,7 +579,7 @@ class OneKomma5StablePriceSensor(
         return self._stable_price
 
     async def async_added_to_hass(self) -> None:
-        """Subscribe to coordinator; fall back to restored state if coordinator has no price."""
+        """Subscribe to coordinator; fall back to restored state if no price yet."""
         await super().async_added_to_hass()
         restored = await self.async_get_last_sensor_data()
         if (
@@ -624,7 +624,7 @@ class OneKomma5StablePriceSensor(
 
 
 class OneKomma5CostSensor(OneKomma5AccumulatingSensor):
-    """Accumulated electricity cost sensor (€) derived from grid import power × dynamic price.
+    """Accumulated electricity cost sensor (€), grid-import power × dynamic price.
 
     Negative prices reduce the accumulated cost (you get paid for
     consuming electricity).  Accumulation is skipped when price is unavailable.
@@ -715,7 +715,7 @@ class OneKomma5ConsumerCostSensor(OneKomma5AccumulatingSensor):
 
 
 class OneKomma5FeedInRevenueSensor(OneKomma5AccumulatingSensor):
-    """Accumulated feed-in revenue sensor (€) derived from grid export power × fixed tariff.
+    """Accumulated feed-in revenue sensor (€), grid-export power × fixed tariff.
 
     The tariff is configurable via the integration's options flow and defaults
     to DEFAULT_FEED_IN_TARIFF.  The integration reloads on options change so

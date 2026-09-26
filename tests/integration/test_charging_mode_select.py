@@ -45,7 +45,7 @@ def _ev_charger() -> MagicMock:
 async def test_charging_mode_select_translates_lowercase_option_to_enum(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """Calling ``select.select_option`` with ``smart_charge`` calls the API with the matching enum."""
+    """``select.select_option`` with ``smart_charge`` calls the API with the enum."""
     from onekommafive.models import ChargingMode
 
     ev = _ev_charger()

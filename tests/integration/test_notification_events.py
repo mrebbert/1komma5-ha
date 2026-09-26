@@ -69,7 +69,7 @@ async def _setup_entry(
     system_id: str = "sys-1",
     stored: dict | None = None,
 ) -> MockConfigEntry:
-    """Bring the integration up with the given mock system, optionally pre-seeding Store."""
+    """Bring the integration up with the mock system, optional Store seed."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id=system_id,

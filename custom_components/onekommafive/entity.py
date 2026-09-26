@@ -92,7 +92,7 @@ ASSET_TYPES_BY_DEVICE_KEY: dict[str, tuple[str, ...]] = {
 
 
 def get_emp_type(details: Any) -> str | None:
-    """Read ``SystemDetails.emp_type`` defensively (setup may have skipped the fetch)."""
+    """Read ``SystemDetails.emp_type`` defensively (setup may skip the fetch)."""
     return getattr(details, "emp_type", None) if details else None
 
 

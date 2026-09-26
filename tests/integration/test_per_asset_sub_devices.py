@@ -223,7 +223,7 @@ async def test_unique_ids_unchanged_after_sub_device_split(
         "sys-1_heat_pump_cost",
     ):
         assert expected in unique_ids, (
-            f"unique_id {expected!r} missing — sub-device move must not have rewritten it"
+            f"unique_id {expected!r} missing; sub-device move must not rewrite it"
         )
 
 

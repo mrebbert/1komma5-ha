@@ -160,7 +160,7 @@ async def test_async_register_wires_info_callback(
 async def test_health_info_skips_entry_without_runtime_data(
     hass: HomeAssistant,
 ) -> None:
-    """Config entries whose setup failed carry no ``runtime_data``; the panel skips them."""
+    """Failed-setup config entries carry no ``runtime_data``; panel skips them."""
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="sys-no-runtime",
@@ -183,7 +183,7 @@ async def test_health_info_skips_entry_without_runtime_data(
 async def test_health_info_includes_last_update_age_when_available(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """`last_update_success_time` on the coordinator surfaces as ``<label>_last_update_age``."""
+    """`last_update_success_time` surfaces as ``<label>_last_update_age``."""
     import datetime as dt
 
     system = mock_system_factory(system_id="sys-1")

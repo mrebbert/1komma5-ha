@@ -121,7 +121,7 @@ async def test_system_age_days_from_earliest_measurement(
 async def test_system_age_days_diagnostic_category(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """`system_age_days` lives under DIAGNOSTIC so it doesn't crowd the main device card."""
+    """`system_age_days` sits under DIAGNOSTIC to keep the main card tidy."""
     system = mock_system_factory(system_id="sys-1")
     await _setup(hass, system)
     entity_id = _resolve(hass, "sensor", "system_age_days")
@@ -133,7 +133,7 @@ async def test_system_age_days_diagnostic_category(
 async def test_details_none_yields_unknown(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """All three entities return ``unknown`` when details fetch failed (details=None)."""
+    """All three entities return ``unknown`` when details fetch failed."""
     system = mock_system_factory(system_id="sys-1")
     system.get_details.side_effect = RuntimeError("simulated details fetch failure")
     await _setup(hass, system)
@@ -150,7 +150,7 @@ async def test_details_none_yields_unknown(
 async def test_system_age_days_invalid_earliest(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """Garbage in `earliest_measurement` → state is `unknown`, no exception bubbles."""
+    """Garbage in `earliest_measurement`: state is `unknown`, no exception."""
     details = MagicMock(
         customer_id="cust-uuid-1",
         emp_type="GRIDX",

@@ -33,9 +33,8 @@ class OneKomma5SensorDescription(SensorEntityDescription):
     """Sensor entity description with value accessor."""
 
     value_fn: Callable[[LiveData], Any]
-    device_key: str | None = (
-        None  # sub-device key (inverter / heat_pump / meter / wallbox); None = system parent
-    )
+    # sub-device key (inverter / heat_pump / meter / wallbox); None = system parent
+    device_key: str | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -300,7 +299,7 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
     ),
 )
 
-# Virtual power descriptors used only for battery energy integration (not exposed as live sensors).
+# Virtual power descriptors for battery energy integration only (not live sensors).
 BATTERY_SPLIT_DESCRIPTORS: tuple[OneKomma5SensorDescription, ...] = (
     OneKomma5SensorDescription(
         key="battery_charge_power",

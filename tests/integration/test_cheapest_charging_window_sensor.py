@@ -382,7 +382,7 @@ async def test_cheapest_window_honours_configured_duration(
 async def test_cheapest_window_reloads_on_options_change(
     hass: HomeAssistant, mock_system_factory, freezer
 ) -> None:
-    """Updating the duration via options-flow reloads the entry; sensor picks up the new duration."""
+    """Options-flow duration update reloads the entry; sensor picks it up."""
     from custom_components.onekommafive.const import (
         CONF_CHARGING_WINDOW_DURATION_MINUTES,
     )
@@ -449,7 +449,7 @@ async def test_tomorrow_window_picks_cheapest_tomorrow_slot(
     tomorrow_base = datetime.datetime(2026, 6, 16, 0, 15, tzinfo=datetime.UTC)
     slot = datetime.timedelta(minutes=15)
     prices: dict[datetime.datetime, float] = {}
-    # 4 today-slots, all expensive, so the today-window picker has data but tomorrow is the cheap one.
+    # 4 today-slots, all expensive; today-picker has data, tomorrow is the cheap one.
     today_base = datetime.datetime(2026, 6, 15, 22, 15, tzinfo=datetime.UTC)
     for i in range(4):
         prices[today_base + slot * i] = 0.90
