@@ -5,7 +5,12 @@ from __future__ import annotations
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from onekommafive.ev_charger import EVCharger
+
+    from . import OneKomma5Data
 
 from homeassistant.components.number import (
     DOMAIN as NUMBER_DOMAIN,
@@ -35,7 +40,7 @@ class OneKomma5EVNumberDescription(NumberEntityDescription):
     available_fn: Callable[[Any], bool] = lambda _: True
 
 
-def _ev_smart_charge_available(ev: Any) -> bool:
+def _ev_smart_charge_available(ev: EVCharger) -> bool:
     """True only when the EV charger is in SMART_CHARGE mode."""
     from onekommafive.models import ChargingMode
 
@@ -114,9 +119,9 @@ class OneKomma5EVNumber(OneKomma5EVEntity, NumberEntity):
         coordinator: Any,
         system_id: str,
         system_name: str,
-        ev: Any,
+        ev: EVCharger,
         description: OneKomma5EVNumberDescription,
-        data: Any,
+        data: OneKomma5Data,
     ) -> None:
         """Initialize the number entity."""
         super().__init__(coordinator, system_id, system_name, ev, description.key, data)

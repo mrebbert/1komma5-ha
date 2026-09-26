@@ -14,6 +14,19 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from onekommafive.errors import ApiError
+from onekommafive.ev_charger import EVCharger
+from onekommafive.models import (
+    Asset,
+    EmsSettings,
+    EnergyData,
+    LiveOverview,
+    MarketPrices,
+    Notification,
+    OptimizationEvent,
+    Wallbox,
+)
+from onekommafive.models import WeatherData as SdkWeatherData
+from onekommafive.system import System
 
 from .const import (
     DOMAIN,
@@ -43,20 +56,20 @@ _LOGGER = logging.getLogger(__name__)
 class LiveData:
     """Container for live data fetched from the API."""
 
-    live_overview: Any  # onekommafive.models.LiveOverview
-    ev_chargers: list[Any]  # list[onekommafive.ev_charger.EVCharger]
-    ems_settings: Any  # onekommafive.models.EmsSettings
+    live_overview: LiveOverview
+    ev_chargers: list[EVCharger]
+    ems_settings: EmsSettings | None
     # Wallbox inventory with live ``assigned_ev_id`` — piggy-backs the 30-sec
     # live cadence so app-side assignment changes surface in HA within one
     # tick instead of waiting for the 5-min system-status coordinator.
-    wallboxes: list[Any]  # list[onekommafive.models.Wallbox]
+    wallboxes: list[Wallbox]
 
 
 @dataclass
 class PriceData:
     """Container for market price data fetched from the API."""
 
-    market_prices: Any  # onekommafive.models.MarketPrices
+    market_prices: MarketPrices
     current_price: float | None
     forecast: list[dict[str, Any]]  # sorted list of {start, end, price} dicts
     all_in_prices: dict[str, float] | None = None  # full price dict for dynamic lookups
@@ -71,14 +84,14 @@ class PriceData:
 class WeatherData:
     """Container for weather data fetched from the API."""
 
-    weather: Any  # onekommafive.models.WeatherData
+    weather: SdkWeatherData
 
 
 @dataclass
 class EnergyTodayData:
     """Container for today's aggregated energy data fetched from the API."""
 
-    energy: Any  # onekommafive.models.EnergyData (daily running totals, reset at midnight)
+    energy: EnergyData  # daily running totals, reset at midnight
 
 
 @dataclass
@@ -86,32 +99,32 @@ class SystemStatusData:
     """Container for site status + asset inventory + active feature flags."""
 
     site_status: str | None  # "CONNECTED" / "DISCONNECTED" / None
-    assets: list[Any]  # list[onekommafive.models.sites.Asset]
+    assets: list[Asset]
     active_features: list[str]  # [] when customer_id unknown or fetch failed
     # first-wins-per-type view; convenience for the common single-asset lookup
-    assets_by_type: dict[str, Any]
+    assets_by_type: dict[str, Asset]
     # full list per asset type; needed wherever more than one asset of a type
     # may realistically appear (currently EV_CHARGER for multi-wallbox setups)
-    assets_by_type_list: dict[str, list[Any]]
+    assets_by_type_list: dict[str, list[Asset]]
 
 
 @dataclass
 class NotificationsData:
     """Container for the latest batch of cloud notifications."""
 
-    notifications: list[Any]  # list[onekommafive.models.notifications.Notification]
+    notifications: list[Notification]
 
 
 @dataclass
 class OptimizationData:
     """Container for optimization event data fetched from the API."""
 
-    events: list[Any]  # list[OptimizationEvent]
+    events: list[OptimizationEvent]
     event_count: int
     total_cost: float | None
     energy_bought: float | None
     energy_sold: float | None
-    last_event: Any | None  # OptimizationEvent or None
+    last_event: OptimizationEvent | None
 
 
 class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
@@ -132,7 +145,7 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
     # the coordinator stuck since DataUpdateCoordinator imposes no timeout.
     _fetch_timeout_seconds: float = 30.0
 
-    def __init__(self, hass: HomeAssistant, system: Any) -> None:
+    def __init__(self, hass: HomeAssistant, system: System) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
@@ -181,7 +194,7 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
     def __init__(
         self,
         hass: HomeAssistant,
-        system: Any,
+        system: System,
         is_1k5: bool = False,
         entry_id: str | None = None,
     ) -> None:
@@ -247,7 +260,7 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         """
         if self._entry_id is None:
             return
-        current = frozenset(wb.id for wb in data.wallboxes if getattr(wb, "id", None) is not None)
+        current: frozenset[str] = frozenset(wb.id for wb in data.wallboxes if wb.id is not None)
         if self._known_wallbox_ids is None:
             self._known_wallbox_ids = current
             return
@@ -412,7 +425,7 @@ class OneKomma5OptimizationCoordinator(OneKomma5BaseCoordinator[OptimizationData
         """Fire HA bus events for newly observed decisions."""
         self._fire_new_decision_events(data.events)
 
-    def _fire_new_decision_events(self, events: list[Any]) -> None:
+    def _fire_new_decision_events(self, events: list[OptimizationEvent]) -> None:
         """Fire onekommafive_optimization_decision for each event newer than the last seen.
 
         On the very first refresh after Home Assistant starts, only the most
@@ -508,7 +521,7 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
     _coordinator_name = "1KOMMA5° System Status"
     _interval_seconds = SYSTEM_STATUS_UPDATE_INTERVAL_SECONDS
 
-    def __init__(self, hass: HomeAssistant, system: Any, customer_id: str | None) -> None:
+    def __init__(self, hass: HomeAssistant, system: System, customer_id: str | None) -> None:
         super().__init__(hass, system)
         self._customer_id = customer_id
 
@@ -520,8 +533,8 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
                 features = list(await self._system.get_active_features(self._customer_id))
             except Exception as err:
                 _LOGGER.debug("Active features fetch failed: %s", err)
-        assets = list(site.assets or [])
-        assets_by_type_list: dict[str, list[Any]] = {}
+        assets: list[Asset] = list(site.assets or [])
+        assets_by_type_list: dict[str, list[Asset]] = {}
         for asset in assets:
             asset_type = getattr(asset, "type", None)
             if not asset_type:
@@ -559,7 +572,7 @@ class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsDa
     _STORAGE_VERSION = 1
     _STORAGE_KEY_FIELD = "last_seen_created_at"
 
-    def __init__(self, hass: HomeAssistant, system: Any, entry_id: str) -> None:
+    def __init__(self, hass: HomeAssistant, system: System, entry_id: str) -> None:
         super().__init__(hass, system)
         self._store: Store[dict[str, Any]] = Store(
             hass, self._STORAGE_VERSION, f"{DOMAIN}.notifications.{entry_id}"
@@ -570,13 +583,13 @@ class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsDa
     async def _fetch(self) -> NotificationsData:
         """Fetch the latest notifications batch via the async SDK."""
         result = await self._system.get_notifications()
-        return NotificationsData(notifications=list(result.notifications))
+        return NotificationsData(notifications=list(result.notifications or []))
 
     async def _on_data(self, data: NotificationsData) -> None:
         """Hydrate the Store on first call, then fire events + persist state."""
         await self._fire_and_persist(data.notifications)
 
-    async def _fire_and_persist(self, notifications: list[Any]) -> None:
+    async def _fire_and_persist(self, notifications: list[Notification]) -> None:
         """Fire one bus event per newly-observed notification, then persist state.
 
         First-ever run (Store empty): compute max(created_at) over the current
@@ -587,11 +600,13 @@ class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsDa
             self._last_seen_created_at = stored.get(self._STORAGE_KEY_FIELD)
             self._hydrated = True
 
-        valid = [n for n in notifications if getattr(n, "created_at", None)]
+        valid: list[tuple[Notification, str]] = [
+            (n, n.created_at) for n in notifications if n.created_at is not None
+        ]
         if not valid:
             return
 
-        max_seen = max(n.created_at for n in valid)
+        max_seen = max(created_at for _, created_at in valid)
 
         if self._last_seen_created_at is None:
             # Prime silently on first run — save the horizon, emit nothing.
@@ -601,12 +616,12 @@ class OneKomma5NotificationsCoordinator(OneKomma5BaseCoordinator[NotificationsDa
             return
 
         cutoff = self._last_seen_created_at
-        new_items = [n for n in valid if n.created_at > cutoff]
+        new_items = [(n, ts) for n, ts in valid if ts > cutoff]
         if not new_items:
             return
 
         # Fire oldest-first so listeners see notifications in temporal order.
-        for n in sorted(new_items, key=lambda x: x.created_at):
+        for n, _ in sorted(new_items, key=lambda pair: pair[1]):
             payload = {
                 "system_id": self._system.id(),
                 "notification_id": n.id,

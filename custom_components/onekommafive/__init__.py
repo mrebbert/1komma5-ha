@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -13,6 +13,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+if TYPE_CHECKING:
+    from onekommafive.models import DeviceGateway, SystemDetails, Wallbox
+    from onekommafive.system import System
 
 from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME, DOMAIN
 from .coordinator import (
@@ -58,11 +62,11 @@ class OneKomma5Data:
     system_status_coordinator: OneKomma5SystemStatusCoordinator
     energy_coordinator: OneKomma5EnergyCoordinator
     notifications_coordinator: OneKomma5NotificationsCoordinator
-    system: Any  # onekommafive.system.System (SDK ships no type hints → Any)
-    system_name: str  # pre-fetched in executor to avoid blocking calls in async context
+    system: System
+    system_name: str  # resolved from ``system.info()`` at setup for entity DeviceInfo
     # Full SystemDetails captured once at setup. Used only for diagnostics —
     # never surfaced as entities. None if the call failed at setup.
-    details: object | None
+    details: SystemDetails | None
     customer_id: str | None  # sliced off details for the system-status coordinator
     currency: str  # ISO 4217 code derived from details.address_country (default EUR)
     price_guarantee: PriceGuarantee | None
@@ -70,13 +74,10 @@ class OneKomma5Data:
     system_device_id: str  # device_registry ID of the system parent device (via_device_id)
     emp_type: str | None  # SystemDetails.emp_type, e.g. "GRIDX" or "1K5"
     sdk_version: str | None  # installed onekommafive SDK version; cached to keep diag async-safe
-    wallboxes: list[Any]  # physical wallboxes, cached at setup; drives multi-wallbox sub-devices
-    wallbox_device_ids: dict[
-        str, str
-    ]  # {Wallbox.id: device_registry id}; used to via_device the paired EV
-    device_gateways: list[
-        Any
-    ]  # Heartbeat gateways from SDK v0.4.0 endpoint; surfaces in diagnostics
+    wallboxes: list[Wallbox]  # physical wallboxes, drives multi-wallbox sub-devices
+    # {Wallbox.id: device_registry id}; used to via_device the paired EV
+    wallbox_device_ids: dict[str, str]
+    device_gateways: list[DeviceGateway]  # Heartbeat gateways, surfaces in diagnostics
 
 
 type OneKomma5ConfigEntry = ConfigEntry[OneKomma5Data]
@@ -91,7 +92,7 @@ async def _safe_afetch[T](label: str, factory: Callable[[], Awaitable[T]]) -> T 
         return None
 
 
-async def _extract_co2_saved(system: Any) -> float | None:
+async def _extract_co2_saved(system: System) -> float | None:
     """Return lifetime CO2 saved in kg from get_impact_overview, or None on failure."""
     impact = await _safe_afetch("Impact overview", system.get_impact_overview)
     if impact is None:
@@ -103,7 +104,9 @@ async def _extract_co2_saved(system: Any) -> float | None:
         return None
 
 
-async def _extract_price_guarantee(system: Any, customer_id: str | None) -> PriceGuarantee | None:
+async def _extract_price_guarantee(
+    system: System, customer_id: str | None
+) -> PriceGuarantee | None:
     """Return DP price-guarantee (ct/kWh → EUR/kWh) or None on any failure.
 
     Uses the SDK v1.0.1 ``get_price_guarantee`` endpoint which surfaces the DP
@@ -134,7 +137,7 @@ def _remove_stale_wallbox_devices(
     device_registry: dr.DeviceRegistry,
     entry_id: str,
     system_id: str,
-    wallboxes: list[Any],
+    wallboxes: list[Wallbox],
 ) -> None:
     """Delete wallbox sub-devices whose id is no longer reported by the API.
 
@@ -172,7 +175,7 @@ def _setup_wallbox_sub_devices(
     entry: OneKomma5ConfigEntry,
     system_id: str,
     parent_device_id: str,
-    wallboxes: list[Any],
+    wallboxes: list[Wallbox],
     system_status_coordinator: OneKomma5SystemStatusCoordinator,
 ) -> dict[str, str]:
     """Pre-create one HA sub-device per physical wallbox and return ``{Wallbox.id: device_id}``.

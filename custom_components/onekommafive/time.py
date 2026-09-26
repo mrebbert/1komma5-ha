@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import Any
+from typing import TYPE_CHECKING
 
 from homeassistant.components.time import DOMAIN as TIME_DOMAIN
 from homeassistant.components.time import TimeEntity
@@ -13,6 +13,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import OneKomma5ConfigEntry
 from .entity import OneKomma5EVEntity, apply_stable_entity_ids
+
+if TYPE_CHECKING:
+    from onekommafive.ev_charger import EVCharger
+
+    from . import OneKomma5Data
+    from .coordinator import OneKomma5LiveCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,11 +62,11 @@ class OneKomma5EVDepartureTime(OneKomma5EVEntity, TimeEntity):
 
     def __init__(
         self,
-        coordinator: Any,
+        coordinator: OneKomma5LiveCoordinator,
         system_id: str,
         system_name: str,
-        ev: Any,
-        data: Any,
+        ev: EVCharger,
+        data: OneKomma5Data,
     ) -> None:
         """Initialize the time entity."""
         super().__init__(coordinator, system_id, system_name, ev, "departure_time", data)

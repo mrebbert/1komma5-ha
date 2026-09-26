@@ -10,7 +10,13 @@ import datetime as _dt
 import logging
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from onekommafive.ev_charger import EVCharger
+
+    from . import OneKomma5Data
+    from .coordinator import OneKomma5LiveCoordinator
 
 from homeassistant.components.sensor import (
     RestoreSensor,
@@ -375,12 +381,12 @@ class OneKomma5EVSensor(OneKomma5EVEntity, SensorEntity):
 
     def __init__(
         self,
-        coordinator: Any,
+        coordinator: OneKomma5LiveCoordinator,
         system_id: str,
         system_name: str,
-        ev: Any,
+        ev: EVCharger,
         description: OneKomma5EVSensorDescription,
-        data: Any,
+        data: OneKomma5Data,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, system_id, system_name, ev, description.key, data)

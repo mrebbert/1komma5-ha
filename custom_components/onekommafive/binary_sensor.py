@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from onekommafive.models import Wallbox
 
 from homeassistant.components.binary_sensor import (
     DOMAIN as BINARY_SENSOR_DOMAIN,
@@ -464,7 +467,7 @@ class OneKomma5WallboxConnectivitySensor(OneKomma5SystemStatusEntity, BinarySens
         coordinator: Any,
         system_id: str,
         system_name: str,
-        wallbox: Any,
+        wallbox: Wallbox,
         *,
         wallbox_count: int,
     ) -> None:

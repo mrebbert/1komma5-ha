@@ -77,10 +77,8 @@ class OneKomma5Weather(CoordinatorEntity[OneKomma5WeatherCoordinator], WeatherEn
         now_utc = dt_util.utcnow()
         active = None
         for slot in forecasts:
-            start = slot.period_start
-            if isinstance(start, str):
-                start = datetime.fromisoformat(start.replace("Z", "+00:00"))
-            if dt_util.as_utc(start) <= now_utc:
+            start_dt = datetime.fromisoformat(slot.period_start.replace("Z", "+00:00"))
+            if dt_util.as_utc(start_dt) <= now_utc:
                 active = slot
             else:
                 break
@@ -113,7 +111,11 @@ class OneKomma5Weather(CoordinatorEntity[OneKomma5WeatherCoordinator], WeatherEn
                 condition=weather_symbol_to_ha_condition(slot.weather_symbol_id),
                 native_temperature=slot.temperature_celsius,
                 native_precipitation=slot.precipitation_mm,
-                precipitation_probability=slot.precipitation_probability,
+                precipitation_probability=(
+                    int(slot.precipitation_probability)
+                    if slot.precipitation_probability is not None
+                    else None
+                ),
                 native_wind_speed=slot.wind_speed,
             )
             for slot in self.coordinator.data.weather.forecasts

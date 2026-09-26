@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -20,6 +20,12 @@ from .coordinator import (
     OneKomma5SystemStatusCoordinator,
     OneKomma5WeatherCoordinator,
 )
+
+if TYPE_CHECKING:
+    from onekommafive.ev_charger import EVCharger
+    from onekommafive.models import Wallbox
+
+    from . import OneKomma5Data
 
 # HA ≥ 2026.7 deprecates DeviceInfo.via_device (tuple) in favour of
 # via_device_id (device_registry id string). Prefer the new form when
@@ -227,7 +233,9 @@ def attach_to_wallbox_sub_device(
     return DeviceInfo(identifiers={wallbox_identifier(system_id, wallbox_id, wallbox_count)})
 
 
-def ev_wallbox_parent(ev: Any, data: Any) -> tuple[str | None, tuple[str, str] | None]:
+def ev_wallbox_parent(
+    ev: EVCharger, data: OneKomma5Data
+) -> tuple[str | None, tuple[str, str] | None]:
     """Return the paired wallbox sub-device's ``(device_id, identifier)``.
 
     Vehicle entities pass both to :class:`OneKomma5EVEntity` so the
@@ -253,7 +261,7 @@ def ev_wallbox_parent(ev: Any, data: Any) -> tuple[str | None, tuple[str, str] |
     return (device_id, wallbox_identifier(system_id, wallbox_id, len(wallboxes)))
 
 
-def resolve_wallbox_for_ev(ev: Any, wallboxes: list[Any]) -> Any | None:
+def resolve_wallbox_for_ev(ev: EVCharger, wallboxes: list[Wallbox]) -> Wallbox | None:
     """Match an :class:`EVCharger` (vehicle profile) to its physical wallbox.
 
     Uses the cloud-side pairing ``EVCharger.assigned_charger_id ==
@@ -361,9 +369,9 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
         coordinator: OneKomma5LiveCoordinator,
         system_id: str,
         system_name: str,
-        ev: Any,
+        ev: EVCharger,
         unique_id_suffix: str,
-        data: Any,
+        data: OneKomma5Data,
     ) -> None:
         """Initialize the entity.
 
@@ -395,7 +403,7 @@ class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):
             parent_identifier=wallbox_parent_identifier,
         )
 
-    def _get_ev(self) -> Any | None:
+    def _get_ev(self) -> EVCharger | None:
         """Return the current EV charger object from coordinator data."""
         if self.coordinator.data is None:
             return None

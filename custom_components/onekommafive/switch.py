@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.components.switch import SwitchEntity
@@ -15,6 +15,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import OneKomma5ConfigEntry
 from .const import DOMAIN
 from .entity import OneKomma5Entity, apply_stable_entity_ids, is_1k5_backend
+
+if TYPE_CHECKING:
+    from onekommafive.system import System
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +70,7 @@ class OneKomma5EMSSwitch(OneKomma5Entity, SwitchEntity):
     def __init__(
         self,
         coordinator: Any,
-        system: Any,
+        system: System,
         system_id: str,
         system_name: str,
     ) -> None:

@@ -12,7 +12,7 @@ Two select entities:
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.select import DOMAIN as SELECT_DOMAIN
 from homeassistant.components.select import SelectEntity
@@ -28,6 +28,12 @@ from .entity import (
     apply_stable_entity_ids,
     attach_to_wallbox_sub_device,
 )
+
+if TYPE_CHECKING:
+    from onekommafive.ev_charger import EVCharger
+    from onekommafive.models import Wallbox
+
+    from . import OneKomma5Data
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,7 +90,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-def _ev_slug(ev: Any) -> str:
+def _ev_slug(ev: EVCharger) -> str:
     """Return the stable option slug for a vehicle profile.
 
     Uses the human-readable name when set (typical, so ``bmw_i3`` /
@@ -103,11 +109,11 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
 
     def __init__(
         self,
-        coordinator: Any,
+        coordinator: OneKomma5LiveCoordinator,
         system_id: str,
         system_name: str,
-        ev: Any,
-        data: Any,
+        ev: EVCharger,
+        data: OneKomma5Data,
     ) -> None:
         """Initialize the select entity."""
         super().__init__(coordinator, system_id, system_name, ev, "charging_mode_select", data)
@@ -151,19 +157,26 @@ class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinato
         coordinator: OneKomma5LiveCoordinator,
         system_id: str,
         system_name: str,
-        wallbox: Any,
+        wallbox: Wallbox,
         *,
         wallbox_count: int = 1,
     ) -> None:
-        """Initialize the assignment select."""
+        """Initialize the assignment select.
+
+        ``async_setup_entry`` filters out wallboxes with no id, so the cast
+        below is safe.
+        """
         super().__init__(coordinator)
+        assert wallbox.id is not None
         self._system_id = system_id
-        self._wallbox_id = wallbox.id
+        self._wallbox_id: str = wallbox.id
         self._attr_unique_id = f"{system_id}_{self._wallbox_id}_assigned_vehicle"
         self._stable_object_id = (
             f"{slugify(system_name)}_{slugify(self._wallbox_id)}_assigned_vehicle"
         )
-        self._attr_device_info = attach_to_wallbox_sub_device(system_id, wallbox.id, wallbox_count)
+        self._attr_device_info = attach_to_wallbox_sub_device(
+            system_id, self._wallbox_id, wallbox_count
+        )
 
     def _ev_chargers(self) -> list[Any]:
         if self.coordinator.data is None:
@@ -199,7 +212,7 @@ class OneKomma5WallboxAssignmentSelect(CoordinatorEntity[OneKomma5LiveCoordinato
 
     async def async_select_option(self, option: str) -> None:
         """Bind ``option`` (an EV slug) to this wallbox."""
-        target_ev: Any | None = None
+        target_ev: EVCharger | None = None
         for ev in self._ev_chargers():
             if _ev_slug(ev) == option:
                 target_ev = ev
