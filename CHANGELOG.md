@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.66] - 2026-10-03
+
+Internal-only release: SDK-Pin auf v1.1.0 und Ruff-Line-Length-Konvergenz auf den Home-Assistant-Core-Standard. Keine sichtbare Entity-, Service- oder Blueprint-Änderung.
+
+### Changed
+- Bumped the `onekommafive` SDK pin to `>=1.1.0,<2` (from `>=1.0.3,<2`). v1.1.0 continues the async aiohttp API surface with `py.typed`; the integration picks it up automatically at install time.
+- Ruff `line-length` lowered from 100 to 88 to match the Home Assistant core Ruff config. `ruff format` reformatted 54 files (193 lines rewrapped automatically) plus 41 manual cleanups (docstring trims, inline-comment relocations, factored-out f-strings). No entity or code-path behaviour changed.
+- `.git-blame-ignore-revs` added with the two reformat SHAs so `git blame` continues to point at the substantive authors of each line. GitHub honours the file automatically; contributors enable it locally once with `git config blame.ignoreRevsFile .git-blame-ignore-revs` (documented in `CONTRIBUTING.md`).
+
 ## [0.1.65] - 2026-09-26
 
 Consolidates the v0.1.63-armed feature work with the SDK v1.0.2 async migration; the v0.1.63 tag was skipped so both stories ship together.
