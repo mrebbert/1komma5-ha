@@ -33,6 +33,11 @@ Consolidates the v0.1.63-armed feature work with the SDK v1.0.2 async migration;
 - Combined test coverage lifted from 93 % to 95.4 % (292 tests, +25). CI `--cov-fail-under` gate raised from 90 to 95; helpers.py, system_health.py and diagnostics.py reach 100 %.
 - `pyproject.toml [tool.mypy]` switches to `strict = true`. Eleven remaining strict errors resolved (typed generics, explicit `bool` / `float | None` casts on properties, HA-stub `# type: ignore[attr-defined]` markers for `WeatherEntityFeature` and switch `DOMAIN`).
 
+### Refactor sweep
+- HA best practice: named the wallbox-reload task (`onekommafive_reload_on_wallbox_change`) so HA 2024.5+ no longer warns; marked `active_features`, `details_flag` and `dynamic_pulse_price_guarantee` sensors as `EntityCategory.DIAGNOSTIC` (static contract flags, not live automation signals); made `_SystemEntry` a `frozen=True` dataclass.
+- Clean code: `OneKomma5Data.named_coordinators()` is now the single source of truth for the seven coordinator labels (services and system-health drop their duplicate maps); `_null_safe` decorator centralises the `if data is None: return {}` guard across the diagnostics summarisers; dead `_redact_asset` wrapper and unused `ATTR_SYSTEM_ID` / `ATTR_SYSTEM_NAME` constants gone; five function-local imports in `__init__.py` and `ChargingMode` in select/number hoisted to module level; `_BaseSystemEntity` renamed to `SystemEntityBase` (public intra-package base).
+- KISS: `QuarterHourUpdateMixin` and `_DescriptionValueSensor` type themselves under `TYPE_CHECKING` and drop four `# type: ignore[attr-defined]` markers; `OneKomma5PriceCoordinator._fetch` splits into `_fetch_today_and_tomorrow` (SDK round-trip) and `_price_statistics` (dict summary), shrinking the entry-point from 61 to 15 lines with identical behaviour.
+
 ## [0.1.63] - never tagged
 
 The v0.1.63 armed work (wallbox → vehicle assignment, live-coordinator wallbox fetch, optimization slot-count fix) was consolidated into v0.1.65 and shipped there on 2026-09-26; see the [0.1.65] entry above.
