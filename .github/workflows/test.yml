@@ -23,8 +23,11 @@ jobs:
       - name: Install test dependencies
         run: pip install -e ".[test]"
 
+      # Tier-1 sanity: fast smoke test of the pure helpers + translation
+      # parity. Coverage is measured in the Tier-2 job, which runs the full
+      # test tree and thus sees both tiers together.
       - name: Run pytest
-        run: pytest tests/test_helpers.py tests/test_translations.py -v --cov=custom_components/onekommafive/helpers --cov-report=term-missing --cov-fail-under=95
+        run: pytest tests/test_helpers.py tests/test_translations.py -v
 
   integration-tests:
     name: Integration tests (HA stack)
