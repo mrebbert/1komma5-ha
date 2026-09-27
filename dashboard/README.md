@@ -58,9 +58,11 @@ The view header shows four **badges**: EMS auto mode switch, self-sufficiency ra
 
 A focused view for controlling the EV charger:
 
-- Charging mode selector (Smart Charge / Quick Charge / Solar Charge)
-- Wallbox → vehicle assignment (since v0.1.63): which vehicle profile is currently bound to the wallbox. Options are the site's vehicles as lowercase name slugs. Placeholder `WALLBOX_IDENTIFIER` in the YAML resolves to `wallbox` on single-wallbox sites (the historical default) and to each wallbox's own slug on multi-wallbox sites — check *Settings → Devices & Services → 1KOMMA5°* on your install for the exact `select.SYSTEM_NAME_<wallbox>_assigned_vehicle` id.
-- Manual battery level input, target battery level and daily departure time (visible in Smart Charge mode only)
+- **Wallbox → vehicle assignment** (since v0.1.63) at the top of the section: which vehicle profile is currently bound to the wallbox. Options are the site's vehicles as lowercase name slugs. Placeholder `WALLBOX` in the YAML resolves to `wallbox` on single-wallbox sites (the historical default) and to each wallbox's own slug on multi-wallbox sites — check *Settings → Devices & Services → 1KOMMA5°* on your install for the exact `select.SYSTEM_NAME_<wallbox>_assigned_vehicle` id.
+- **Charging-mode selector** (Smart Charge / Quick Charge / Solar Charge) — one selector per EV, but only the one for the currently-assigned vehicle is shown. Conditional cards use the assignment selector's state to swap between EVs.
+- **Manual battery level, target battery level and daily departure time** — visible in Smart Charge mode only, again scoped to the currently-assigned vehicle.
+
+Duplicate the two conditional blocks (Lademodus + Smart-Charge-Einstellungen) once per vehicle, replacing `EV_N_PREFIX` with the vehicle's entity prefix (e.g. `volkswagen_id_4`, or the long `<owner>_<uuid>` slug for backend-only test profiles) and `EV_N_SLUG` with the option value that appears in the assignment selector's `attributes.options` list.
 
 ### Prices and costs
 
@@ -103,12 +105,16 @@ In every existing view the Showcase adds badges (e.g. AI status, cheap-now indic
 1. In Home Assistant go to **Settings → Dashboards → Add Dashboard** (or open an existing one in edit mode).
 2. Click the ⋮ menu → **Edit Dashboard** → **Raw configuration editor**.
 3. Paste the contents of [`dashboard.yaml`](dashboard.yaml) or [`dashboard-showcase.yaml`](dashboard-showcase.yaml).
-4. Replace the two placeholders throughout the YAML:
+4. Replace the placeholders throughout the YAML:
 
    | Placeholder | Replace with | Where to find it |
    |-------------|-------------|-----------------|
    | `SYSTEM_NAME` | Your system name prefix | **Settings → Devices & Services → 1KOMMA5°**, visible on any entity ID |
-   | `CAR_IDENTIFIER` | Your EV entity prefix | Same location, visible on EV charger entities (e.g. `volkswagen_id_4`) |
+   | `WALLBOX` | The wallbox sub-device slug | `wallbox` on single-wallbox sites; the wallbox-name slug on multi-wallbox sites (visible in `select.SYSTEM_NAME_<wallbox>_assigned_vehicle`) |
+   | `EV_1_PREFIX`, `EV_2_PREFIX`, … | Entity prefix per EV | Visible on the EV's own entities (`volkswagen_id_4`, or the long `<owner>_<uuid>` for backend test profiles) |
+   | `EV_1_SLUG`, `EV_2_SLUG`, … | Slug per EV in the assignment selector | Read `attributes.options` on `select.SYSTEM_NAME_<wallbox>_assigned_vehicle` (e.g. `id_5`, `dummy`) |
+
+   Duplicate the two conditional blocks (Lademodus + Smart-Charge-Einstellungen) once per EV. Sites with a single EV need only the `EV_1_*` block.
 
    If your 1KOMMA5° device is assigned to a Home Assistant *area*, HA may prefix new entity_ids with the area slug (e.g. `garage_SYSTEM_NAME_…`). Use whatever your install actually generates: Settings → Devices & Services → 1KOMMA5° → click an entity to see its ID.
 

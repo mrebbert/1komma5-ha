@@ -418,47 +418,83 @@ views:
         entity: binary_sensor.SYSTEM_NAME_smart_charging_active
         name: Smart Charging
     sections:
+      # Wallbox → Fahrzeug + Lademodus + Smart-Charge-Einstellungen, gestapelt
+      # nach zugewiesenem EV. Der Wallbox-Sub-Device-Slug heißt bei einer
+      # einzelnen Wallbox `wallbox`, bei mehreren den Slug des Wallbox-Namens
+      # (z. B. select.SYSTEM_NAME_garage_assigned_vehicle) — dann pro Wallbox
+      # einen eigenen Block. Placeholder:
+      #   EV_N_PREFIX  = Entity-Prefix des EV (z. B. `volkswagen_id_4` oder
+      #                  `<owner>_<uuid>`)
+      #   EV_N_SLUG    = Slug im Assignment-Selektor (aus `attributes.options`)
       - type: grid
         cards:
+          - type: heading
+            heading: Wallbox → Fahrzeug
+            heading_style: title
+            icon: mdi:car-arrow-right
+          - type: entities
+            entities:
+              - entity: select.SYSTEM_NAME_WALLBOX_assigned_vehicle
+                name: Zugewiesenes Fahrzeug
+                secondary_info: last-updated
           - type: heading
             heading: Lademodus
             heading_style: title
             icon: mdi:ev-station
-          - type: entities
-            entities:
-              - entity: select.CAR_IDENTIFIER_lademodus
           - type: conditional
             conditions:
               - condition: state
-                entity: sensor.CAR_IDENTIFIER_lademodus
+                entity: select.SYSTEM_NAME_WALLBOX_assigned_vehicle
+                state: EV_1_SLUG
+            card:
+              type: entities
+              entities:
+                - entity: select.EV_1_PREFIX_lademodus
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: select.SYSTEM_NAME_WALLBOX_assigned_vehicle
+                state: EV_2_SLUG
+            card:
+              type: entities
+              entities:
+                - entity: select.EV_2_PREFIX_lademodus
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: select.SYSTEM_NAME_WALLBOX_assigned_vehicle
+                state: EV_1_SLUG
+              - condition: state
+                entity: select.EV_1_PREFIX_lademodus
                 state: smart_charge
             card:
               type: entities
               title: Smart-Charge Einstellungen
               entities:
-                - entity: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
+                - entity: number.EV_1_PREFIX_fahrzeug_akkustand_manuell
                   name: Akkustand aktuell
-                - entity: number.CAR_IDENTIFIER_ziel_akkustand
+                - entity: number.EV_1_PREFIX_ziel_akkustand
                   name: Zielakkustand
-                - entity: time.CAR_IDENTIFIER_abfahrtzeit
+                - entity: time.EV_1_PREFIX_abfahrtzeit
                   name: Tägliche Abfahrtzeit
-
-      # Wallbox → Fahrzeug (seit v0.1.63). Ein Select pro physischer Wallbox
-      # bindet ein Fahrzeugprofil an die Wallbox. Bei einer einzelnen Wallbox
-      # heißt der Sub-Device "wallbox"; bei mehreren nutzt HA den Slug des
-      # Wallbox-Namens (z. B. select.SYSTEM_NAME_garage_assigned_vehicle) —
-      # dann pro Wallbox eine eigene Karte anlegen.
-      - type: grid
-        cards:
-          - type: heading
-            heading: Wallbox-Zuweisung
-            heading_style: title
-            icon: mdi:car-arrow-right
-          - type: entities
-            entities:
-              - entity: select.SYSTEM_NAME_wallbox_assigned_vehicle
-                name: Zugewiesenes Fahrzeug
-                secondary_info: last-updated
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: select.SYSTEM_NAME_WALLBOX_assigned_vehicle
+                state: EV_2_SLUG
+              - condition: state
+                entity: select.EV_2_PREFIX_lademodus
+                state: smart_charge
+            card:
+              type: entities
+              title: Smart-Charge Einstellungen
+              entities:
+                - entity: number.EV_2_PREFIX_fahrzeug_akkustand_manuell
+                  name: Akkustand aktuell
+                - entity: number.EV_2_PREFIX_ziel_akkustand
+                  name: Zielakkustand
+                - entity: time.EV_2_PREFIX_abfahrtzeit
+                  name: Tägliche Abfahrtzeit
 
       - type: grid
         cards:
