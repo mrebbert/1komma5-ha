@@ -7,12 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.66] - 2026-10-03
 
-Internal-only release: SDK-Pin auf v1.1.0 und Ruff-Line-Length-Konvergenz auf den Home-Assistant-Core-Standard. Keine sichtbare Entity-, Service- oder Blueprint-Änderung.
+Internal-only release: SDK-Pin auf v1.1.1, Ruff-Line-Length-Konvergenz auf den Home-Assistant-Core-Standard und Dashboard-Doku für Multi-EV-Assignments. Keine sichtbare Entity-, Service- oder Blueprint-Änderung.
 
 ### Changed
-- Bumped the `onekommafive` SDK pin to `>=1.1.0,<2` (from `>=1.0.3,<2`). v1.1.0 continues the async aiohttp API surface with `py.typed`; the integration picks it up automatically at install time.
+- Bumped the `onekommafive` SDK pin to `>=1.1.1,<2` (from `>=1.0.3,<2`). v1.1.1 sends the required `view=historic` parameter with `System.get_optimizations`; older SDKs would silently return an empty `events` list, leaving the AI-decision sensors on stale data. Also adds `System.get_live_optimizations()` for the currently running optimisation slot (not consumed by the integration yet).
 - Ruff `line-length` lowered from 100 to 88 to match the Home Assistant core Ruff config. `ruff format` reformatted 54 files (193 lines rewrapped automatically) plus 41 manual cleanups (docstring trims, inline-comment relocations, factored-out f-strings). No entity or code-path behaviour changed.
 - `.git-blame-ignore-revs` added with the two reformat SHAs so `git blame` continues to point at the substantive authors of each line. GitHub honours the file automatically; contributors enable it locally once with `git config blame.ignoreRevsFile .git-blame-ignore-revs` (documented in `CONTRIBUTING.md`).
+- Example dashboards (`dashboard/dashboard.yaml`, `dashboard/dashboard-showcase.yaml`) now stack the Fahrzeug view as Wallbox-Assignment → Lademodus → Smart-Charge-Einstellungen, with per-EV conditional blocks so multi-vehicle setups show the currently-assigned EV's controls. Placeholders switch from the single `CAR_IDENTIFIER` to `EV_N_PREFIX` / `EV_N_SLUG`, one duplication per EV; the fahrzeug-view screenshot in `dashboard/README.md` is updated.
 
 ## [0.1.65] - 2026-09-26
 
