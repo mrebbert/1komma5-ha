@@ -366,8 +366,14 @@
       "diag_notification_update": {
         "name": "Viimeisin ilmoituspäivitys"
       },
+      "diag_heartbeat_prices_update": {
+        "name": "Viimeisin heartbeat-hintapäivitys"
+      },
       "dynamic_pulse_price_guarantee": {
         "name": "DP-hintatakuu"
+      },
+      "module1_grid_fee_reduction_annual": {
+        "name": "§14a moduuli 1 (vuosittain)"
       },
       "ev_battery_capacity": {
         "name": "Akun kapasiteetti"

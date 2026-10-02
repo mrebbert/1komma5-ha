@@ -111,7 +111,7 @@
       "fields": {
         "coordinator": {
           "name": "Coordinator",
-          "description": "Welchen Coordinator aktualisieren — oder 'all' für alle sieben."
+          "description": "Welchen Coordinator aktualisieren — oder 'all' für alle acht."
         },
         "config_entry_id": {
           "name": "Integration",
@@ -366,8 +366,14 @@
       "diag_notification_update": {
         "name": "Letztes Notifications-Update"
       },
+      "diag_heartbeat_prices_update": {
+        "name": "Letztes Heartbeat-Preise-Update"
+      },
       "dynamic_pulse_price_guarantee": {
         "name": "DP-Preisgarantie"
+      },
+      "module1_grid_fee_reduction_annual": {
+        "name": "§14a Modul 1 (jährlich)"
       },
       "ev_battery_capacity": {
         "name": "Batteriekapazität"

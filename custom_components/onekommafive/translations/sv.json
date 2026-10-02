@@ -366,8 +366,14 @@
       "diag_notification_update": {
         "name": "Senaste notifikationsuppdatering"
       },
+      "diag_heartbeat_prices_update": {
+        "name": "Senaste heartbeat-prisuppdatering"
+      },
       "dynamic_pulse_price_guarantee": {
         "name": "DP-prisgaranti"
+      },
+      "module1_grid_fee_reduction_annual": {
+        "name": "§14a modul 1 (årlig)"
       },
       "ev_battery_capacity": {
         "name": "Batterikapacitet"
