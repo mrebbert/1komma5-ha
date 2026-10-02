@@ -118,6 +118,18 @@ def _notifications_summary(data: Any) -> dict[str, Any]:
 
 
 @_null_safe
+def _heartbeat_prices_summary(data: Any) -> dict[str, Any]:
+    year = getattr(data, "year", None)
+    if year is None:
+        return {"year_window_present": False}
+    return {
+        "year_window_present": True,
+        "module1_provisioning_date": year.module1_provisioning_date,
+        "module1_savings_per_year_eur": year.module1_savings_per_year_eur,
+    }
+
+
+@_null_safe
 def _system_status_summary(data: Any) -> dict[str, Any]:
     asset_types = sorted({a.type for a in (data.assets or [])})
     return {
@@ -278,6 +290,12 @@ async def async_get_config_entry_diagnostics(
             "notifications": {
                 **_coordinator_snapshot(data.notifications_coordinator),
                 "summary": _notifications_summary(data.notifications_coordinator.data),
+            },
+            "heartbeat_prices": {
+                **_coordinator_snapshot(data.heartbeat_prices_coordinator),
+                "summary": _heartbeat_prices_summary(
+                    data.heartbeat_prices_coordinator.data
+                ),
             },
         },
         "system": {

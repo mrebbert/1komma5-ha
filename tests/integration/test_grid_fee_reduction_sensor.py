@@ -115,10 +115,11 @@ async def test_attributes_expose_provisioning_and_gross_estimate(
 
     attrs = hass.states.get(_resolve(hass)).attributes
     assert attrs["provisioning_date"] == "2025-09-19"
-    assert attrs["active_days"] == 365
     # 121 × 1.19 = 143.99 → rounded 143.99
     assert attrs["gross_estimate_eur_assumption"] == 143.99
     assert "§14a EnWG Modul 1" in attrs["basis"]
+    # `active_days` was removed in the refactor — it mirrored the window length.
+    assert "active_days" not in attrs
 
 
 async def test_unavailable_without_provisioning_date(

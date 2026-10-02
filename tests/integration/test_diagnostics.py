@@ -67,7 +67,7 @@ async def test_diagnostics_redacts_credentials_and_system_id(
 async def test_diagnostics_includes_all_coordinators(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """All seven coordinator summaries are present with shape we expect."""
+    """All eight coordinator summaries are present with shape we expect."""
     system = mock_system_factory(system_id="sys-1")
     entry = await _setup(hass, system)
 
@@ -81,6 +81,7 @@ async def test_diagnostics_includes_all_coordinators(
         "system_status",
         "energy",
         "notifications",
+        "heartbeat_prices",
     }
     for snap in diag["coordinators"].values():
         assert "last_update_success" in snap

@@ -1004,20 +1004,15 @@ class OneKomma5DynamicPulsePriceGuaranteeSensor(
         return {"version": self._version}
 
 
+# Working-Hypothesis basis string surfaced as the `basis` attribute on the
+# Modul-1 sensor. Pending a second-grid-area data point for confirmation.
+_MODULE1_BASIS = "§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"
+# German consumer VAT; the API value is net, published tariff tables are gross.
+_GERMAN_VAT_MULTIPLIER = 1.19
+
+
 class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEntity):
-    """§14a EnWG Modul 1 annual net grid-fee reduction (EUR/year).
-
-    The 1KOMMA5° API exposes four ``module1`` fields on each ``HeartbeatPriceWindow``
-    that go non-null the moment an iMSys plus a controllable consumption device
-    (wallbox, heat pump, PV battery) is provisioned for the account. SDK v1.1.3
-    documents the working hypothesis that these mirror the §14a EnWG "Modul 1"
-    net grid-fee reduction per BNetzA BK6-22-300. Hypothesis still needs a second
-    data point from a different grid area; the API value itself is real, only the
-    §14a interpretation is pending confirmation.
-
-    Attributes expose ``provisioning_date``, ``active_days``, a derived gross
-    estimate (``* 1.19``, flagged as assumption), and the basis string.
-    """
+    """§14a EnWG Modul 1 annual net grid-fee reduction (EUR/year)."""
 
     _attr_translation_key = "module1_grid_fee_reduction_annual"
     _attr_device_class = SensorDeviceClass.MONETARY
@@ -1026,9 +1021,6 @@ class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEnti
     _attr_suggested_display_precision = 2
     _attr_icon = "mdi:transmission-tower"
     _device_key = "meter"
-
-    _BASIS = "§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"
-    _VAT_MULTIPLIER = 1.19
 
     def __init__(
         self,
@@ -1076,10 +1068,9 @@ class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEnti
         if window is None:
             return None
         base = window.module1_savings_per_year_eur
-        gross = round(base * self._VAT_MULTIPLIER, 2) if base is not None else None
+        gross = round(base * _GERMAN_VAT_MULTIPLIER, 2) if base is not None else None
         return {
             "provisioning_date": window.module1_provisioning_date,
-            "active_days": window.module1_active_days,
             "gross_estimate_eur_assumption": gross,
-            "basis": self._BASIS,
+            "basis": _MODULE1_BASIS,
         }

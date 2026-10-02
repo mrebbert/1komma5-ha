@@ -10,6 +10,7 @@ from __future__ import annotations
 from custom_components.onekommafive.diagnostics import (
     _assets_redacted,
     _energy_summary,
+    _heartbeat_prices_summary,
     _live_summary,
     _notifications_summary,
     _optimization_summary,
@@ -41,6 +42,10 @@ def test_energy_summary_none_returns_empty() -> None:
 
 def test_notifications_summary_none_returns_empty() -> None:
     assert _notifications_summary(None) == {}
+
+
+def test_heartbeat_prices_summary_none_returns_empty() -> None:
+    assert _heartbeat_prices_summary(None) == {}
 
 
 def test_system_status_summary_none_returns_empty() -> None:
