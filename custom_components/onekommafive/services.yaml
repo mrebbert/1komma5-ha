@@ -63,6 +63,7 @@ refresh_now:
             - system_status
             - energy
             - notifications
+            - heartbeat_prices
             - all
     config_entry_id:
       selector:

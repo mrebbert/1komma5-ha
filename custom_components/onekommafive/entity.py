@@ -17,6 +17,7 @@ from homeassistant.util import slugify
 from .const import DOMAIN
 from .coordinator import (
     OneKomma5EnergyCoordinator,
+    OneKomma5HeartbeatPricesCoordinator,
     OneKomma5LiveCoordinator,
     OneKomma5OptimizationCoordinator,
     OneKomma5PriceCoordinator,
@@ -365,6 +366,12 @@ class OneKomma5WeatherEntity(SystemEntityBase[OneKomma5WeatherCoordinator]):
 
 class OneKomma5EnergyEntity(SystemEntityBase[OneKomma5EnergyCoordinator]):
     """Base entity for sensors backed by the energy (today) coordinator."""
+
+
+class OneKomma5HeartbeatPricesEntity(
+    SystemEntityBase[OneKomma5HeartbeatPricesCoordinator]
+):
+    """Base entity for sensors backed by the heartbeat-prices coordinator."""
 
 
 class OneKomma5EVEntity(CoordinatorEntity[OneKomma5LiveCoordinator]):

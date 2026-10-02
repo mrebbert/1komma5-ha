@@ -366,8 +366,14 @@
       "diag_notification_update": {
         "name": "Última actualización de notificaciones"
       },
+      "diag_heartbeat_prices_update": {
+        "name": "Última actualización de precios Heartbeat"
+      },
       "dynamic_pulse_price_guarantee": {
         "name": "Garantía de precio DP"
+      },
+      "module1_grid_fee_reduction_annual": {
+        "name": "§14a módulo 1 (anual)"
       },
       "ev_battery_capacity": {
         "name": "Capacidad de batería"

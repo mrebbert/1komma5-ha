@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME, DOMAIN
 from .coordinator import (
     OneKomma5EnergyCoordinator,
+    OneKomma5HeartbeatPricesCoordinator,
     OneKomma5LiveCoordinator,
     OneKomma5NotificationsCoordinator,
     OneKomma5OptimizationCoordinator,
@@ -73,6 +74,7 @@ class OneKomma5Data:
     system_status_coordinator: OneKomma5SystemStatusCoordinator
     energy_coordinator: OneKomma5EnergyCoordinator
     notifications_coordinator: OneKomma5NotificationsCoordinator
+    heartbeat_prices_coordinator: OneKomma5HeartbeatPricesCoordinator
     system: System
     system_name: str  # resolved from ``system.info()`` at setup for entity DeviceInfo
     # Full SystemDetails captured once at setup. Used only for diagnostics —
@@ -95,9 +97,9 @@ class OneKomma5Data:
     device_gateways: list[DeviceGateway]  # Heartbeat gateways, surfaces in diagnostics
 
     def named_coordinators(self) -> dict[str, DataUpdateCoordinator[Any]]:
-        """Return the seven coordinators keyed by their service/diagnostics label.
+        """Return the eight coordinators keyed by their service/diagnostics label.
 
-        Single source of truth: adding an eighth coordinator now updates
+        Single source of truth: adding a ninth coordinator now updates
         ``services.refresh_now``, the diagnostics dump and the system-health
         panel in one place.
         """
@@ -109,6 +111,7 @@ class OneKomma5Data:
             "system_status": self.system_status_coordinator,
             "energy": self.energy_coordinator,
             "notifications": self.notifications_coordinator,
+            "heartbeat_prices": self.heartbeat_prices_coordinator,
         }
 
 
@@ -329,6 +332,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     notifications_coordinator = OneKomma5NotificationsCoordinator(
         hass, system, entry.entry_id
     )
+    heartbeat_prices_coordinator = OneKomma5HeartbeatPricesCoordinator(hass, system)
 
     await live_coordinator.async_config_entry_first_refresh()
 
@@ -343,6 +347,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         system_status_coordinator,
         energy_coordinator,
         notifications_coordinator,
+        heartbeat_prices_coordinator,
     ):
         await coordinator.async_refresh()
 
@@ -378,6 +383,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         system_status_coordinator=system_status_coordinator,
         energy_coordinator=energy_coordinator,
         notifications_coordinator=notifications_coordinator,
+        heartbeat_prices_coordinator=heartbeat_prices_coordinator,
         system=system,
         system_name=system_name,
         details=details,

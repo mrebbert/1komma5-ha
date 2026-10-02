@@ -14,9 +14,13 @@ from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from onekommafive.ev_charger import EVCharger
+    from onekommafive.models import Asset, HeartbeatPriceWindow
 
     from . import OneKomma5Data
-    from .coordinator import OneKomma5LiveCoordinator
+    from .coordinator import (
+        OneKomma5HeartbeatPricesCoordinator,
+        OneKomma5LiveCoordinator,
+    )
 
 from homeassistant.components.sensor import (
     RestoreSensor,
@@ -34,6 +38,7 @@ from .entity import (
     OneKomma5EnergyEntity,
     OneKomma5Entity,
     OneKomma5EVEntity,
+    OneKomma5HeartbeatPricesEntity,
     OneKomma5OptimizationEntity,
     OneKomma5PriceEntity,
     OneKomma5SystemStatusEntity,
@@ -997,3 +1002,84 @@ class OneKomma5DynamicPulsePriceGuaranteeSensor(
         if self._version is None:
             return None
         return {"version": self._version}
+
+
+class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEntity):
+    """§14a EnWG Modul 1 annual net grid-fee reduction (EUR/year).
+
+    The 1KOMMA5° API exposes four ``module1`` fields on each ``HeartbeatPriceWindow``
+    that go non-null the moment an iMSys plus a controllable consumption device
+    (wallbox, heat pump, PV battery) is provisioned for the account. SDK v1.1.3
+    documents the working hypothesis that these mirror the §14a EnWG "Modul 1"
+    net grid-fee reduction per BNetzA BK6-22-300. Hypothesis still needs a second
+    data point from a different grid area; the API value itself is real, only the
+    §14a interpretation is pending confirmation.
+
+    Attributes expose ``provisioning_date``, ``active_days``, a derived gross
+    estimate (``* 1.19``, flagged as assumption), and the basis string.
+    """
+
+    _attr_translation_key = "module1_grid_fee_reduction_annual"
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_suggested_display_precision = 2
+    _attr_icon = "mdi:transmission-tower"
+    _device_key = "meter"
+
+    _BASIS = "§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"
+    _VAT_MULTIPLIER = 1.19
+
+    def __init__(
+        self,
+        coordinator: OneKomma5HeartbeatPricesCoordinator,
+        system_id: str,
+        system_name: str,
+        *,
+        asset: Asset | None = None,
+        currency: str = "EUR",
+        parent_device_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "module1_grid_fee_reduction_annual",
+            asset=asset,
+            parent_device_id=parent_device_id,
+        )
+        self._attr_native_unit_of_measurement = currency
+
+    def _window(self) -> HeartbeatPriceWindow | None:
+        prices = self.coordinator.data
+        if prices is None:
+            return None
+        return prices.year
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        window = self._window()
+        return window is not None and window.module1_provisioning_date is not None
+
+    @property
+    def native_value(self) -> float | None:
+        window = self._window()
+        if window is None:
+            return None
+        return window.module1_savings_per_year_eur
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        window = self._window()
+        if window is None:
+            return None
+        base = window.module1_savings_per_year_eur
+        gross = round(base * self._VAT_MULTIPLIER, 2) if base is not None else None
+        return {
+            "provisioning_date": window.module1_provisioning_date,
+            "active_days": window.module1_active_days,
+            "gross_estimate_eur_assumption": gross,
+            "basis": self._BASIS,
+        }

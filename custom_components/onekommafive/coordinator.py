@@ -19,6 +19,7 @@ from onekommafive.models import (
     Asset,
     EmsSettings,
     EnergyData,
+    HeartbeatPrices,
     LiveOverview,
     MarketPrices,
     Notification,
@@ -35,6 +36,7 @@ from .const import (
     EVENT_NEGATIVE_PRICE_STARTED,
     EVENT_NOTIFICATION,
     EVENT_OPTIMIZATION_DECISION,
+    HEARTBEAT_PRICES_UPDATE_INTERVAL_SECONDS,
     LIVE_UPDATE_INTERVAL_SECONDS,
     NOTIFICATION_UPDATE_INTERVAL_SECONDS,
     OPTIMIZATION_UPDATE_INTERVAL_SECONDS,
@@ -529,6 +531,18 @@ class OneKomma5EnergyCoordinator(OneKomma5BaseCoordinator[EnergyTodayData]):
     async def _fetch(self) -> EnergyTodayData:
         """Fetch today's energy aggregation via the async SDK."""
         return EnergyTodayData(energy=await self._system.get_energy_today())
+
+
+class OneKomma5HeartbeatPricesCoordinator(OneKomma5BaseCoordinator[HeartbeatPrices]):
+    """Coordinator for the Heartbeat prices endpoint (§14a Modul 1 carrier)."""
+
+    _data_label = "heartbeat prices"
+    _coordinator_name = "1KOMMA5° Heartbeat Prices"
+    _interval_seconds = HEARTBEAT_PRICES_UPDATE_INTERVAL_SECONDS
+
+    async def _fetch(self) -> HeartbeatPrices:
+        """Fetch the five aggregation windows via the async SDK."""
+        return await self._system.get_heartbeat_prices()
 
 
 class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData]):

@@ -93,6 +93,7 @@ async def test_all_refreshes_every_coordinator(
         "system_status": rd.system_status_coordinator,
         "energy": rd.energy_coordinator,
         "notifications": rd.notifications_coordinator,
+        "heartbeat_prices": rd.heartbeat_prices_coordinator,
     }
     mocks = {name: AsyncMock() for name in all_coords}
     for name, coord in all_coords.items():

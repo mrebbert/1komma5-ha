@@ -42,6 +42,7 @@ def _make_data(coordinator: MagicMock, ev: MagicMock) -> OneKomma5Data:
         system_status_coordinator=MagicMock(),
         energy_coordinator=MagicMock(),
         notifications_coordinator=MagicMock(),
+        heartbeat_prices_coordinator=MagicMock(),
         system=MagicMock(),
         system_name="Test",
         details=None,
