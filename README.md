@@ -14,7 +14,7 @@ Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI 
 
 ## Highlights
 
-- ⚡ **60+ sensors** across 7 coordinators covering power, energy, cost, dynamic prices, AI decisions, weather and system health
+- ⚡ **60+ sensors** across 8 coordinators covering power, energy, cost, dynamic prices, AI decisions, weather, system health and §14a grid-fee reduction
 - 💶 **Dynamic tariff support** with 30-hour price forecast, cheapest-window sensors, and per-consumer cost allocation
 - 🤖 **AI optimization events** — react to Heartbeat's grid-charge / heat-pump-recommend decisions in real time
 - 🔔 **Cloud notification bridge** (v0.1.52) — drive automations from the same push notifications the 1KOMMA5° mobile app receives
@@ -31,6 +31,7 @@ Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI 
   - [Dynamic electricity pricing](#dynamic-electricity-pricing)
   - [Energy accounting](#energy-accounting)
   - [Cost & revenue](#cost--revenue)
+  - [§14a grid-fee reduction](#14a-grid-fee-reduction-since-v0166)
   - [AI optimization](#ai-optimization)
   - [EV charger / wallbox](#ev-charger--wallbox)
   - [Weather](#weather)
@@ -274,6 +275,22 @@ Monetary sensors integrating power flow × price. `state_class: total`, `device_
 
 The four per-consumer cost sensors always sum to `electricity_cost`. When PV/battery cover all consumption the grid bill is zero and all five stop accumulating together.
 
+### §14a grid-fee reduction (since v0.1.66)
+
+One diagnostic sensor on the meter sub-device for accounts that have the 1KOMMA5° backend provisioned under BNetzA BK6-22-300 "Modul 1" (iMSys plus a controllable consumption device: wallbox, heat pump, PV battery).
+
+| Entity | Key | Semantic |
+|--------|-----|----------|
+| §14a Modul 1 (annual) | `module1_grid_fee_reduction_annual` | Annual **net** grid-fee reduction (EUR/year), from `HeartbeatPriceWindow.module1_savings_per_year_eur`. Diagnostic category. Stays `unavailable` on accounts without a provisioning date (no iMSys + SteuVE). |
+
+Attributes:
+
+- `provisioning_date` — ISO date the Modul 1 bundle went live on the account.
+- `gross_estimate_eur_assumption` — `value × 1.19`, flagged as an assumption pending a second-grid-area data point. Matches the published gross figure on the first observed account (121 € API net vs 144 € tariff-area gross).
+- `basis` — `"§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"`.
+
+Deliberately **separate from the cost sensors**: Modul 1 is an annual rebate on the grid-fee position of the year-end bill, not a per-kWh discount. Linearising it onto `stable_electricity_price` or `electricity_cost` would be misleading.
+
 ### AI optimization
 
 Heartbeat AI decisions surfaced as sensors and binary sensors, updated every 15 minutes.
@@ -377,6 +394,7 @@ Hidden by default (`entity_category: diagnostic`) — useful for troubleshooting
 | `diag_system_status_update` | Timestamp of the last site-status / asset-inventory fetch |
 | `diag_energy_update` | Timestamp of the last daily-savings fetch |
 | `diag_notification_update` | Timestamp of the last cloud-notifications fetch (v0.1.52) |
+| `diag_heartbeat_prices_update` | Timestamp of the last heartbeat-prices fetch (v0.1.66; backs the §14a Modul 1 sensor) |
 
 **System Information** (**Settings → System → Repairs → System Information**) reports per-coordinator update status, API reachability, SDK version and resolved currency/country. **PII-safe** — no customer/system identifiers or addresses. Use this for bug reports instead of the full diagnostics download.
 
@@ -399,6 +417,7 @@ Every polled endpoint is fronted by its own `DataUpdateCoordinator`; the interva
 | Notifications | 5 min | New cloud push notifications → `onekommafive_notification` bus event |
 | Price | 1 h | Today + tomorrow's dynamic tariff forecast (timestamps are slot ENDs) |
 | Weather | 1 h | 48 h hourly forecast + sunshine totals |
+| Heartbeat prices | 1 h | Five aggregation windows backing the §14a Modul 1 sensor (v0.1.66) |
 
 The intervals are compile-time constants; they can be temporarily overridden by calling `onekommafive.refresh_now` from an automation or the Developer Tools (see [Services & bus events](#services--bus-events)).
 
@@ -457,7 +476,7 @@ Force an immediate refresh of one (or all) data coordinators. Useful after a pow
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| `coordinator` | `live` | One of `live`, `price`, `optimization`, `weather`, `system_status`, `energy`, `notifications`, `all` |
+| `coordinator` | `live` | One of `live`, `price`, `optimization`, `weather`, `system_status`, `energy`, `notifications`, `heartbeat_prices`, `all` |
 | `config_entry_id` | — | Only required with multiple systems configured |
 
 Response: `{"refreshed": [...], "failed": [...]}`. `all` runs every coordinator in parallel; per-coordinator failures land in `failed` but don't raise.
@@ -704,7 +723,7 @@ Cost, revenue and price sensors render in the local currency without manual conf
 | API library | [mrebbert/1komma5-api](https://github.com/mrebbert/1komma5-api) |
 | Authentication | OAuth2 PKCE (matches the official iOS app flow) |
 | IoT class | `cloud_polling` |
-| Coordinators | 7 (live 30 s, price 1 h, optimization 15 min, weather 1 h, system_status 5 min, energy 15 min, notifications 5 min) |
+| Coordinators | 8 (live 30 s, price 1 h, optimization 15 min, weather 1 h, system_status 5 min, energy 15 min, notifications 5 min, heartbeat_prices 1 h) |
 | HA domain | `onekommafive` |
 
 ---
