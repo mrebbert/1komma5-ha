@@ -145,6 +145,18 @@
       "optimization_battery_grid_charge": {
         "name": "AI: Batterij vanuit net laden"
       },
+      "optimization_battery_grid_discharge": {
+        "name": "AI: Batterij naar net ontladen"
+      },
+      "optimization_battery_no_charge": {
+        "name": "AI: Batterij-laadblokkering"
+      },
+      "optimization_battery_no_discharge": {
+        "name": "AI: Batterij-ontlaadblokkering"
+      },
+      "optimization_ev_grid_charge": {
+        "name": "AI: EV vanuit net laden"
+      },
       "optimization_heat_pump_recommended": {
         "name": "AI: Warmtepomp aanbevolen"
       },

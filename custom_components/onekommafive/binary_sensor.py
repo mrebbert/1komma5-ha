@@ -277,6 +277,33 @@ OPTIMIZATION_DECISION_SENSORS: tuple[OptimizationDecisionSpec, ...] = (
         include_soc=True,
     ),
     OptimizationDecisionSpec(
+        key="optimization_battery_grid_discharge",
+        asset="BATTERY",
+        decision="BATTERY_DISCHARGE_TO_GRID",
+        device_key="inverter",
+        include_soc=True,
+    ),
+    OptimizationDecisionSpec(
+        key="optimization_battery_no_charge",
+        asset="BATTERY",
+        decision="BATTERY_NO_CHARGE",
+        device_key="inverter",
+        include_soc=True,
+    ),
+    OptimizationDecisionSpec(
+        key="optimization_battery_no_discharge",
+        asset="BATTERY",
+        decision="BATTERY_NO_DISCHARGE",
+        device_key="inverter",
+        include_soc=True,
+    ),
+    OptimizationDecisionSpec(
+        key="optimization_ev_grid_charge",
+        asset="EV",
+        decision="EV_CHARGE_FROM_GRID",
+        device_key="wallbox",
+    ),
+    OptimizationDecisionSpec(
         key="optimization_heat_pump_recommended",
         asset="HEATPUMP",
         decision="HEATPUMP_RECOMMEND_ON",

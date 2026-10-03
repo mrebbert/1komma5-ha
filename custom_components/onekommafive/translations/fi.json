@@ -145,6 +145,18 @@
       "optimization_battery_grid_charge": {
         "name": "AI: Lataa akku verkosta"
       },
+      "optimization_battery_grid_discharge": {
+        "name": "AI: Pura akku verkkoon"
+      },
+      "optimization_battery_no_charge": {
+        "name": "AI: Akun lataus estetty"
+      },
+      "optimization_battery_no_discharge": {
+        "name": "AI: Akun purku estetty"
+      },
+      "optimization_ev_grid_charge": {
+        "name": "AI: Lataa EV verkosta"
+      },
       "optimization_heat_pump_recommended": {
         "name": "AI: Lämpöpumppu suositeltu"
       },
