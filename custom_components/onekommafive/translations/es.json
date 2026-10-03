@@ -145,6 +145,18 @@
       "optimization_battery_grid_charge": {
         "name": "IA: Cargar batería desde la red"
       },
+      "optimization_battery_grid_discharge": {
+        "name": "IA: Descargar batería a la red"
+      },
+      "optimization_battery_no_charge": {
+        "name": "IA: Bloqueo de carga de batería"
+      },
+      "optimization_battery_no_discharge": {
+        "name": "IA: Bloqueo de descarga de batería"
+      },
+      "optimization_ev_grid_charge": {
+        "name": "IA: Cargar VE desde la red"
+      },
       "optimization_heat_pump_recommended": {
         "name": "IA: Bomba de calor recomendada"
       },

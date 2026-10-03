@@ -145,6 +145,18 @@
       "optimization_battery_grid_charge": {
         "name": "AI: Ladda batteri från nätet"
       },
+      "optimization_battery_grid_discharge": {
+        "name": "AI: Ladda ur batteri till nätet"
+      },
+      "optimization_battery_no_charge": {
+        "name": "AI: Batteriladdning blockerad"
+      },
+      "optimization_battery_no_discharge": {
+        "name": "AI: Batteriurladdning blockerad"
+      },
+      "optimization_ev_grid_charge": {
+        "name": "AI: Ladda EV från nätet"
+      },
       "optimization_heat_pump_recommended": {
         "name": "AI: Värmepump rekommenderad"
       },

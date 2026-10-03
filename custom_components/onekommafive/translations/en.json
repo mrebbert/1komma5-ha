@@ -145,6 +145,18 @@
       "optimization_battery_grid_charge": {
         "name": "AI: Battery grid charging"
       },
+      "optimization_battery_grid_discharge": {
+        "name": "AI: Battery grid discharging"
+      },
+      "optimization_battery_no_charge": {
+        "name": "AI: Battery charge lock"
+      },
+      "optimization_battery_no_discharge": {
+        "name": "AI: Battery discharge lock"
+      },
+      "optimization_ev_grid_charge": {
+        "name": "AI: EV grid charging"
+      },
       "optimization_heat_pump_recommended": {
         "name": "AI: Heat pump recommendation"
       },

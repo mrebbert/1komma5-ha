@@ -145,6 +145,18 @@
       "optimization_battery_grid_charge": {
         "name": "AI: Oplad batteri fra nettet"
       },
+      "optimization_battery_grid_discharge": {
+        "name": "AI: Aflad batteri til nettet"
+      },
+      "optimization_battery_no_charge": {
+        "name": "AI: Batteri-opladning blokeret"
+      },
+      "optimization_battery_no_discharge": {
+        "name": "AI: Batteri-afladning blokeret"
+      },
+      "optimization_ev_grid_charge": {
+        "name": "AI: Oplad EV fra nettet"
+      },
       "optimization_heat_pump_recommended": {
         "name": "AI: Varmepumpe anbefalet"
       },

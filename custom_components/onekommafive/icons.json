@@ -19,6 +19,30 @@
           "on": "mdi:battery-arrow-up"
         }
       },
+      "optimization_battery_grid_discharge": {
+        "default": "mdi:battery-arrow-down-outline",
+        "state": {
+          "on": "mdi:battery-arrow-down"
+        }
+      },
+      "optimization_battery_no_charge": {
+        "default": "mdi:battery-remove-outline",
+        "state": {
+          "on": "mdi:battery-remove"
+        }
+      },
+      "optimization_battery_no_discharge": {
+        "default": "mdi:battery-lock-open",
+        "state": {
+          "on": "mdi:battery-lock"
+        }
+      },
+      "optimization_ev_grid_charge": {
+        "default": "mdi:ev-station",
+        "state": {
+          "on": "mdi:car-electric"
+        }
+      },
       "optimization_heat_pump_recommended": {
         "default": "mdi:heat-pump-outline",
         "state": {
