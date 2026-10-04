@@ -360,6 +360,20 @@
       "active_features": {
         "name": "Aktiiviset toiminnot"
       },
+      "active_subscriptions": {
+        "name": "Aktiiviset tilaukset"
+      },
+      "subscription_eligibility": {
+        "name": "Lisäosien saatavuus"
+      },
+      "emp_backend": {
+        "name": "EMP-taustajärjestelmä",
+        "state": {
+          "GRIDX": "GridX",
+          "1K5": "1KOMMA5°",
+          "UNKNOWN": "Tuntematon"
+        }
+      },
       "system_age_days": {
         "name": "Järjestelmän ikä"
       },
