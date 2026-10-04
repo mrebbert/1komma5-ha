@@ -40,6 +40,7 @@ from .sensor_descriptions import (
 )
 from .sensor_entities import (
     OneKomma5ActiveFeaturesSensor,
+    OneKomma5ActiveSubscriptionsSensor,
     OneKomma5CheapestChargingWindowSensor,
     OneKomma5CheapestChargingWindowTomorrowSensor,
     OneKomma5ConsumerCostSensor,
@@ -47,6 +48,7 @@ from .sensor_entities import (
     OneKomma5DailySavingsSensor,
     OneKomma5DiagnosticSensor,
     OneKomma5DynamicPulsePriceGuaranteeSensor,
+    OneKomma5EmpBackendSensor,
     OneKomma5EnergySensor,
     OneKomma5EVSensor,
     OneKomma5FeedInRevenueSensor,
@@ -55,6 +57,7 @@ from .sensor_entities import (
     OneKomma5OptimizationSensor,
     OneKomma5PriceSensor,
     OneKomma5StablePriceSensor,
+    OneKomma5SubscriptionEligibilitySensor,
     OneKomma5SystemAgeDaysSensor,
     OneKomma5WeatherSensor,
 )
@@ -323,6 +326,37 @@ async def async_setup_entry(
             data.system_status_coordinator,
             system_id,
             system_name,
+        )
+    )
+
+    # Contract-overview sensors (v0.1.68): setup-time snapshots, three
+    # diagnostic entities on the system parent device. ``subscriptions`` and
+    # ``subscription_eligibility`` are skipped when the setup fetch failed —
+    # ``emp_backend`` always registers (falls back to ``UNKNOWN``).
+    if data.subscriptions is not None:
+        entities.append(
+            OneKomma5ActiveSubscriptionsSensor(
+                data.system_status_coordinator,
+                system_id,
+                system_name,
+                data.subscriptions,
+            )
+        )
+    if data.subscription_eligibility is not None:
+        entities.append(
+            OneKomma5SubscriptionEligibilitySensor(
+                data.system_status_coordinator,
+                system_id,
+                system_name,
+                data.subscription_eligibility,
+            )
+        )
+    entities.append(
+        OneKomma5EmpBackendSensor(
+            data.system_status_coordinator,
+            system_id,
+            system_name,
+            data.emp_type,
         )
     )
 

@@ -14,7 +14,7 @@ Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI 
 
 ## Highlights
 
-- ⚡ **60+ sensors** across 8 coordinators covering power, energy, cost, dynamic prices, AI decisions, weather, system health and §14a grid-fee reduction
+- ⚡ **60+ sensors** across 8 coordinators covering power, energy, cost, dynamic prices, AI decisions, weather, system health, §14a grid-fee reduction and contract overview
 - 💶 **Dynamic tariff support** with 30-hour price forecast, cheapest-window sensors, and per-consumer cost allocation
 - 🤖 **AI optimization events** — react to Heartbeat's grid-charge / heat-pump-recommend decisions in real time
 - 🔔 **Cloud notification bridge** (v0.1.52) — drive automations from the same push notifications the 1KOMMA5° mobile app receives
@@ -32,6 +32,7 @@ Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI 
   - [Energy accounting](#energy-accounting)
   - [Cost & revenue](#cost--revenue)
   - [§14a grid-fee reduction](#14a-grid-fee-reduction-since-v0166)
+  - [Contract overview](#contract-overview-since-v0168)
   - [AI optimization](#ai-optimization)
   - [EV charger / wallbox](#ev-charger--wallbox)
   - [Weather](#weather)
@@ -290,6 +291,20 @@ Attributes:
 - `basis` — `"§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"`.
 
 Deliberately **separate from the cost sensors**: Modul 1 is an annual rebate on the grid-fee position of the year-end bill, not a per-kWh discount. Linearising it onto `stable_electricity_price` or `electricity_cost` would be misleading.
+
+### Contract overview (since v0.1.68)
+
+Three diagnostic sensors on the system parent that make the account's contract state addressable from automations and dashboards without raw API calls.
+
+| Entity | Key | Semantic |
+|--------|-----|----------|
+| Active subscriptions | `active_subscriptions` | Count of contracts with `status == "ACTIVE"`. Attribute `contracts` lists every subscription's PII-safe fields (type, status, dates, notice period, renewal, billing frequency, price, currency, payment-method enum, country code). |
+| Add-on eligibility | `subscription_eligibility` | Count of 1KOMMA5°Care add-ons the account qualifies for. Attributes split into `eligible` (list of product types) and `ineligible` (`{type, reason}` with the CRM-provided reason verbatim). |
+| EMP backend | `emp_backend` | ENUM — `GRIDX`, `1K5`, or `UNKNOWN` (fallback). Previously only in the diagnostics dump. |
+
+Setup-time snapshots, mirrors the `dynamic_pulse_price_guarantee` pattern: subscriptions change on contract events, not during runtime. Fetches are non-fatal — a failed `get_subscriptions` or `get_subscription_eligibility` skips its sensor; `emp_backend` always registers and falls back to `UNKNOWN`.
+
+**PII guardrail:** the `contracts` attribute whitelists fields explicitly; `customer_id`, `site_id`, `electricity_contract_number`, `market_location_id`, `terms_and_conditions_url` and the raw CRM record (IBAN, addresses, Zoho/Lumenaza IDs, status history) stay out by design.
 
 ### AI optimization
 

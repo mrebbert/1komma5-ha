@@ -17,7 +17,13 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from onekommafive.models import DeviceGateway, SystemDetails, Wallbox
+    from onekommafive.models import (
+        DeviceGateway,
+        Subscription,
+        SubscriptionEligibility,
+        SystemDetails,
+        Wallbox,
+    )
     from onekommafive.system import System
 
 from .const import CONF_PASSWORD, CONF_SYSTEM_ID, CONF_USERNAME, DOMAIN
@@ -84,6 +90,11 @@ class OneKomma5Data:
     currency: str  # ISO 4217 code derived from details.address_country (default EUR)
     price_guarantee: PriceGuarantee | None
     co2_saved_kg: float | None  # lifetime CO2 saved (kg), captured once at setup
+    # Subscriptions & add-on eligibility; captured once at setup. None marks a
+    # fetch failure; [] a legitimately empty list. Never surfaced as raw —
+    # entities whitelist PII-safe fields only.
+    subscriptions: list[Subscription] | None
+    subscription_eligibility: list[SubscriptionEligibility] | None
     system_device_id: (
         str  # device_registry ID of the system parent device (via_device_id)
     )
@@ -165,6 +176,41 @@ async def _extract_price_guarantee(
     except (TypeError, ValueError):
         return None
     return PriceGuarantee(value_eur_per_kwh=value_eur_per_kwh, version=version)
+
+
+async def _extract_subscriptions(
+    system: System, customer_id: str | None
+) -> list[Subscription] | None:
+    """Return the customer's subscription list, or None on fetch failure.
+
+    Guarded by ``customer_id`` — the endpoint is customer-scoped.
+    An empty list means the customer legitimately has no contracts and is
+    distinct from ``None`` (fetch failed / endpoint unavailable).
+    """
+    if customer_id is None:
+        return None
+    result = await _safe_afetch(
+        "Subscriptions", lambda: system.get_subscriptions(customer_id)
+    )
+    if result is None:
+        return None
+    return list(result.subscriptions)
+
+
+async def _extract_subscription_eligibility(
+    system: System,
+) -> list[SubscriptionEligibility] | None:
+    """Return 1KOMMA5°Care add-on eligibility list, or None on fetch failure.
+
+    Site-scoped endpoint (SDK v1.1.4+). Each entry has a product type, an
+    ``eligible`` flag, and a CRM-provided ``reason`` when gated.
+    """
+    result = await _safe_afetch(
+        "Subscription eligibility", system.get_subscription_eligibility
+    )
+    if result is None:
+        return None
+    return list(result.subscriptions)
 
 
 def _remove_stale_wallbox_devices(
@@ -295,6 +341,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         cust_id = getattr(details, "customer_id", None) if details else None
         price_guarantee = await _extract_price_guarantee(system, cust_id)
         co2_saved_kg = await _extract_co2_saved(system)
+        subscriptions = await _extract_subscriptions(system, cust_id)
+        subscription_eligibility = await _extract_subscription_eligibility(system)
         # importlib.metadata reads distribution files — stays in the executor.
         sdk_version = await hass.async_add_executor_job(_read_sdk_version)
         # Wallbox inventory rarely changes; reload picks up hardware
@@ -391,6 +439,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
         currency=currency,
         price_guarantee=price_guarantee,
         co2_saved_kg=co2_saved_kg,
+        subscriptions=subscriptions,
+        subscription_eligibility=subscription_eligibility,
         system_device_id=parent_device.id,
         emp_type=emp_type,
         sdk_version=sdk_version,

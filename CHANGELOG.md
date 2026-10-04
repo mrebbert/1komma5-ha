@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.68] - 2026-10-17
+
+Adds three Diagnostic Sensoren for the Vertragsübersicht — active contracts (PII-safe), add-on eligibility, and the EMP backend. Setup-time snapshots, mirrors the `price_guarantee` pattern. No change to existing automations.
+
+### Added
+- **`sensor.<sys>_active_subscriptions`** — number of `status == "ACTIVE"` contracts; `contracts` attribute carries each subscription's PII-safe fields (`type`, `status`, `start_date`, `end_date`, `signed_date`, notice period, `renewal`, `billing_frequency`, `price_eur`, `currency`, `payment_method`, `country_code`). The raw CRM record (`customer_id`, `site_id`, `electricity_contract_number`, `market_location_id`, `terms_and_conditions_url`, `raw`-Blob mit IBAN) stays out by whitelist. Diagnostic entity category.
+- **`sensor.<sys>_subscription_eligibility`** — number of 1KOMMA5°Care add-ons the account qualifies for; attributes split into `eligible` (product types) and `ineligible` (`{type, reason}` with the CRM-provided reason verbatim). Reads SDK v1.1.4's `get_subscription_eligibility()`.
+- **`sensor.<sys>_emp_backend`** — ENUM diagnostic sensor (`GRIDX` / `1K5` / `UNKNOWN`) exposing the account's EMP backend. Previously only visible in the diagnostics dump.
+
 ## [0.1.67] - 2026-10-10
 
 Internal-only release: SDK pin bump. No entity, service or blueprint behaviour change.

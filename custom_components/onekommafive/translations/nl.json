@@ -360,6 +360,20 @@
       "active_features": {
         "name": "Actieve functies"
       },
+      "active_subscriptions": {
+        "name": "Actieve abonnementen"
+      },
+      "subscription_eligibility": {
+        "name": "Beschikbare add-ons"
+      },
+      "emp_backend": {
+        "name": "EMP-backend",
+        "state": {
+          "GRIDX": "GridX",
+          "1K5": "1KOMMA5°",
+          "UNKNOWN": "Onbekend"
+        }
+      },
       "system_age_days": {
         "name": "Systeemleeftijd"
       },

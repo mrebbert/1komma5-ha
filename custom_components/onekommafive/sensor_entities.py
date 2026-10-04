@@ -14,7 +14,12 @@ from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from onekommafive.ev_charger import EVCharger
-    from onekommafive.models import Asset, HeartbeatPriceWindow
+    from onekommafive.models import (
+        Asset,
+        HeartbeatPriceWindow,
+        Subscription,
+        SubscriptionEligibility,
+    )
 
     from . import OneKomma5Data
     from .coordinator import (
@@ -1002,6 +1007,132 @@ class OneKomma5DynamicPulsePriceGuaranteeSensor(
         if self._version is None:
             return None
         return {"version": self._version}
+
+
+# Fields of a Subscription that are safe to surface on the active-subscriptions
+# sensor's attribute dict. All other fields (id, site_id, customer_id,
+# electricity_contract_number, market_location_id, terms_and_conditions_url,
+# raw) stay out — they are PII or carry the full raw CRM record.
+_SUBSCRIPTION_PII_SAFE_FIELDS: tuple[str, ...] = (
+    "type",
+    "status",
+    "start_date",
+    "end_date",
+    "signed_date",
+    "notice_period_number",
+    "notice_period_interval",
+    "renewal",
+    "billing_frequency",
+    "price_eur",
+    "currency",
+    "payment_method",
+    "country_code",
+)
+
+
+class OneKomma5ActiveSubscriptionsSensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """Diagnostic sensor: number of active contracts; PII-safe contract list.
+
+    State is the count of subscriptions with ``status == "ACTIVE"``. The full
+    PII-redacted contract list sits on the ``contracts`` attribute for
+    dashboards. Setup-time captured — subscriptions change on contract events,
+    not during normal runtime.
+    """
+
+    _attr_translation_key = "active_subscriptions"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:file-document-check-outline"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        subscriptions: list[Subscription],
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, "active_subscriptions")
+        self._subscriptions = subscriptions
+
+    @property
+    def native_value(self) -> int:
+        return sum(1 for s in self._subscriptions if s.status == "ACTIVE")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "contracts": [
+                {field: getattr(sub, field) for field in _SUBSCRIPTION_PII_SAFE_FIELDS}
+                for sub in self._subscriptions
+            ]
+        }
+
+
+class OneKomma5SubscriptionEligibilitySensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """Diagnostic sensor: 1KOMMA5°Care add-on eligibility.
+
+    State is the number of add-ons the account qualifies for. Attributes list
+    the eligible product types and the gated ones with the CRM-provided reason.
+    """
+
+    _attr_translation_key = "subscription_eligibility"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:gift-outline"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        eligibility: list[SubscriptionEligibility],
+    ) -> None:
+        super().__init__(
+            coordinator, system_id, system_name, "subscription_eligibility"
+        )
+        self._eligibility = eligibility
+
+    @property
+    def native_value(self) -> int:
+        return sum(1 for item in self._eligibility if item.eligible)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "eligible": [item.type for item in self._eligibility if item.eligible],
+            "ineligible": [
+                {"type": item.type, "reason": item.reason}
+                for item in self._eligibility
+                if not item.eligible
+            ],
+        }
+
+
+# ENUM options for the EMP backend sensor; keeps HA's enum validation happy
+# and gives the UI a stable set of translation keys.
+_EMP_BACKEND_OPTIONS: tuple[str, ...] = ("GRIDX", "1K5", "UNKNOWN")
+
+
+class OneKomma5EmpBackendSensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """Diagnostic ENUM sensor exposing the account's EMP backend ("GRIDX" / "1K5")."""
+
+    _attr_translation_key = "emp_backend"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(_EMP_BACKEND_OPTIONS)
+    _attr_icon = "mdi:server-outline"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        emp_type: str | None,
+    ) -> None:
+        super().__init__(coordinator, system_id, system_name, "emp_backend")
+        self._emp_type = emp_type if emp_type in _EMP_BACKEND_OPTIONS else "UNKNOWN"
+
+    @property
+    def native_value(self) -> str:
+        return self._emp_type
 
 
 # Working-Hypothesis basis string surfaced as the `basis` attribute on the

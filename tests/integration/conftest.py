@@ -73,6 +73,7 @@ def mock_system_factory():
         active_features: list[str] | None = None,
         notifications: list | None = None,
         subscriptions: list | None = None,
+        subscription_eligibility: list | None = None,
         heartbeat_prices: MagicMock | None = None,
         impact: MagicMock | None = None,
         price_guarantee: MagicMock | None = None,
@@ -196,12 +197,22 @@ def mock_system_factory():
             return_value=MagicMock(notifications=list(notifications or []))
         )
 
-        # Subscriptions inventory still stubbed for backward-compat with tests
-        # that address it directly; the integration no longer consumes it.
+        # Subscriptions inventory — surfaced by the v0.1.68 contract-overview
+        # sensors. Default to an empty list so tests that don't care about the
+        # new sensors still boot cleanly (empty list means "0 active contracts",
+        # not "fetch failed").
         system.get_subscriptions = AsyncMock(
             return_value=MagicMock(
                 subscriptions=list(subscriptions or []),
                 total_items=len(subscriptions or []),
+            )
+        )
+
+        # Subscription-eligibility (SDK v1.1.4+); same default-empty policy as
+        # the subscriptions above.
+        system.get_subscription_eligibility = AsyncMock(
+            return_value=MagicMock(
+                subscriptions=list(subscription_eligibility or []),
             )
         )
 

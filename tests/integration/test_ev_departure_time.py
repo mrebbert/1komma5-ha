@@ -50,6 +50,8 @@ def _make_data(coordinator: MagicMock, ev: MagicMock) -> OneKomma5Data:
         currency="EUR",
         price_guarantee=None,
         co2_saved_kg=None,
+        subscriptions=None,
+        subscription_eligibility=None,
         system_device_id="dev-1",
         emp_type=None,
         sdk_version="1.0.2",

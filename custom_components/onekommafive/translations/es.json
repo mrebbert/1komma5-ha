@@ -360,6 +360,20 @@
       "active_features": {
         "name": "Funciones activas"
       },
+      "active_subscriptions": {
+        "name": "Suscripciones activas"
+      },
+      "subscription_eligibility": {
+        "name": "Elegibilidad de complementos"
+      },
+      "emp_backend": {
+        "name": "Backend EMP",
+        "state": {
+          "GRIDX": "GridX",
+          "1K5": "1KOMMA5°",
+          "UNKNOWN": "Desconocido"
+        }
+      },
       "system_age_days": {
         "name": "Edad del sistema"
       },

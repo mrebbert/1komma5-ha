@@ -360,6 +360,20 @@
       "active_features": {
         "name": "Aktiva funktioner"
       },
+      "active_subscriptions": {
+        "name": "Aktiva abonnemang"
+      },
+      "subscription_eligibility": {
+        "name": "Tillgängliga tillägg"
+      },
+      "emp_backend": {
+        "name": "EMP-backend",
+        "state": {
+          "GRIDX": "GridX",
+          "1K5": "1KOMMA5°",
+          "UNKNOWN": "Okänd"
+        }
+      },
       "system_age_days": {
         "name": "Systemets ålder"
       },
