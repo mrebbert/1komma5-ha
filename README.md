@@ -40,9 +40,11 @@ Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI 
   - [Diagnostics](#diagnostics)
 - [Services & bus events](#services--bus-events)
 - [Ready-made dashboards & automation blueprints](#ready-made-dashboards--automation-blueprints)
+- [Supported devices](#supported-devices)
 - [Devices & entity structure](#devices--entity-structure)
 - [Compatibility & requirements](#compatibility--requirements)
-- [FAQ / troubleshooting](#faq--troubleshooting)
+- [Known limitations](#known-limitations)
+- [FAQ / troubleshooting](#faq--troubleshooting) — plus [`docs/faq.md`](docs/faq.md) für die Vollversion
 - [Contributing](#contributing)
 - [Credits](#credits)
 - [Disclaimer](#disclaimer)
@@ -197,50 +199,7 @@ cheapest_future_price: 0.198400
 
 </details>
 
-<details>
-<summary>Ready-to-use apexcharts-card config</summary>
-
-```yaml
-type: custom:apexcharts-card
-graph_span: 24h
-span:
-  start: hour
-now:
-  show: true
-  label: Now
-header:
-  show: true
-  title: Electricity Price (24 h)
-  show_states: true
-  colorize_states: true
-yaxis:
-  - min: auto
-    decimals: 4
-series:
-  - entity: sensor.SYSTEMNAME_current_electricity_price
-    name: Electricity Price
-    unit: EUR/kWh
-    float_precision: 4
-    type: column
-    data_generator: |
-      return entity.attributes.forecast.map(e => [
-        new Date(e.start).getTime(),
-        e.price
-      ]);
-    color_threshold:
-      - value: 0
-        color: "#4caf50"
-      - value: 0.25
-        color: "#ff9800"
-      - value: 0.35
-        color: "#f44336"
-    show:
-      legend_value: false
-      name_in_header: false
-```
-
-Replace `SYSTEMNAME` with your actual entity ID (find it under **Settings → Devices & Services → 1KOMMA5°**).
-</details>
+For a ready-made 30-hour price-forecast chart (`apexcharts-card`, `color_threshold`-coloured), see the "Preise und Kosten" view in [`dashboard/dashboard.yaml`](dashboard/dashboard.yaml). Copy the `custom:apexcharts-card` block, replace the entity prefix, done.
 
 **Dynamic-Pulse price guarantee** (DP contract only) — `sensor.<sys>_dynamic_pulse_price_guarantee` exposes the raw `price_guarantee_value` from your DP subscription in `EUR/kWh`. The guarantee comes with terms and conditions on the 1KOMMA5° side that this integration doesn't (and can't) model, so treat the value as informational — see the FAQ.
 
@@ -319,9 +278,7 @@ Heartbeat AI decisions surfaced as sensors and binary sensors, updated every 15 
 
 Available decision enum values: `BATTERY_CHARGE_FROM_GRID`, `BATTERY_NO_CHARGE`, `BATTERY_NO_DISCHARGE`, `EV_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`, `HEATPUMP_AUTO`. The SDK documents the list as non-exhaustive; unknown values keep the sensor at `unknown` and log a warning so a new cloud-side variant surfaces without breaking the state.
 
-> **Note:** `optimization_total_cost`, `optimization_energy_bought` and `optimization_energy_sold` exist but stay `unknown` — the API doesn't populate settlement data yet.
-
-> **Recommendation, not execution state.** These sensors reflect what the 1KOMMA5° Cloud AI *recommends*. The Heartbeat HEMS can act independently: `optimization_heat_pump_recommended` may stay `off` for days while your Wärmepumpe runs on locally-triggered SG-Ready, and `optimization_battery_grid_charge` follows the same pattern. Don't gate SG-Ready or grid-charge automations on these sensors as if they were live control signals.
+**Caveats:** `optimization_total_cost` / `_energy_bought` / `_energy_sold` stay `unknown` — the API doesn't populate settlement data yet. These sensors reflect what the Cloud AI *recommends*; the Heartbeat HEMS can act independently (`optimization_heat_pump_recommended` may stay `off` while the Wärmepumpe runs on local SG-Ready). Don't gate SG-Ready or grid-charge automations on them as if they were live control signals.
 
 Bus event `onekommafive_optimization_decision` fires per new decision — see [Services & bus events](#services--bus-events).
 
@@ -349,32 +306,7 @@ Automation shortcut: the [`vehicle_at_wallbox.yaml` blueprint](blueprints/automa
 
 Id-addressed alternative for scripts: the `onekommafive.assign_ev_to_wallbox` service — see [Services & bus events](#services--bus-events).
 
-<details>
-<summary>Automation: sync manual SoC from your car integration</summary>
-
-If your EV integration exposes a battery-level sensor (e.g. Volkswagen WeConnect, Tesla), mirror it into 1KOMMA5°:
-
-```yaml
-alias: "EV SoC sync: vehicle sensor → 1KOMMA5°"
-trigger:
-  - platform: state
-    entity_id: sensor.EV_BATTERY_SENSOR
-condition:
-  - condition: template
-    value_template: "{{ states('sensor.EV_BATTERY_SENSOR') | is_number }}"
-  - condition: template
-    value_template: "{{ not is_state('number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell', 'unavailable') }}"
-action:
-  - service: number.set_value
-    target:
-      entity_id: number.CAR_IDENTIFIER_fahrzeug_akkustand_manuell
-    data:
-      value: "{{ states('sensor.EV_BATTERY_SENSOR') | int }}"
-mode: single
-```
-
-Replace `EV_BATTERY_SENSOR` with your vehicle's battery sensor and `CAR_IDENTIFIER` with your EV charger prefix. The second condition ensures the automation only runs in `SMART_CHARGE` mode (the target entity is `unavailable` otherwise).
-</details>
+**Mirror your car's battery sensor into the manual-SoC input:** trigger on your EV integration's battery-level sensor, assert `is_number`, and `number.set_value` on `number.<car>_fahrzeug_akkustand_manuell`. The target entity is `unavailable` outside `SMART_CHARGE` mode, so the condition `not is_state(target, 'unavailable')` keeps the automation idle in the other modes.
 
 ### Weather
 
@@ -411,11 +343,9 @@ Hidden by default (`entity_category: diagnostic`) — useful for troubleshooting
 | `diag_notification_update` | Timestamp of the last cloud-notifications fetch (v0.1.52) |
 | `diag_heartbeat_prices_update` | Timestamp of the last heartbeat-prices fetch (v0.1.66; backs the §14a Modul 1 sensor) |
 
-**System Information** (**Settings → System → Repairs → System Information**) reports per-coordinator update status, API reachability, SDK version and resolved currency/country. **PII-safe** — no customer/system identifiers or addresses. Use this for bug reports instead of the full diagnostics download.
+**System Information** (**Settings → System → Repairs → System Information**) reports per-coordinator update status, API reachability, SDK version and resolved currency/country. **PII-safe** — use this for bug reports instead of the full diagnostics download.
 
-**EMS availability by backend.** GridX-backend installs (`emp_type: "GRIDX"`) that lack a DeviceGateway keep the EMS fields `unavailable` and, after several consecutive fetch failures, register a **Repair Issue** in Settings → Repairs; it auto-resolves the moment EMS data returns. 1K5-backend installs (`emp_type: "1K5"`) do not expose the GridX EMS endpoint at all, so the integration skips the fetch, the Repair Issue and the switch entirely from v0.1.57 on (a stale switch from a prior GRIDX run is cleaned up on the first reload).
-
-**EMS auto-mode switch** (`ems_auto_mode`, diagnostic section) — created on GRIDX-backend installs only, kept in case the cloud override activates. The official 1KOMMA5° app doesn't expose an equivalent toggle, so it is likely cosmetic on the cloud side.
+**EMS auto-mode switch** (`ems_auto_mode`, diagnostic category) — only created on GRIDX-backend installs; 1K5-backend installs skip it entirely from v0.1.57 on because the endpoint is not reachable there. See [`docs/faq.md`](docs/faq.md#why-is-the-ems-auto-mode-switch-unavailable) for the Repair Issue behaviour and `30401` log line.
 
 ---
 
@@ -551,82 +481,17 @@ previous_ev_id: "ev-uuid-a"   # null when the wallbox had no assignment
 
 `previous_ev_id` is captured from the local system-status cache before the write, so an automation can log the swap. Unknown ids raise a clear `HomeAssistantError`. There is no detach path: `ev_id` is required — the 1KOMMA5° model is 1:1 exclusive, and setting one vehicle releases the previously bound one automatically in the same call.
 
-### Bus event: `onekommafive_notification` (v0.1.52)
+### Bus events
 
-Fires once per newly-observed 1KOMMA5° cloud notification (energy market thresholds, system health alerts, dynamic-pulse events, …). Enables automations that react to the same push notifications the mobile app receives — no email/webhook/tap-detection needed.
+Three automation-triggerable events; full payload shapes and example automations in [`docs/bus-events.md`](docs/bus-events.md).
 
-**Event data (flat JSON):**
+| Event | Fires on | Key fields |
+|---|---|---|
+| `onekommafive_notification` (v0.1.52) | Each new 1KOMMA5° cloud notification; dedup state persists across restarts | `type`, `title`, `body`, `locale`, `meta` |
+| `onekommafive_optimization_decision` | Each new Heartbeat AI decision (BATTERY / HEATPUMP) | `asset`, `decision`, `from`, `to`, `market_price`, `state_of_charge` |
+| `onekommafive_negative_price_started` / `_ended` | Positive↔negative edge of the active 15-min slot | `price`, `negative_price_slots_remaining` |
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `system_id` | string | System UUID |
-| `notification_id` | string | Unique per notification |
-| `type` | string | e.g. `ENERGY_MARKET_UPPER_TARGET_REACHED`, `SYSTEM_HEALTH` |
-| `title` | string \| null | Already localized to your account language |
-| `body` | string \| null | Already localized |
-| `locale` | string \| null | e.g. `"de"` |
-| `created_at` | string \| null | ISO-8601 |
-| `meta` | dict | Type-specific extras (e.g. `meta.price.value` for price thresholds) |
-
-**Semantics:** dedup state persists across HA restarts via `homeassistant.helpers.storage.Store` under `.storage/onekommafive.notifications.<entry_id>`. First refresh after a fresh install primes silently — no replay of history. Which notification types reach HA is controlled entirely by your **1KOMMA5° app** notification settings (Settings → Notifications); the API filters at source.
-
-<details>
-<summary>Example: surface every cloud notification as an HA persistent notification</summary>
-
-```yaml
-alias: 1KOMMA5° notification passthrough
-trigger:
-  - platform: event
-    event_type: onekommafive_notification
-action:
-  - service: persistent_notification.create
-    data:
-      title: "1KOMMA5°: {{ trigger.event.data.title }}"
-      message: "{{ trigger.event.data.body }}"
-      notification_id: "onekommafive_{{ trigger.event.data.notification_id }}"
-```
-
-Filter by `type` (e.g. `event_data: {type: ENERGY_MARKET_UPPER_TARGET_REACHED}`) to react only to specific notification kinds.
-</details>
-
-### Bus event: `onekommafive_optimization_decision`
-
-Fires per new Heartbeat AI decision (BATTERY / HEATPUMP). First refresh after HA start fires one event for the most recent decision so the wiring is immediately verifiable in Developer Tools → Events; earlier decisions of the day are not replayed.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `system_id` | string | System UUID |
-| `asset` | string | `BATTERY` or `HEATPUMP` |
-| `decision` | string | `BATTERY_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`, … |
-| `from`, `to` | string | ISO-8601 slot range |
-| `market_price` | float \| null | EUR/MWh |
-| `market_price_currency` | string \| null | Typically `EUR` |
-| `state_of_charge` | int \| null | Battery SoC at decision time (0–100) |
-
-<details>
-<summary>Example: turn on a non-essential load when the AI plans grid charging</summary>
-
-```yaml
-trigger:
-  - platform: event
-    event_type: onekommafive_optimization_decision
-    event_data:
-      decision: BATTERY_CHARGE_FROM_GRID
-action:
-  - service: switch.turn_on
-    target:
-      entity_id: switch.dishwasher
-```
-
-</details>
-
-### Bus events: `onekommafive_negative_price_started` / `onekommafive_negative_price_ended`
-
-Fired on positive↔negative edges of the active 15-min slot. First refresh after HA start primes the tracker without firing. Granularity = coordinator interval (1 h).
-
-**Event data:** `system_id` (string), `price` (float, EUR/kWh), `negative_price_slots_remaining` (int).
-
-See the `notify_negative_price_started.yaml` blueprint for a ready-made notification automation.
+Which notification types reach HA is controlled entirely by your **1KOMMA5° app** notification settings — the API filters at source.
 
 ---
 
@@ -757,54 +622,21 @@ Three cloud-API realities the integration cannot design around. Documenting them
 
 ## FAQ / troubleshooting
 
-### Why does HACS not show the latest release yet?
-
-HACS refreshes each user's cache roughly every 60–90 min. To force it immediately: open HACS in the HA UI, find **1KOMMA5°**, click the three-dot menu, and choose **Redownload** (or **Reload**). No harm in waiting an hour or two either.
-
-### Why is the EMS auto-mode switch unavailable?
-
-Your install has no DeviceGateway. The integration registers a Repair Issue in **Settings → Repairs** after a few consecutive failures. It auto-resolves the moment EMS data returns. On 1K5-backend installs (`emp_type: "1K5"` in the diagnostics), the switch is intentionally **not created** as of v0.1.58 — the EMS endpoint is not reachable on that backend, so the switch would be permanently unavailable.
+Three questions that cover most installations; the full list sits in [`docs/faq.md`](docs/faq.md).
 
 ### Why are the charging-mode / target-SoC / departure-time entities missing?
 
-Since v0.1.58 (with SDK 0.2.0), the wallbox / EV endpoints use the site-scoped v2 route, which works on both `GRIDX` and `1K5` backends. If the entities are still missing, download diagnostics (**Settings → Devices & Services → 1KOMMA5° → ⋮ → Download diagnostics**) and check `data.system.wallboxes[]`:
-
-- **`assigned_ev_id_present: false`** — a vehicle profile isn't paired to the wallbox in the 1KOMMA5° app. Assign it under *Settings → Vehicles* in the app, then restart Home Assistant.
-- **`assigned_ev_id_present: true`** but entities still missing — open an issue with the diagnostics dump attached. The remaining `emp_type_1k5_native_hint` flag (v0.1.57+) is kept as a triage marker for edge cases.
-
-Not a Home Assistant misconfiguration in either branch.
-
-### Why do some optimization sensors show `unknown`?
-
-`optimization_total_cost`, `optimization_energy_bought`, and `optimization_energy_sold` depend on settlement data that the 1KOMMA5° cloud API does not currently populate. `optimization_event_count` and `optimization_last_decision` work independently.
-
-### Why is `sensor.<system>_diag_price_update` stuck at `unknown` right after a restart?
-
-Diagnostic timestamps only advance after the coordinator's first *post-add* refresh. Slow-interval coordinators (price 1 h, weather 1 h) can therefore sit at `unknown` for up to their interval after HA start. To prime immediately, call `onekommafive.refresh_now` with the coordinator name.
-
-### Which notification types reach HA via `onekommafive_notification`?
-
-Whatever the 1KOMMA5° cloud returns — which honours your per-type subscription settings in the 1KOMMA5° app (Settings → Notifications). Types you have disabled in the app don't produce HA events. There is no HA-side subscription control.
+Since v0.1.58 the wallbox / EV endpoints use the site-scoped v2 route, which works on both `GRIDX` and `1K5` backends. If the entities are still missing, assign a vehicle profile in the 1KOMMA5° app (*Settings → Vehicles*) and restart Home Assistant. If an assignment is already in place, download diagnostics and open an issue — see [`docs/faq.md`](docs/faq.md#why-are-the-charging-mode--target-soc--departure-time-entities-missing).
 
 ### Is `dynamic_pulse_price_guarantee` the max price I'll pay per kWh?
 
-**No.** The guarantee is bound to terms and conditions on the 1KOMMA5° side that this integration doesn't model. Treat the sensor as informational; don't wire automations that assume "current price ≤ guarantee" semantics.
-
-### My entity names look wrong ("1k5 …" prefix vs. plain name)
-
-Entity naming is composed from `device.name + entity original_name` unless you renamed the entity in the HA UI. Mixed prefixes in one install typically mean some entities were renamed manually. The `entity_id` and long-term statistics are unaffected.
-
-### The Energy Dashboard shows no data / wrong data
-
-See [`dashboard/ENERGY_DASHBOARD.md`](dashboard/ENERGY_DASHBOARD.md) for the slot-to-sensor mapping. The two most common misconfigurations: (a) using `battery_power` (bidirectional) instead of `battery_charge_power_energy` + `battery_discharge_power_energy`; (b) using the raw `grid_power` instead of the split `grid_consumption_power_energy` + `grid_feed_in_power_energy`.
-
-### The log shows repeated `30401` errors for `/ems`
-
-That means your account runs on the newer **1K5-native** backend, which serves the `EmsSettings` payload as an empty document (`30401`) rather than the GRIDX shape the SDK expects. Since v0.1.58 the integration detects this via `emp_type_1k5_native_hint` and stops registering the EMS switch, so the log entry should be silent on affected installs. If you still see it after upgrading, download diagnostics and open an issue with `data.system.emp_type` and `emp_type_1k5_native_hint` attached; that's the triage evidence.
+**No.** The guarantee comes with terms and conditions on the 1KOMMA5° side that this integration doesn't model. Treat the sensor as informational; don't wire automations that assume "current price ≤ guarantee" semantics.
 
 ### How do I file a good bug report?
 
 Grab the **System Information** dump from **Settings → System → Repairs → System Information** (PII-safe — no customer/system identifiers or addresses). Attach it to a [GitHub issue](https://github.com/mrebbert/1komma5-ha/issues) with a short reproducer.
+
+For HACS cache lag, EMS switch availability, optimization-sensor behaviour, diagnostic-timestamp warmup, notification-type scope, entity naming, Energy Dashboard wiring and the `/ems 30401` log line, see [`docs/faq.md`](docs/faq.md).
 
 ---
 
