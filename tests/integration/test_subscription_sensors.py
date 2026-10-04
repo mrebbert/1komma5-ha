@@ -168,23 +168,23 @@ async def test_emp_backend_enum_state(hass: HomeAssistant, mock_system_factory) 
     await _setup(hass, system)
     state = _state(hass, "emp_backend")
 
-    assert state.state == "1K5"
+    assert state.state == "1k5"
     assert state.attributes["device_class"] == SensorDeviceClass.ENUM.value
-    assert set(state.attributes["options"]) == {"GRIDX", "1K5", "UNKNOWN"}
+    assert set(state.attributes["options"]) == {"gridx", "1k5", "unknown"}
     assert _entity_category(hass, "emp_backend") == EntityCategory.DIAGNOSTIC
 
 
 async def test_emp_backend_falls_back_to_unknown(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """Missing/unexpected emp_type falls back to the UNKNOWN enum member."""
+    """Missing/unexpected emp_type falls back to the ``unknown`` enum member."""
     system = mock_system_factory(
         system_id="sys-1",
         details=MagicMock(customer_id="cust-1", emp_type=None),
     )
     await _setup(hass, system)
 
-    assert _state(hass, "emp_backend").state == "UNKNOWN"
+    assert _state(hass, "emp_backend").state == "unknown"
 
 
 async def test_failed_subscriptions_fetch_skips_sensor(
@@ -206,7 +206,7 @@ async def test_failed_subscriptions_fetch_skips_sensor(
         is None
     )
     # emp_backend still registers.
-    assert _state(hass, "emp_backend").state == "GRIDX"
+    assert _state(hass, "emp_backend").state == "gridx"
 
 
 async def test_failed_eligibility_fetch_skips_sensor(

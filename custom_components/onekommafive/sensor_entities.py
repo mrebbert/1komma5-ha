@@ -1106,13 +1106,14 @@ class OneKomma5SubscriptionEligibilitySensor(OneKomma5SystemStatusEntity, Sensor
         }
 
 
-# ENUM options for the EMP backend sensor; keeps HA's enum validation happy
-# and gives the UI a stable set of translation keys.
-_EMP_BACKEND_OPTIONS: tuple[str, ...] = ("GRIDX", "1K5", "UNKNOWN")
+# ENUM option keys for the EMP backend sensor. Lowercase + ASCII-only to
+# satisfy hassfest's translation-key pattern [a-z0-9-_]+; translations map
+# each key to the display-cased label ("gridx" → "GridX", "1k5" → "1KOMMA5°").
+_EMP_BACKEND_OPTIONS: tuple[str, ...] = ("gridx", "1k5", "unknown")
 
 
 class OneKomma5EmpBackendSensor(OneKomma5SystemStatusEntity, SensorEntity):
-    """Diagnostic ENUM sensor exposing the account's EMP backend ("GRIDX" / "1K5")."""
+    """Diagnostic ENUM sensor exposing the account's EMP backend ("gridx" / "1k5")."""
 
     _attr_translation_key = "emp_backend"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -1128,7 +1129,8 @@ class OneKomma5EmpBackendSensor(OneKomma5SystemStatusEntity, SensorEntity):
         emp_type: str | None,
     ) -> None:
         super().__init__(coordinator, system_id, system_name, "emp_backend")
-        self._emp_type = emp_type if emp_type in _EMP_BACKEND_OPTIONS else "UNKNOWN"
+        key = (emp_type or "").lower()
+        self._emp_type = key if key in _EMP_BACKEND_OPTIONS else "unknown"
 
     @property
     def native_value(self) -> str:

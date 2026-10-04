@@ -32,7 +32,7 @@ Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI 
   - [Energy accounting](#energy-accounting)
   - [Cost & revenue](#cost--revenue)
   - [§14a grid-fee reduction](#14a-grid-fee-reduction-since-v0166)
-  - [Contract overview](#contract-overview-since-v0168)
+  - [Contract overview](#contract-overview-since-v0167)
   - [AI optimization](#ai-optimization)
   - [EV charger / wallbox](#ev-charger--wallbox)
   - [Weather](#weather)
@@ -292,7 +292,7 @@ Attributes:
 
 Deliberately **separate from the cost sensors**: Modul 1 is an annual rebate on the grid-fee position of the year-end bill, not a per-kWh discount. Linearising it onto `stable_electricity_price` or `electricity_cost` would be misleading.
 
-### Contract overview (since v0.1.68)
+### Contract overview (since v0.1.67)
 
 Three diagnostic sensors on the system parent that make the account's contract state addressable from automations and dashboards without raw API calls.
 
@@ -300,7 +300,7 @@ Three diagnostic sensors on the system parent that make the account's contract s
 |--------|-----|----------|
 | Active subscriptions | `active_subscriptions` | Count of contracts with `status == "ACTIVE"`. Attribute `contracts` lists every subscription's PII-safe fields (type, status, dates, notice period, renewal, billing frequency, price, currency, payment-method enum, country code). |
 | Add-on eligibility | `subscription_eligibility` | Count of 1KOMMA5°Care add-ons the account qualifies for. Attributes split into `eligible` (list of product types) and `ineligible` (`{type, reason}` with the CRM-provided reason verbatim). |
-| EMP backend | `emp_backend` | ENUM — `GRIDX`, `1K5`, or `UNKNOWN` (fallback). Previously only in the diagnostics dump. |
+| EMP backend | `emp_backend` | ENUM — `gridx`, `1k5`, or `unknown` (fallback). Previously only in the diagnostics dump. Lowercase keys to satisfy hassfest; translations map to "GridX" / "1KOMMA5°" in the UI. |
 
 Setup-time snapshots, mirrors the `dynamic_pulse_price_guarantee` pattern: subscriptions change on contract events, not during runtime. Fetches are non-fatal — a failed `get_subscriptions` or `get_subscription_eligibility` skips its sensor; `emp_backend` always registers and falls back to `UNKNOWN`.
 
