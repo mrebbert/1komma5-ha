@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.67] - 2026-10-10
+
+Internal-only release: SDK pin bump. No entity, service or blueprint behaviour change.
+
+### Changed
+- Bumped the `onekommafive` SDK pin to `>=1.1.4,<2` (from `>=1.1.3,<2`). v1.1.4 adds `System.get_subscription_eligibility()` for the `GET /api/v1/sites/{id}/subscription-eligibility` endpoint — a list of 1KOMMA5°Care add-on products with an `eligible` flag and a human-readable `reason` when the backend gates it. The integration does not consume this endpoint by design: it is an upsell/eligibility surface, not an operational signal, so it stays out of the HA entity catalogue.
+
 ## [0.1.66] - 2026-10-03
 
 Adds a new §14a-Modul-1 meter sensor plus the usual internal hygiene: SDK pin bump, Ruff-line-length convergence to the Home-Assistant-core standard, and multi-EV dashboard documentation.
