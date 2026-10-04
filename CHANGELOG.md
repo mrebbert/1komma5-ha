@@ -5,21 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.68] - 2026-10-17
+## [0.1.67] - 2026-10-10
 
-Adds three Diagnostic Sensoren for the Vertragsübersicht — active contracts (PII-safe), add-on eligibility, and the EMP backend. Setup-time snapshots, mirrors the `price_guarantee` pattern. No change to existing automations.
+Adds three Diagnostic Sensoren for the Vertragsübersicht — active contracts (PII-safe), add-on eligibility, and the EMP backend. Setup-time snapshots, mirrors the `price_guarantee` pattern. Also bumps the SDK floor to the version carrying the eligibility endpoint. No change to existing automations.
 
 ### Added
 - **`sensor.<sys>_active_subscriptions`** — number of `status == "ACTIVE"` contracts; `contracts` attribute carries each subscription's PII-safe fields (`type`, `status`, `start_date`, `end_date`, `signed_date`, notice period, `renewal`, `billing_frequency`, `price_eur`, `currency`, `payment_method`, `country_code`). The raw CRM record (`customer_id`, `site_id`, `electricity_contract_number`, `market_location_id`, `terms_and_conditions_url`, `raw`-Blob mit IBAN) stays out by whitelist. Diagnostic entity category.
 - **`sensor.<sys>_subscription_eligibility`** — number of 1KOMMA5°Care add-ons the account qualifies for; attributes split into `eligible` (product types) and `ineligible` (`{type, reason}` with the CRM-provided reason verbatim). Reads SDK v1.1.4's `get_subscription_eligibility()`.
-- **`sensor.<sys>_emp_backend`** — ENUM diagnostic sensor (`GRIDX` / `1K5` / `UNKNOWN`) exposing the account's EMP backend. Previously only visible in the diagnostics dump.
-
-## [0.1.67] - 2026-10-10
-
-Internal-only release: SDK pin bump. No entity, service or blueprint behaviour change.
+- **`sensor.<sys>_emp_backend`** — ENUM diagnostic sensor (`gridx` / `1k5` / `unknown`) exposing the account's EMP backend. Previously only visible in the diagnostics dump. Options stay lowercase to satisfy hassfest's translation-key pattern; translations map each key to its display label (`gridx` → "GridX", `1k5` → "1KOMMA5°").
 
 ### Changed
-- Bumped the `onekommafive` SDK pin to `>=1.1.4,<2` (from `>=1.1.3,<2`). v1.1.4 adds `System.get_subscription_eligibility()` for the `GET /api/v1/sites/{id}/subscription-eligibility` endpoint — a list of 1KOMMA5°Care add-on products with an `eligible` flag and a human-readable `reason` when the backend gates it. The integration does not consume this endpoint by design: it is an upsell/eligibility surface, not an operational signal, so it stays out of the HA entity catalogue.
+- Bumped the `onekommafive` SDK pin to `>=1.1.4,<2` (from `>=1.1.3,<2`). v1.1.4 adds `System.get_subscription_eligibility()` — the endpoint behind the new `subscription_eligibility` sensor above.
 
 ## [0.1.66] - 2026-10-03
 

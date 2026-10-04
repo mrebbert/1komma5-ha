@@ -369,9 +369,9 @@
       "emp_backend": {
         "name": "EMP backend",
         "state": {
-          "GRIDX": "GridX",
-          "1K5": "1KOMMA5°",
-          "UNKNOWN": "Unknown"
+          "gridx": "GridX",
+          "1k5": "1KOMMA5°",
+          "unknown": "Unknown"
         }
       },
       "system_age_days": {
