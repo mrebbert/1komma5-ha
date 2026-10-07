@@ -81,12 +81,13 @@ def _snapshot_registries(hass: HomeAssistant, entry: MockConfigEntry) -> dict[st
         via_slug = device_slug.get(device.via_device_id or "")
         devices_out.append(
             {
+                # Translation-independent facts only. ``device.name`` is
+                # locale-dependent (en in CI, de locally) and intentionally
+                # omitted — the identifiers + manufacturer carry the structure.
                 "identifiers": sorted(tuple(i) for i in device.identifiers),
                 "manufacturer": device.manufacturer,
                 "model": device.model,
                 "sw_version": device.sw_version,
-                "name": device.name,
-                "name_by_user": device.name_by_user,
                 "via_device_slug": via_slug,
                 "entry_type": device.entry_type.value if device.entry_type else None,
                 "disabled_by": (
