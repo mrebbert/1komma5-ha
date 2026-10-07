@@ -89,3 +89,19 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]  # asserts in tests are fine
+
+[tool.interrogate]
+# Docstring-coverage gate. We care about public classes and top-level
+# functions; the formatter already pins style, so interrogate only measures
+# presence. Property-decorator methods (is_on, native_value, …) are
+# semantically self-describing via HA's Entity-base contracts and are
+# ignored here.
+ignore-init-method = true           # class docstring covers __init__
+ignore-init-module = true           # __init__.py is mostly re-exports
+ignore-magic = true                 # dunder methods seldom need prose
+ignore-nested-functions = true
+ignore-private = true
+ignore-property-decorators = true   # HA property contracts carry the semantics
+fail-under = 85
+exclude = ["tests", "dashboard", "blueprints"]
+verbose = 1
