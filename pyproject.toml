@@ -107,6 +107,13 @@ source_paths = [
     "custom_components/onekommafive/helpers.py",
     "custom_components/onekommafive/sensor_entities.py",
 ]
+# mutmut 3.x only copies the files in `source_paths` into its sandbox
+# `mutants/` directory. Without `also_copy`, siblings like __init__.py,
+# const.py and the rest of the package are missing and pytest crashes with
+# `ModuleNotFoundError: No module named 'custom_components.onekommafive.const'`
+# before any mutant runs. Pointing it at the top-level `custom_components/`
+# dir copies the full package tree alongside the mutated files.
+also_copy = ["custom_components"]
 pytest_add_cli_args_test_selection = ["tests/"]
 runner = "pytest -x --timeout=60"
 backup = false
