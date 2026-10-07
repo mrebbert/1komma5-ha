@@ -1,0 +1,81 @@
+name: Nightly HA/Python matrix
+
+# Catches HA Core breaking changes and Python-version regressions one week
+# earlier than user bug reports typically do. Matrix:
+#   python {3.13, 3.14} × homeassistant {stable, beta}
+# Each cell runs the full Tier-2 test suite with the coverage gate.
+# continue-on-error is set per matrix cell so a single beta regression
+# doesn't short-circuit the other cells; a summary job at the end opens a
+# single GitHub Issue if any cell failed.
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # 02:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  nightly:
+    name: ${{ matrix.ha-channel }} on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+        ha-channel: ["stable", "beta"]
+    outputs:
+      failed: ${{ steps.result.outputs.failed }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install integration test dependencies
+        run: pip install -e ".[test-integration]"
+
+      - name: Override homeassistant to ${{ matrix.ha-channel }} channel
+        if: matrix.ha-channel == 'beta'
+        run: pip install --upgrade --pre homeassistant
+
+      - name: Run integration pytest
+        id: pytest
+        run: pytest tests -v --cov=custom_components/onekommafive --cov-fail-under=95
+
+      - name: Record failure
+        if: failure()
+        id: result
+        run: echo "failed=true" >> "$GITHUB_OUTPUT"
+
+  report:
+    name: Open issue on failure
+    needs: nightly
+    runs-on: ubuntu-latest
+    if: always() && contains(needs.nightly.result, 'failure')
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Write issue body
+        run: |
+          cat > issue-body.md <<EOF
+          Nightly matrix detected at least one failing cell on $(date -u +%Y-%m-%d).
+
+          Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Please open the run above, pick the red cell(s) and triage. This issue was opened automatically by \`.github/workflows/nightly.yml\`.
+          EOF
+
+      - name: Create nightly-regression issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Nightly matrix regression (${{ github.run_id }})"
+          content-filepath: issue-body.md
+          labels: nightly-regression,automation
