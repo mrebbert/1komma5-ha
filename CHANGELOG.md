@@ -17,6 +17,13 @@ Adds three Diagnostic Sensoren for the Vertragsübersicht — active contracts (
 ### Changed
 - Bumped the `onekommafive` SDK pin to `>=1.1.4,<2` (from `>=1.1.3,<2`). v1.1.4 adds `System.get_subscription_eligibility()` — the endpoint behind the new `subscription_eligibility` sensor above.
 
+### Internal (no user-visible change)
+- Property-based tests (`hypothesis`) on three pure-logic helpers (`get_current_price`, `trapezoidal_delta_kwh`, `find_cheapest_window`), 100–200 random examples per property.
+- Device- and entity-registry snapshot tests across four setup scenarios (GRIDX / 1K5 backend, with/without heat pump, with/without wallbox) pin the sub-device hierarchy at build time.
+- Docstring-coverage gate via `interrogate` (pre-commit + CI, `--fail-under 85`, baseline 86.7 %).
+- Mutation testing (`mutmut`) on `helpers.py` + `sensor_entities.py`, opt-in workflow on `main` pushes and manual dispatch; results surfaced as a job summary and 30-day artifact.
+- Nightly matrix across `python {3.13, 3.14}` × `homeassistant {stable, beta}` catches core-level breaking changes before user issues; failures open a single `nightly-regression` issue.
+
 ## [0.1.66] - 2026-10-03
 
 Adds a new §14a-Modul-1 meter sensor plus the usual internal hygiene: SDK pin bump, Ruff-line-length convergence to the Home-Assistant-core standard, and multi-EV dashboard documentation.
