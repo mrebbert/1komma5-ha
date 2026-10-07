@@ -12,6 +12,14 @@ requires-python = ">=3.13"
 test = [
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
+    "hypothesis>=6.100,<7",
+    "interrogate>=1.7,<2",
+]
+
+# Mutation testing. Opt-in extra; the mutation CI job installs it on top of
+# the integration extras. Not pulled into the standard test run.
+test-mutation = [
+    "mutmut>=3.0,<4",
 ]
 
 # Tier-2 integration tests against a real HA instance.  Heavyweight — the
