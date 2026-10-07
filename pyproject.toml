@@ -33,6 +33,11 @@ test-integration = [
     # pre-Python-3.13 numpy wheels that fail to build).
     "pytest-homeassistant-custom-component==0.13.316",
     "onekommafive>=1.1.4,<2",
+    # The integration tests tree includes property-based + docstring-coverage
+    # tests. They must also install in the Tier-2 job because that job runs
+    # the full `tests/` path with the coverage gate.
+    "hypothesis>=6.100,<7",
+    "interrogate>=1.7,<2",
 ]
 
 # Static type-checking (H3 hardening). Run: mypy custom_components/onekommafive
