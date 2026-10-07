@@ -9,8 +9,10 @@ Catches historical live-only bugs:
 - Empty sub-device creation when an asset is missing
 - Identifier shift during single-wallbox → multi-wallbox transition
 
-Snapshots live in ``tests/integration/__snapshots__/`` and are regenerated
+Snapshots live in ``tests/integration/snapshots/`` and are regenerated
 with ``pytest tests/integration/test_registry_snapshot.py --snapshot-update``.
+``HomeAssistantSnapshotExtension`` (from pytest-homeassistant-custom-component)
+dictates the ``snapshots/`` path — not syrupy's default ``__snapshots__/``.
 UUIDs and timestamps are normalised so the files are deterministic.
 """
 
@@ -24,6 +26,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
 from syrupy.assertion import SnapshotAssertion
 
 from custom_components.onekommafive.const import (
@@ -182,4 +185,10 @@ async def test_registry_snapshot(
     )
 
     entry = await _setup(hass, system)
-    assert _snapshot_registries(hass, entry) == snapshot
+    # Pin the extension so lokal + CI resolve the identical ``snapshots/``
+    # directory and the identical Amber serialiser configuration. Without this
+    # pin, syrupy's fixture lookup diverged between environments
+    # (default -> ``__snapshots__/``, pytest-ha-cc -> ``snapshots/``).
+    assert _snapshot_registries(hass, entry) == snapshot.use_extension(
+        HomeAssistantSnapshotExtension
+    )
