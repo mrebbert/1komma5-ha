@@ -19,4 +19,11 @@ repos:
       - id: check-toml
       - id: check-merge-conflict
       - id: check-added-large-files
-        args: [--maxkb=500]
+        args: [--maxkb=5000]  # snapshot .ambr files legitimately exceed 500 KB
+
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.7.0
+    hooks:
+      - id: interrogate
+        args: [-c, pyproject.toml, custom_components/onekommafive]
+        pass_filenames: false
