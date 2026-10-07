@@ -90,6 +90,19 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]  # asserts in tests are fine
 
+[tool.mutmut]
+# Targeted mutation testing on the pure-logic hotspots. Projekt-weit wäre
+# der Lauf 30+ min; die reine Entity-Boilerplate ist zudem besser durch
+# Integration-Tests gedeckt. Scope: helpers.py (window-search, price math,
+# kWh integration) + sensor_entities.py (entity state computation).
+paths_to_mutate = [
+    "custom_components/onekommafive/helpers.py",
+    "custom_components/onekommafive/sensor_entities.py",
+]
+tests_dir = "tests/"
+runner = "pytest -x --timeout=60"
+backup = false
+
 [tool.interrogate]
 # Docstring-coverage gate. We care about public classes and top-level
 # functions; the formatter already pins style, so interrogate only measures

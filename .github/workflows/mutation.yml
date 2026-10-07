@@ -1,0 +1,56 @@
+name: Mutation testing
+
+# Opt-in: runs on main pushes and manual dispatch. Not a required check for PRs
+# because a full run on helpers.py + sensor_entities.py takes 10–20 min.
+# The job uploads the raw mutmut results as an artifact; the Mutation Score
+# surfaces in the job summary so it can trend over time without blocking merges.
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "custom_components/onekommafive/helpers.py"
+      - "custom_components/onekommafive/sensor_entities.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    name: Mutation score (helpers + sensor_entities)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[test-integration,test-mutation]"
+
+      - name: Run mutmut
+        run: mutmut run || true  # non-zero exit is expected when mutants survive
+
+      - name: Dump results
+        if: always()
+        run: |
+          mutmut results | tee mutation-results.txt
+          echo "## Mutation score" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          mutmut results >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload mutmut results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-results
+          path: mutation-results.txt
+          retention-days: 30
