@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.68] - 2026-10-17
+
+SDK pin bump only. No new entities, services or configuration surfaces; no change to existing automations.
+
+### Changed
+- Bumped the `onekommafive` SDK pin to `>=1.1.7,<2` (from `>=1.1.6,<2`). v1.1.7 adds `Notification.updated_at: str | None` — the ISO-8601 timestamp of the last read/dismissed state change on `/users/{uid}/notifications/latest`. Additive, `None` on notifications that have never changed state after creation. The new field flows through the `onekommafive_notification` bus event for anyone who wants to key on it.
+
 ## [0.1.67] - 2026-10-10
 
 Adds three Diagnostic Sensoren for the Vertragsübersicht — active contracts (PII-safe), add-on eligibility, and the EMP backend — plus a new §14a-Modul-3 grid-fee-savings sensor on the meter sub-device. Also bumps the SDK floor to the version carrying both endpoints. No change to existing automations.
