@@ -7,8 +7,10 @@ end-to-end.
 
 from __future__ import annotations
 
+import logging
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 
@@ -21,16 +23,19 @@ from custom_components.onekommafive.const import DOMAIN
 
 async def test_user_flow_invalid_credentials_shows_error(
     hass: HomeAssistant,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """An ``AuthenticationError`` from the library surfaces as ``invalid_auth``."""
+    """An ``AuthenticationError`` from the library surfaces as ``invalid_auth``
+    and the SDK's error detail lands in the log at WARNING level."""
     from onekommafive.errors import AuthenticationError
 
     with (
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
+        caplog.at_level(logging.WARNING, logger="custom_components.onekommafive"),
     ):
         mock_systems_cls.return_value.get_systems.side_effect = AuthenticationError(
-            "bad creds"
+            "Login failed: user_does_not_exist"
         )
 
         result = await hass.config_entries.flow.async_init(
@@ -43,19 +48,25 @@ async def test_user_flow_invalid_credentials_shows_error(
 
     assert result["type"] == "form"
     assert result["errors"] == {"base": "invalid_auth"}
+    assert "Login failed: user_does_not_exist" in caplog.text
 
 
 async def test_user_flow_cannot_connect_shows_error(
     hass: HomeAssistant,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """A ``RequestError`` surfaces as ``cannot_connect``."""
+    """A ``RequestError`` surfaces as ``cannot_connect`` and the SDK's error
+    detail lands in the log at WARNING level."""
     from onekommafive.errors import RequestError
 
     with (
         patch("onekommafive.systems.Systems") as mock_systems_cls,
         patch("onekommafive.client.Client"),
+        caplog.at_level(logging.WARNING, logger="custom_components.onekommafive"),
     ):
-        mock_systems_cls.return_value.get_systems.side_effect = RequestError("network")
+        mock_systems_cls.return_value.get_systems.side_effect = RequestError(
+            "connection refused"
+        )
 
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -67,6 +78,7 @@ async def test_user_flow_cannot_connect_shows_error(
 
     assert result["type"] == "form"
     assert result["errors"] == {"base": "cannot_connect"}
+    assert "connection refused" in caplog.text
 
 
 async def test_user_flow_unexpected_exception_shows_unknown_error(
