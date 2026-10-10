@@ -6,6 +6,18 @@ Common questions when installing or running the 1KOMMA5° Home Assistant integra
 
 HACS refreshes each user's cache roughly every 60–90 min. To force it immediately: open HACS in the HA UI, find **1KOMMA5°**, click the three-dot menu, and choose **Redownload** (or **Reload**). No harm in waiting an hour or two either.
 
+## Config flow says `invalid_auth` but the app or `my.1komma5.io` work for me
+
+The integration logs in only through the current Auth0 flow (`auth.1komma5grad.com`), the one the official iOS app uses. The EMP backend behind the account (**GridX or 1KOMMA5°-native**) is independent of this and both are supported. What matters is whether your account has an Auth0 record. The official mobile app is likely built to serve both account generations and probably runs a backend-discovery step before login, so a non-migrated account can still sign in there without ever touching Auth0.
+
+Since v0.1.68 the config flow writes the SDK's sanitized failure context to `home-assistant.log` as a WARNING line:
+
+```
+1KOMMA5° authentication failed: <step and raw response>
+```
+
+No DEBUG level required. If that line names a 302/200 mismatch at Auth0's `/u/login` endpoint, the account is likely still on the legacy sign-in flow, not yet migrated to Auth0. The developer has no legacy account to test against, so that path stays unsupported.
+
 ## Why is the EMS auto-mode switch unavailable?
 
 Your install has no DeviceGateway. The integration registers a Repair Issue in **Settings → Repairs** after a few consecutive failures. It auto-resolves the moment EMS data returns. On 1K5-backend installs (`emp_type: "1K5"` in the diagnostics), the switch is intentionally **not created** as of v0.1.58 — the EMS endpoint is not reachable on that backend, so the switch would be permanently unavailable.

@@ -611,7 +611,7 @@ Cost, revenue and price sensors render in the local currency without manual conf
 | Property | Value |
 |----------|-------|
 | API library | [mrebbert/1komma5-api](https://github.com/mrebbert/1komma5-api) |
-| Authentication | OAuth2 PKCE (matches the official iOS app flow) |
+| Authentication | OAuth2 PKCE against `auth.1komma5grad.com` (the current Auth0 flow, matches the official iOS app). Accounts that still sign in only via `my.1komma5.io` are not supported; the EMP backend behind the account (GridX or 1KOMMA5°-native) is independent and both work. |
 | IoT class | `cloud_polling` |
 | Coordinators | 8 (live 30 s, price 1 h, optimization 15 min, weather 1 h, system_status 5 min, energy 15 min, notifications 5 min, heartbeat_prices 1 h) |
 | HA domain | `onekommafive` |
@@ -646,7 +646,7 @@ Since v0.1.58 the wallbox / EV endpoints use the site-scoped v2 route, which wor
 
 Grab the **System Information** dump from **Settings → System → Repairs → System Information** (PII-safe — no customer/system identifiers or addresses). Attach it to a [GitHub issue](https://github.com/mrebbert/1komma5-ha/issues) with a short reproducer.
 
-For HACS cache lag, EMS switch availability, optimization-sensor behaviour, diagnostic-timestamp warmup, notification-type scope, entity naming, §14a-Modul-1-and-Modul-3 reading, Energy Dashboard wiring and the `/ems 30401` log line, see [`docs/faq.md`](docs/faq.md).
+For HACS cache lag, EMS switch availability, optimization-sensor behaviour, diagnostic-timestamp warmup, notification-type scope, entity naming, §14a-Modul-1-and-Modul-3 reading, Energy Dashboard wiring, the `invalid_auth` + `my.1komma5.io` case and the `/ems 30401` log line, see [`docs/faq.md`](docs/faq.md).
 
 ---
 
