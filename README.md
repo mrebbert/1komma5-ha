@@ -646,7 +646,7 @@ Since v0.1.58 the wallbox / EV endpoints use the site-scoped v2 route, which wor
 
 Grab the **System Information** dump from **Settings → System → Repairs → System Information** (PII-safe — no customer/system identifiers or addresses). Attach it to a [GitHub issue](https://github.com/mrebbert/1komma5-ha/issues) with a short reproducer.
 
-For HACS cache lag, EMS switch availability, optimization-sensor behaviour, diagnostic-timestamp warmup, notification-type scope, entity naming, Energy Dashboard wiring and the `/ems 30401` log line, see [`docs/faq.md`](docs/faq.md).
+For HACS cache lag, EMS switch availability, optimization-sensor behaviour, diagnostic-timestamp warmup, notification-type scope, entity naming, §14a-Modul-1-and-Modul-3 reading, Energy Dashboard wiring and the `/ems 30401` log line, see [`docs/faq.md`](docs/faq.md).
 
 ---
 

@@ -35,6 +35,21 @@ Whatever the 1KOMMA5° cloud returns — which honours your per-type subscriptio
 
 **No.** The guarantee is bound to terms and conditions on the 1KOMMA5° side that this integration doesn't model. Treat the sensor as informational; don't wire automations that assume "current price ≤ guarantee" semantics.
 
+## What do `module1_grid_fee_reduction_annual` and `module3_grid_fee_savings_annual` tell me?
+
+Both surface BNetzA BK6-22-300 §14a-EnWG grid-fee treatment on your meter sub-device, as reported by the 1KOMMA5° backend.
+
+- **Modul 1** is the annual **flat net rebate** on the grid-fee position of the year-end bill. Applies to accounts with an iMSys plus a controllable consumption device (wallbox, heat pump, PV battery). State equals `HeartbeatPriceWindow.module1_savings_per_year_eur` for the year window. Attribute `provisioning_date` carries the ISO date the bundle went live.
+- **Modul 3** is the **variable Netzentgelte HT/NT bundle**: fees that change by hour-of-day. The sensor reports the **annual net delta** between the HT/NT tariff you're actually billed under and a flat reference tariff the backend provides. Attributes expose both totals (`comparison_grid_fees_total_eur`, `variable_grid_fees_total_eur`), the comparison per-kWh rate, and the combined Modul-1-plus-Modul-3 figure (`enwg14a_total_savings_eur`).
+
+Both carry a `gross_estimate_eur_assumption` attribute (`net × 1.19`) matching German consumer VAT; the API itself returns net values. Both are **deliberately kept out of the cost sensors** — Modul 1 is a yearly rebate on the bill, Modul 3 captures a delta against a hypothetical tariff. Linearising either onto `electricity_cost` would misrepresent them.
+
+## Why does `module3_grid_fee_savings_annual` show `unavailable`?
+
+The site hasn't been enrolled in Modul 3 by the 1KOMMA5° backend. The five SDK fields (`module3_total_savings_eur`, `comparison_grid_fee_eur_per_kwh`, `comparison_grid_fees_total_eur`, `variable_grid_fees_total_eur`, `enwg14a_total_savings_eur`) stay `None` until that enrolment happens on the provider side — there is no customer-facing setting to toggle. Enrolment is driven by the Netzbetreiber's own HT/NT tariff rollout.
+
+A `unavailable` state is therefore **not an integration bug** — it means your meter is still on a flat Netzentgelt. The Modul-1 sensor can be `unavailable` for the same class of reason: no provisioning date yet.
+
 ## My entity names look wrong ("1k5 …" prefix vs. plain name)
 
 Entity naming is composed from `device.name + entity original_name` unless you renamed the entity in the HA UI. Mixed prefixes in one install typically mean some entities were renamed manually. The `entity_id` and long-term statistics are unaffected.
