@@ -229,8 +229,15 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
                 entries.append(_SystemEntry(system=s, system_id=s.id(), title=title))
             return entries
         except AuthenticationError as err:
+            # Surface the SDK's error context (Auth0 step + HTTP body or status)
+            # so Issue reports carry something more actionable than
+            # "Starting OAuth2 PKCE login" followed by silence. The config-flow
+            # user still sees the generic "invalid_auth" form; operators get
+            # the detail in home-assistant.log at WARNING level.
+            _LOGGER.warning("1KOMMA5° authentication failed: %s", err)
             raise InvalidAuth from err
         except RequestError as err:
+            _LOGGER.warning("1KOMMA5° request failed during login: %s", err)
             raise CannotConnect from err
 
 

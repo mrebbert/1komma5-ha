@@ -7,10 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.68] - 2026-10-17
 
-SDK pin bump only. No new entities, services or configuration surfaces; no change to existing automations.
+SDK pin bump plus a diagnostic log line for failed logins. No new entities, services or configuration surfaces; no change to existing automations.
 
 ### Changed
 - Bumped the `onekommafive` SDK pin to `>=1.1.7,<2` (from `>=1.1.6,<2`). v1.1.7 adds `Notification.updated_at: str | None` — the ISO-8601 timestamp of the last read/dismissed state change on `/users/{uid}/notifications/latest`. Additive, `None` on notifications that have never changed state after creation. The new field flows through the `onekommafive_notification` bus event for anyone who wants to key on it.
+- Config-flow login failures now emit a WARNING line with the SDK's error context (which OAuth2/PKCE step failed and the raw HTTP body or status). Users still see the generic `invalid_auth` or `cannot_connect` form; operators get the detail in `home-assistant.log` to tell "wrong credentials" apart from "account not in this Auth0 tenant" or "network error". No change for successful logins.
 
 ## [0.1.67] - 2026-10-10
 
