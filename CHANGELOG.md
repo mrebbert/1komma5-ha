@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.68] - 2026-10-17
+## [0.1.68] - 2026-10-10
 
 SDK pin bump plus a diagnostic log line for failed logins. No new entities, services or configuration surfaces; no change to existing automations.
 
