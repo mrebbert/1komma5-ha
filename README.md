@@ -237,19 +237,29 @@ The four per-consumer cost sensors always sum to `electricity_cost`. When PV/bat
 
 ### §14a grid-fee reduction (since v0.1.66)
 
-One diagnostic sensor on the meter sub-device for accounts that have the 1KOMMA5° backend provisioned under BNetzA BK6-22-300 "Modul 1" (iMSys plus a controllable consumption device: wallbox, heat pump, PV battery).
+Two diagnostic sensors on the meter sub-device for accounts that the 1KOMMA5° backend has provisioned under BNetzA BK6-22-300 (iMSys plus a controllable consumption device: wallbox, heat pump, PV battery).
 
 | Entity | Key | Semantic |
 |--------|-----|----------|
 | §14a Modul 1 (annual) | `module1_grid_fee_reduction_annual` | Annual **net** grid-fee reduction (EUR/year), from `HeartbeatPriceWindow.module1_savings_per_year_eur`. Diagnostic category. Stays `unavailable` on accounts without a provisioning date (no iMSys + SteuVE). |
+| §14a Modul 3 (annual) | `module3_grid_fee_savings_annual` | Annual **net** savings from variable Netzentgelte (HT/NT), from `HeartbeatPriceWindow.module3_total_savings_eur`. Diagnostic category. Stays `unavailable` until the site opts into Modul 3. _New in v0.1.67._ |
 
-Attributes:
+Modul-1 attributes:
 
 - `provisioning_date` — ISO date the Modul 1 bundle went live on the account.
 - `gross_estimate_eur_assumption` — `value × 1.19`, flagged as an assumption pending a second-grid-area data point. Matches the published gross figure on the first observed account (121 € API net vs 144 € tariff-area gross).
 - `basis` — `"§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"`.
 
-Deliberately **separate from the cost sensors**: Modul 1 is an annual rebate on the grid-fee position of the year-end bill, not a per-kWh discount. Linearising it onto `stable_electricity_price` or `electricity_cost` would be misleading.
+Modul-3 attributes:
+
+- `comparison_grid_fee_eur_per_kwh` — the flat reference tariff the HT/NT tariff is compared against.
+- `comparison_grid_fees_total_eur` — annual grid fees under the flat reference tariff.
+- `variable_grid_fees_total_eur` — annual grid fees under the HT/NT tariff.
+- `enwg14a_total_savings_eur` — combined Modul-1-plus-Modul-3 savings for the window.
+- `gross_estimate_eur_assumption` — `value × 1.19` on the net savings.
+- `basis` — `"§14a EnWG Modul 3 (BNetzA BK6-22-300, variable Netzentgelte HT/NT); net figure"`.
+
+Both deliberately stay **separate from the cost sensors**: Modul 1 is an annual rebate on the grid-fee position of the year-end bill, Modul 3 captures the delta from a hypothetical flat tariff. Linearising either onto `stable_electricity_price` or `electricity_cost` would misrepresent them.
 
 ### Contract overview (since v0.1.67)
 

@@ -126,6 +126,9 @@ def _heartbeat_prices_summary(data: Any) -> dict[str, Any]:
         "year_window_present": True,
         "module1_provisioning_date": year.module1_provisioning_date,
         "module1_savings_per_year_eur": year.module1_savings_per_year_eur,
+        "module3_total_savings_eur": year.module3_total_savings_eur,
+        "variable_grid_fees_total_eur": year.variable_grid_fees_total_eur,
+        "enwg14a_total_savings_eur": year.enwg14a_total_savings_eur,
     }
 
 
