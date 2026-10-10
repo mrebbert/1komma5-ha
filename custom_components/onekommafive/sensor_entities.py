@@ -1207,3 +1207,79 @@ class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEnti
             "gross_estimate_eur_assumption": gross,
             "basis": _MODULE1_BASIS,
         }
+
+
+# §14a-Modul-3 bundle (variable Netzentgelte HT/NT per BK6-22-300). Backend
+# started returning the fields on `/api/v3/heartbeat-prices` in 2026-10; the
+# SDK maps them from v1.1.6 onward. Values are `None` until the site opts in.
+_MODULE3_BASIS = (
+    "§14a EnWG Modul 3 (BNetzA BK6-22-300, variable Netzentgelte HT/NT); net figure"
+)
+
+
+class OneKomma5Module3SavingsSensor(OneKomma5HeartbeatPricesEntity, SensorEntity):
+    """§14a EnWG Modul 3 annual net grid-fee savings from variable HT/NT (EUR/year)."""
+
+    _attr_translation_key = "module3_grid_fee_savings_annual"
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_suggested_display_precision = 2
+    _attr_icon = "mdi:transmission-tower-export"
+    _device_key = "meter"
+
+    def __init__(
+        self,
+        coordinator: OneKomma5HeartbeatPricesCoordinator,
+        system_id: str,
+        system_name: str,
+        *,
+        asset: Asset | None = None,
+        currency: str = "EUR",
+        parent_device_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "module3_grid_fee_savings_annual",
+            asset=asset,
+            parent_device_id=parent_device_id,
+        )
+        self._attr_native_unit_of_measurement = currency
+
+    def _window(self) -> HeartbeatPriceWindow | None:
+        prices = self.coordinator.data
+        if prices is None:
+            return None
+        return prices.year
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        window = self._window()
+        return window is not None and window.module3_total_savings_eur is not None
+
+    @property
+    def native_value(self) -> float | None:
+        window = self._window()
+        if window is None:
+            return None
+        return window.module3_total_savings_eur
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        window = self._window()
+        if window is None:
+            return None
+        base = window.module3_total_savings_eur
+        gross = round(base * _GERMAN_VAT_MULTIPLIER, 2) if base is not None else None
+        return {
+            "comparison_grid_fee_eur_per_kwh": window.comparison_grid_fee_eur_per_kwh,
+            "comparison_grid_fees_total_eur": window.comparison_grid_fees_total_eur,
+            "variable_grid_fees_total_eur": window.variable_grid_fees_total_eur,
+            "enwg14a_total_savings_eur": window.enwg14a_total_savings_eur,
+            "gross_estimate_eur_assumption": gross,
+            "basis": _MODULE3_BASIS,
+        }

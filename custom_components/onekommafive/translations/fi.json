@@ -401,6 +401,9 @@
       "module1_grid_fee_reduction_annual": {
         "name": "§14a moduuli 1 (vuosittain)"
       },
+      "module3_grid_fee_savings_annual": {
+        "name": "§14a moduuli 3 (vuosittain)"
+      },
       "ev_battery_capacity": {
         "name": "Akun kapasiteetti"
       },

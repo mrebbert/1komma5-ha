@@ -54,6 +54,7 @@ from .sensor_entities import (
     OneKomma5FeedInRevenueSensor,
     OneKomma5GridFeeReductionSensor,
     OneKomma5LiveSensor,
+    OneKomma5Module3SavingsSensor,
     OneKomma5OptimizationSensor,
     OneKomma5PriceSensor,
     OneKomma5StablePriceSensor,
@@ -237,6 +238,18 @@ async def async_setup_entry(
     # §14a Modul 1 grid-fee reduction — parented to the meter sub-device.
     entities.append(
         OneKomma5GridFeeReductionSensor(
+            data.heartbeat_prices_coordinator,
+            system_id,
+            system_name,
+            asset=_resolve_asset("meter"),
+            currency=currency,
+            parent_device_id=data.system_device_id,
+        )
+    )
+
+    # §14a Modul 3 variable-grid-fee savings — same parent as Modul 1.
+    entities.append(
+        OneKomma5Module3SavingsSensor(
             data.heartbeat_prices_coordinator,
             system_id,
             system_name,

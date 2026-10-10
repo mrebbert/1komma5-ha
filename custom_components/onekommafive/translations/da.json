@@ -401,6 +401,9 @@
       "module1_grid_fee_reduction_annual": {
         "name": "§14a modul 1 (årlig)"
       },
+      "module3_grid_fee_savings_annual": {
+        "name": "§14a modul 3 (årlig)"
+      },
       "ev_battery_capacity": {
         "name": "Batterikapacitet"
       },

@@ -552,6 +552,15 @@
         'unique_id': 'sys-1_module1_grid_fee_reduction_annual',
       }),
       dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'module3_grid_fee_savings_annual',
+        'unique_id': 'sys-1_module3_grid_fee_savings_annual',
+      }),
+      dict({
         'device_slug': 'onekommafive:sys-1',
         'disabled_by': None,
         'entity_category': None,
@@ -1343,6 +1352,15 @@
         'platform': 'onekommafive',
         'translation_key': 'module1_grid_fee_reduction_annual',
         'unique_id': 'sys-1_module1_grid_fee_reduction_annual',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'module3_grid_fee_savings_annual',
+        'unique_id': 'sys-1_module3_grid_fee_savings_annual',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1',
@@ -2147,6 +2165,15 @@
         'unique_id': 'sys-1_module1_grid_fee_reduction_annual',
       }),
       dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'module3_grid_fee_savings_annual',
+        'unique_id': 'sys-1_module3_grid_fee_savings_annual',
+      }),
+      dict({
         'device_slug': 'onekommafive:sys-1',
         'disabled_by': None,
         'entity_category': None,
@@ -2943,6 +2970,15 @@
         'platform': 'onekommafive',
         'translation_key': 'module1_grid_fee_reduction_annual',
         'unique_id': 'sys-1_module1_grid_fee_reduction_annual',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'module3_grid_fee_savings_annual',
+        'unique_id': 'sys-1_module3_grid_fee_savings_annual',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1',
