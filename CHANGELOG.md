@@ -15,7 +15,7 @@ Adds three Diagnostic Sensoren for the Vertragsübersicht — active contracts (
 - **`sensor.<sys>_emp_backend`** — ENUM diagnostic sensor (`gridx` / `1k5` / `unknown`) exposing the account's EMP backend. Previously only visible in the diagnostics dump. Options stay lowercase to satisfy hassfest's translation-key pattern; translations map each key to its display label (`gridx` → "GridX", `1k5` → "1KOMMA5°").
 
 ### Changed
-- Bumped the `onekommafive` SDK pin to `>=1.1.5,<2` (from `>=1.1.3,<2`). v1.1.4 adds `System.get_subscription_eligibility()` — the endpoint behind the new `subscription_eligibility` sensor above. v1.1.5 adds `SystemDetails.external_partner_id` / `SiteDetails.external_partner_id` (additive, `None` for consumer-direct accounts).
+- Bumped the `onekommafive` SDK pin to `>=1.1.6,<2` (from `>=1.1.3,<2`). v1.1.4 adds `System.get_subscription_eligibility()` — the endpoint behind the new `subscription_eligibility` sensor above. v1.1.5 adds `SystemDetails.external_partner_id` / `SiteDetails.external_partner_id` (additive, `None` for consumer-direct accounts). v1.1.6 adds five `HeartbeatPriceWindow` attributes for §14a-Modul-3 (variable Netzentgelte HT/NT per BK6-22-300): `comparison_grid_fee_eur_per_kwh`, `comparison_grid_fees_total_eur`, `variable_grid_fees_total_eur`, `module3_total_savings_eur`, `enwg14a_total_savings_eur` (all `None` until the site opts in).
 
 ### Internal (no user-visible change)
 - Property-based tests (`hypothesis`) on three pure-logic helpers (`get_current_price`, `trapezoidal_delta_kwh`, `find_cheapest_window`), 100–200 random examples per property.
