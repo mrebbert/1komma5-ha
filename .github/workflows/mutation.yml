@@ -49,7 +49,7 @@ jobs:
 
       - name: Upload mutmut results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mutation-results
           path: mutation-results.txt
