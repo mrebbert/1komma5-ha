@@ -46,5 +46,3 @@ For the full configuration surface, see **[Install & setup](install.md)**.
 ## About
 
 Unofficial reverse-engineered integration maintained by the author against their own 1KOMMA5° system. The underlying Python client is published separately as [`onekommafive` on PyPI](https://pypi.org/project/onekommafive/) with its own [API reference](https://mrebbert.github.io/1komma5-api/). The API is undocumented and may change without notice — see [Disclaimer](compatibility.md#disclaimer).
-
-Credits to [Alex Birkner](https://github.com/BirknerAlex) and the predecessor [hacs_1komma5grad](https://github.com/BirknerAlex/hacs_1komma5grad) integration.

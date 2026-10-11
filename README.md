@@ -116,10 +116,6 @@ Common questions sit on [the FAQ page](https://mrebbert.github.io/1komma5-ha/faq
 
 For setup, PR workflow, code style and translation guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Credits
-
-Large parts of this project are inspired by and based on the work of [Alex Birkner](https://github.com/BirknerAlex) and his [hacs_1komma5grad](https://github.com/BirknerAlex/hacs_1komma5grad) integration. Many thanks for paving the way.
-
 ## Disclaimer
 
 This project is **not affiliated with or endorsed by 1KOMMA5°**. The API is undocumented and may change without notice. This is an unofficial integration based on a reverse-engineered API, built 100 % vibe-coded with AI assistance. It may break if 1KOMMA5° changes their backend. Use at your own risk.
