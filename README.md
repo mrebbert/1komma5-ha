@@ -6,11 +6,14 @@
 [![HACS](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://hacs.xyz)
 [![Validate](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/validate.yml?label=Validate&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/validate.yml)
 [![Tests](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/test.yml?label=Tests&style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/actions/workflows/test.yml)
+[![Docs](https://img.shields.io/github/actions/workflow/status/mrebbert/1komma5-ha/docs.yml?label=Docs&style=for-the-badge)](https://mrebbert.github.io/1komma5-ha/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://github.com/mrebbert/1komma5-ha/blob/main/LICENSE)
 
 **1KOMMA5°** (also written **1komma5**, **1k5**) runs the **Heartbeat** energy platform for solar + battery + heat pump + EV wallbox setups. This is the Home Assistant integration for it, distributed via HACS at [github.com/mrebbert/1komma5-ha](https://github.com/mrebbert/1komma5-ha).
 
 Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI optimization decisions, per-device cost allocation, cheapest-charging-window scheduling, weather forecast, and cloud push notifications, all as native HA sensors, services and bus events. Works on both 1KOMMA5°-backend accounts (`emp_type: "1K5"`, most newer installs) and legacy GridX-backed accounts (`emp_type: "GRIDX"`).
+
+**📖 Full documentation: [mrebbert.github.io/1komma5-ha](https://mrebbert.github.io/1komma5-ha/)**
 
 ## Highlights
 
@@ -21,35 +24,6 @@ Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI 
 - 🌍 **Seven locales** (DE, NL, FI, ES, DK, SE, AU) with per-market currency (EUR, DKK, SEK, AUD)
 - 🏠 **Energy Dashboard-ready** out of the box; no template sensors, no manual wiring
 - 📥 **Available in the HACS Default Store** — no custom repository setup needed
-
-## Table of Contents
-
-- [Quick start](#quick-start)
-- [Configuration](#configuration)
-- [What you get](#what-you-get)
-  - [Live power & battery](#live-power--battery)
-  - [Dynamic electricity pricing](#dynamic-electricity-pricing)
-  - [Energy accounting](#energy-accounting)
-  - [Cost & revenue](#cost--revenue)
-  - [§14a grid-fee reduction](#14a-grid-fee-reduction-since-v0166)
-  - [Contract overview](#contract-overview-since-v0167)
-  - [AI optimization](#ai-optimization)
-  - [EV charger / wallbox](#ev-charger--wallbox)
-  - [Weather](#weather)
-  - [Device connectivity & feature flags](#device-connectivity--feature-flags)
-  - [Diagnostics](#diagnostics)
-- [Services & bus events](#services--bus-events)
-- [Ready-made dashboards & automation blueprints](#ready-made-dashboards--automation-blueprints)
-- [Supported devices](#supported-devices)
-- [Devices & entity structure](#devices--entity-structure)
-- [Compatibility & requirements](#compatibility--requirements)
-- [Known limitations](#known-limitations)
-- [FAQ / troubleshooting](#faq--troubleshooting) — plus [`docs/faq.md`](docs/faq.md) für die Vollversion
-- [Contributing](#contributing)
-- [Credits](#credits)
-- [Disclaimer](#disclaimer)
-
----
 
 ## Quick start
 
@@ -85,622 +59,67 @@ One-click open:
 
 Credentials are stored securely in the Home Assistant config entry. Sensors appear within seconds.
 
-### Removing the integration
-
-Under **Settings → Devices & Services → 1KOMMA5° → ⋮ → Delete**. HA cleans up all entities, sub-devices and stored credentials — the integration owns nothing else on your machine.
-
-Individual sub-devices (Wallbox, Vehicle, Heat pump, …) can also be removed one at a time from the device view (**Devices → click the sub-device → ⋮ → Delete device**), useful when a wallbox is retired: the parent device stays put and the entities come back if the cloud reports the hardware again on the next reload.
-
----
-
-## Configuration
-
-### Options
-
-Under **Settings → Devices & Services → 1KOMMA5° → Configure**:
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| Feed-in Tariff | 0.0803 €/kWh | Feed-in tariff used by the *Feed-in Revenue* sensor. Set to your actual contract rate incl. bonuses. |
-| Charging-window duration | 60 min | Length of the *Cheapest charging window* sensors. Multiple of 15, 15–240 min. Raise to 90/120 for longer flexible loads (EV bulk charges, wash cycles); drop to 30 for short loads (boiler, quick dishwasher programme). Mid-day duration changes invalidate the lock-in so the next refresh re-picks. |
-
-### Updating credentials
-
-Two flows preserve sensor history, restored states and Energy Dashboard configuration:
-
-- **Re-authentication** — When 1KOMMA5° rejects auth (e.g. password change), HA shows a *Re-authentication required* notice. Click it, enter the new password, done.
-- **Reconfigure** — Proactively via **Settings → Devices & Services → 1KOMMA5°** → ⋮ menu → **Reconfigure**.
-
----
+Full install, config-options and re-authentication / reconfigure flows: [Install & setup](https://mrebbert.github.io/1komma5-ha/install/).
 
 ## What you get
 
-Entity names in Home Assistant follow your account language. Tables below use English keys; German (and five other locales) are shipped in the translations.
-
-### Live power & battery
-
-| Entity | Key | Unit |
-|--------|-----|------|
-| PV Power | `pv_power` | W |
-| Battery Power | `battery_power` | W (± bidirectional) |
-| Battery SoC | `battery_soc` | % |
-| Grid Power | `grid_power` | W (± bidirectional) |
-| Grid Import Power | `grid_consumption_power` | W (≥ 0) |
-| Grid Export Power | `grid_feed_in_power` | W (≥ 0) |
-| Total Consumption | `consumption_power` | W |
-| Household Consumption | `household_power` | W |
-| EV Charger Power | `ev_chargers_power` | W |
-| Heat Pump Power | `heat_pumps_power` | W |
-| AC Power | `acs_power` | W |
-| Self-Sufficiency | `self_sufficiency` | % |
-
-**Update interval:** 30 s. All sensors use `state_class: measurement`, so Long-Term Statistics tracks hourly min/max/mean automatically.
-
-> **Plotting self-sufficiency trends** — drop the entity into a `statistics-graph` card, or build a [Statistics Helper](https://www.home-assistant.io/integrations/statistics/) for rolling averages. No integration code needed.
-
-### Dynamic electricity pricing
-
-Dynamischer Stromtarif — 15-minute-resolution price data, 30-hour forecast, cheapest-window scheduling.
-
-| Entity | Key | Unit | Update |
-|--------|-----|------|--------|
-| Current Electricity Price | `current_electricity_price` | EUR/kWh | 15 min |
-| Last Valid Electricity Price | `stable_electricity_price` | EUR/kWh | 15 min |
-| Average / Lowest / Highest Today | `average/lowest/highest_electricity_price` | EUR/kWh | 1 h |
-| Average / Lowest / Highest Tomorrow | `tomorrow_average/lowest/highest_price` | EUR/kWh | 1 h |
-| Negative Price Slots (today / tomorrow) | `negative_price_slots_today/tomorrow` | count | 1 h |
-| Cheapest Charging Window Today | `cheapest_charging_window_today` | timestamp | 15 min |
-| Cheapest Charging Window Tomorrow | `cheapest_charging_window_tomorrow` | timestamp | 15 min |
-
-**Binary sensors:**
-
-| Entity | ON when |
-|--------|---------|
-| `cheap_electricity` | Current price is below today's average |
-| `cheapest_hour_now` | Current 15-min slot is the cheapest in the next ~30 h |
-
-`stable_electricity_price` is the price source for cost sensors: it survives brief zero/unavailable API responses so cost accumulation doesn't skip. Tomorrow's price sensors are `unknown` until day-ahead prices are published (typically around 13:00 CET).
-
-<details>
-<summary>Price-forecast attributes & grid-cost decomposition</summary>
-
-**Current Electricity Price** carries these attributes:
-
-| Attribute | Description |
-|-----------|-------------|
-| `forecast` | Rolling 24–30 h price list (each entry `{start, end, price}`) |
-| `cheapest_future_hour` | ISO-8601 start of the cheapest upcoming slot |
-| `cheapest_future_price` | EUR/kWh of that slot |
-| `spot_price` | Market/exchange price of the active slot (net, ex grid costs & VAT) |
-| `grid_costs` | Net grid-cost adder (energy tax + purchasing + fixed tariff + dynamic markup + feed-in adjustment) |
-| `grid_cost_components` | Per-component breakdown (all net / ex-VAT) |
-| `vat_rate` | VAT rate applied (e.g. `0.19`) |
-| `uses_fallback_grid_costs` | `true` when grid costs are estimated rather than contract-exact |
-
-Decomposition is exact: `all_in = (spot_price + grid_costs) × (1 + vat_rate)`. `spot_price` varies per 15-min slot; grid-cost components are flat daily constants.
-
-**Cheapest-window sensors** additionally expose `start`, `end`, `average_price`, `duration_minutes`, `slot_count`. The today-sensor locks in the pick (via RestoreSensor) so it doesn't wander mid-slot; the tomorrow-sensor re-picks on each refresh.
-
-**Forecast list example** (compatible with Tibber / ENTSO-E-style cards like `apexcharts-card`):
-
-```yaml
-forecast:
-  - start: "2026-02-28T14:00:00+00:00"
-    end:   "2026-02-28T14:15:00+00:00"
-    price: 0.284100
-  - start: "2026-02-28T14:15:00+00:00"
-    end:   "2026-02-28T14:30:00+00:00"
-    price: 0.279300
-  ...  # up to 120 slots (15-min resolution, up to 30 h ahead)
-
-cheapest_future_hour: "2026-02-28T22:00:00+00:00"
-cheapest_future_price: 0.198400
-```
-
-</details>
-
-For a ready-made 30-hour price-forecast chart (`apexcharts-card`, `color_threshold`-coloured), see the "Preise und Kosten" view in [`dashboard/dashboard.yaml`](dashboard/dashboard.yaml). Copy the `custom:apexcharts-card` block, replace the entity prefix, done.
-
-**Dynamic-Pulse price guarantee** (DP contract only) — `sensor.<sys>_dynamic_pulse_price_guarantee` exposes the raw `price_guarantee_value` from your DP subscription in `EUR/kWh`. The guarantee comes with terms and conditions on the 1KOMMA5° side that this integration doesn't (and can't) model, so treat the value as informational — see the FAQ.
-
-### Energy accounting
-
-For every unidirectional power sensor an energy counterpart (kWh) is auto-created via trapezoidal integration of the 30 s power samples. All use `state_class: total_increasing` — direct **Energy Dashboard** compatibility.
-
-| Category | Sensors |
-|----------|---------|
-| Solar | `pv_power_energy` |
-| Grid | `grid_consumption_power_energy`, `grid_feed_in_power_energy` |
-| Consumption | `consumption_power_energy`, `household_power_energy` |
-| Devices | `ev_chargers_power_energy`, `heat_pumps_power_energy`, `acs_power_energy` |
-| Battery | `battery_charge_power_energy`, `battery_discharge_power_energy` |
-
-> **Battery Power and Grid Power are bidirectional** and therefore excluded from the general energy set. The battery is covered by dedicated Charge / Discharge energy sensors that split the signal into two `total_increasing` counters — required for the **Energy Dashboard** battery configuration.
-
-See [`dashboard/ENERGY_DASHBOARD.md`](dashboard/ENERGY_DASHBOARD.md) for the slot-to-sensor mapping and the grid-cost / feed-in-revenue wiring steps.
-
-### Cost & revenue
-
-Monetary sensors integrating power flow × price. `state_class: total`, `device_class: monetary`, per-locale currency.
-
-| Entity | Key | Semantic |
-|--------|-----|----------|
-| Electricity Cost | `electricity_cost` | Cumulative grid-import cost = grid import × stable price |
-| Heat Pump Cost | `heat_pump_cost` | Allocation to heat pump = `heat_pumps_power / consumption_power × grid_consumption_power × stable_price` |
-| EV Charger Cost | `ev_charger_cost` | Same allocation for EV charger(s) |
-| Household Cost | `household_cost` | Same allocation for base household load |
-| AC Cost | `ac_cost` | Same allocation for AC unit |
-| Feed-in Revenue | `feed_in_revenue` | Grid export × configured feed-in tariff |
-| Daily Savings | `daily_savings` | Cloud-computed daily savings (`get_energy_today`), resets at local midnight |
-
-The four per-consumer cost sensors always sum to `electricity_cost`. When PV/battery cover all consumption the grid bill is zero and all five stop accumulating together.
-
-### §14a grid-fee reduction (since v0.1.66)
-
-Two diagnostic sensors on the meter sub-device for accounts that the 1KOMMA5° backend has provisioned under BNetzA BK6-22-300 (iMSys plus a controllable consumption device: wallbox, heat pump, PV battery).
-
-| Entity | Key | Semantic |
-|--------|-----|----------|
-| §14a Modul 1 (annual) | `module1_grid_fee_reduction_annual` | Annual **net** grid-fee reduction (EUR/year), from `HeartbeatPriceWindow.module1_savings_per_year_eur`. Diagnostic category. Stays `unavailable` on accounts without a provisioning date (no iMSys + SteuVE). |
-| §14a Modul 3 (annual) | `module3_grid_fee_savings_annual` | Annual **net** savings from variable Netzentgelte (HT/NT), from `HeartbeatPriceWindow.module3_total_savings_eur`. Diagnostic category. Stays `unavailable` until the site opts into Modul 3. _New in v0.1.67._ |
-
-Modul-1 attributes:
-
-- `provisioning_date` — ISO date the Modul 1 bundle went live on the account.
-- `gross_estimate_eur_assumption` — `value × 1.19`, flagged as an assumption pending a second-grid-area data point. Matches the published gross figure on the first observed account (121 € API net vs 144 € tariff-area gross).
-- `basis` — `"§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"`.
-
-Modul-3 attributes:
-
-- `comparison_grid_fee_eur_per_kwh` — the flat reference tariff the HT/NT tariff is compared against.
-- `comparison_grid_fees_total_eur` — annual grid fees under the flat reference tariff.
-- `variable_grid_fees_total_eur` — annual grid fees under the HT/NT tariff.
-- `enwg14a_total_savings_eur` — combined Modul-1-plus-Modul-3 savings for the window.
-- `gross_estimate_eur_assumption` — `value × 1.19` on the net savings.
-- `basis` — `"§14a EnWG Modul 3 (BNetzA BK6-22-300, variable Netzentgelte HT/NT); net figure"`.
-
-Both deliberately stay **separate from the cost sensors**: Modul 1 is an annual rebate on the grid-fee position of the year-end bill, Modul 3 captures the delta from a hypothetical flat tariff. Linearising either onto `stable_electricity_price` or `electricity_cost` would misrepresent them.
-
-### Contract overview (since v0.1.67)
-
-Three diagnostic sensors on the system parent that make the account's contract state addressable from automations and dashboards without raw API calls.
-
-| Entity | Key | Semantic |
-|--------|-----|----------|
-| Active subscriptions | `active_subscriptions` | Count of contracts with `status == "ACTIVE"`. Attribute `contracts` lists every subscription's PII-safe fields (type, status, dates, notice period, renewal, billing frequency, price, currency, payment-method enum, country code). |
-| Add-on eligibility | `subscription_eligibility` | Count of 1KOMMA5°Care add-ons the account qualifies for. Attributes split into `eligible` (list of product types) and `ineligible` (`{type, reason}` with the CRM-provided reason verbatim). |
-| EMP backend | `emp_backend` | ENUM — `gridx`, `1k5`, or `unknown` (fallback). Previously only in the diagnostics dump. Lowercase keys to satisfy hassfest; translations map to "GridX" / "1KOMMA5°" in the UI. |
-
-Setup-time snapshots, mirrors the `dynamic_pulse_price_guarantee` pattern: subscriptions change on contract events, not during runtime. Fetches are non-fatal — a failed `get_subscriptions` or `get_subscription_eligibility` skips its sensor; `emp_backend` always registers and falls back to `UNKNOWN`.
-
-**PII guardrail:** the `contracts` attribute whitelists fields explicitly; `customer_id`, `site_id`, `electricity_contract_number`, `market_location_id`, `terms_and_conditions_url` and the raw CRM record (IBAN, addresses, Zoho/Lumenaza IDs, status history) stay out by design.
-
-### AI optimization
-
-Heartbeat AI decisions surfaced as sensors and binary sensors, updated every 15 minutes.
-
-| Entity | Key | Description |
-|--------|-----|-------------|
-| Optimization Decisions Today | `optimization_event_count` | Count of today's decisions; attribute holds the full list |
-| Last Optimization Decision | `optimization_last_decision` | Most-recent decision (localized display, underlying enum stays lowercase for automation matching) |
-| AI: Battery grid charging | `optimization_battery_grid_charge` | Binary — ON when the active BATTERY decision is `BATTERY_CHARGE_FROM_GRID` |
-| AI: Heat pump recommended | `optimization_heat_pump_recommended` | Binary — ON when the active HEAT_PUMP decision is `HEATPUMP_RECOMMEND_ON` |
-
-Available decision enum values: `BATTERY_CHARGE_FROM_GRID`, `BATTERY_NO_CHARGE`, `BATTERY_NO_DISCHARGE`, `EV_CHARGE_FROM_GRID`, `HEATPUMP_RECOMMEND_ON`, `HEATPUMP_AUTO`. The SDK documents the list as non-exhaustive; unknown values keep the sensor at `unknown` and log a warning so a new cloud-side variant surfaces without breaking the state.
-
-**Caveats:** `optimization_total_cost` / `_energy_bought` / `_energy_sold` stay `unknown` — the API doesn't populate settlement data yet. These sensors reflect what the Cloud AI *recommends*; the Heartbeat HEMS can act independently (`optimization_heat_pump_recommended` may stay `off` while the Wärmepumpe runs on local SG-Ready). Don't gate SG-Ready or grid-charge automations on them as if they were live control signals.
-
-Bus event `onekommafive_optimization_decision` fires per new decision — see [Services & bus events](#services--bus-events).
-
-### EV charger / wallbox
-
-One set of entities per **vehicle profile** registered in the 1KOMMA5° app.
-
-> **Requires a vehicle profile.** These entities model the car (`SMART_CHARGE` target, SoC, departure time), not the wallbox — they come from the SDK's `/v2/sites/{id}/assets/evs` endpoint (site-scoped since SDK v0.2.0), which returns the vehicles configured under *Settings → Vehicles* in the 1KOMMA5° app. Without a vehicle profile the endpoint returns an empty list and no charging-mode / SoC / departure-time entities are created (the wallbox device itself still appears, backed by connectivity + aggregate `ev_chargers_power` / `ev_charger_cost` sensors from other endpoints).
-
-**Sensors:** `ev_target_soc` (%), `ev_charging_mode` (mode enum), `ev_battery_capacity` (kWh), `ev_scheduled_departure_soc` (%)
-
-**Controls:**
-
-| Entity | Type | Description |
-|--------|------|-------------|
-| Charging Mode | Select | `SMART_CHARGE` / `QUICK_CHARGE` / `SOLAR_CHARGE` |
-| Target SoC | Number (0–100 %) | Desired battery target |
-| Departure Time | Time | Daily primary departure |
-| Vehicle SoC (Manual) | Number (0–100 %) | Manual current-SoC report (SMART_CHARGE only) |
-| Assigned Vehicle | Select (per wallbox) | Which vehicle profile is currently paired with the wallbox (see below). |
-
-**Wallbox → vehicle assignment (since v0.1.63).** Sites with more than one vehicle profile in the 1KOMMA5° app get one `select.<sys>_<wallbox>_assigned_vehicle` per physical wallbox, parented on the wallbox sub-device. Options are the site's vehicles as lowercase name slugs (`bmw_i3`, `tesla_model_y`, …); the state reflects `Wallbox.assigned_ev_id`. Selecting an option binds that vehicle to the wallbox — the same switch the 1KOMMA5° app offers. The backend is 1:1 exclusive: setting the assignment on one vehicle automatically releases whichever vehicle was previously bound to the same wallbox. There is no unassign option (the app UI has none either). Single-vehicle sites see the entity but have nothing to switch — no UI breakage, just an inert control.
-
-Automation shortcut: the [`vehicle_at_wallbox.yaml` blueprint](blueprints/automation/onekommafive/vehicle_at_wallbox.yaml) flips the select automatically when a "car plugged in" binary sensor (from your car integration or a smart-plug helper) goes ON. One import per vehicle.
-
-Id-addressed alternative for scripts: the `onekommafive.assign_ev_to_wallbox` service — see [Services & bus events](#services--bus-events).
-
-**Mirror your car's battery sensor into the manual-SoC input:** trigger on your EV integration's battery-level sensor, assert `is_number`, and `number.set_value` on `number.<car>_fahrzeug_akkustand_manuell`. The target entity is `unavailable` outside `SMART_CHARGE` mode, so the condition `not is_state(target, 'unavailable')` keeps the automation idle in the other modes.
-
-### Weather
-
-- **Weather entity** (`weather.<system>`) — 48 h hourly forecast, `FORECAST_HOURLY` compatible
-- **Sunshine sensors** — `weather_sunshine_today`, `weather_sunshine_tomorrow` (minutes)
-
-### Device connectivity & feature flags
-
-Binary sensors summarising cloud & asset health:
-
-| Entity | Description |
-|--------|-------------|
-| `site_connected` | Aggregate — ON when the cloud reports the site as `CONNECTED` |
-| `inverter_connected`, `heat_pump_connected`, `meter_connected`, `wallbox_connected` | Per-asset-type; AND-logic over all assets of the type. Only created when the cloud actually reports an asset of that type. |
-| `wallbox_<id>_connected` | One per physical wallbox (multi-wallbox sites only, since v0.1.58). Reports the connection status of that specific wallbox — pair with the aggregate `wallbox_connected` to gate on "all healthy" vs. "this one down". |
-| `dynamic_tariff_active`, `time_of_use_active`, `smart_charging_active` | Feature-flag Booleans from the customer-features API |
-| `energy_trader_active` | ON when enrolled in 1KOMMA5°'s virtual power plant (energy trading). From `SystemDetails.energy_trader_active`, captured once at setup. |
-| `dynamic_pulse_compatible` | ON when the site's hardware/contract qualifies for Dynamic Pulse |
-
-Plus: `active_features` sensor (state = count; attributes = feature list) and `system_age_days` (days since earliest measurement).
-
-### Diagnostics
-
-Hidden by default (`entity_category: diagnostic`) — useful for troubleshooting.
-
-| Entity | Description |
-|--------|-------------|
-| `diag_live_update` | Timestamp of the last successful live data fetch |
-| `diag_price_update` | Timestamp of the last successful price fetch |
-| `diag_optimization_update` | Timestamp of the last optimization fetch |
-| `diag_weather_update` | Timestamp of the last weather fetch |
-| `diag_system_status_update` | Timestamp of the last site-status / asset-inventory fetch |
-| `diag_energy_update` | Timestamp of the last daily-savings fetch |
-| `diag_notification_update` | Timestamp of the last cloud-notifications fetch (v0.1.52) |
-| `diag_heartbeat_prices_update` | Timestamp of the last heartbeat-prices fetch (v0.1.66; backs the §14a Modul 1 sensor) |
-
-**System Information** (**Settings → System → Repairs → System Information**) reports per-coordinator update status, API reachability, SDK version and resolved currency/country. **PII-safe** — use this for bug reports instead of the full diagnostics download.
-
-**EMS auto-mode switch** (`ems_auto_mode`, diagnostic category) — only created on GRIDX-backend installs; 1K5-backend installs skip it entirely from v0.1.57 on because the endpoint is not reachable there. See [`docs/faq.md`](docs/faq.md#why-is-the-ems-auto-mode-switch-unavailable) for the Repair Issue behaviour and `30401` log line.
-
----
-
-## Data updates
-
-Every polled endpoint is fronted by its own `DataUpdateCoordinator`; the interval is chosen for the endpoint's actual change rate, not a single global tick. All coordinators are non-blocking on setup, so the integration surface comes up even when one of them times out (typical on the price coordinator right after HA restart).
-
-| Coordinator | Cadence | Fills |
-|-------------|---------|-------|
-| Live | 30 s | `live_overview`, `ev_chargers`, `ems_settings`, `wallboxes` (assignment stays fresh within one tick) |
-| System status | 5 min | Site connectivity, asset inventory, active feature flags |
-| Optimization | 15 min | Today's AI decision events + last-decision enum |
-| Energy | 15 min | Daily-cumulative cloud figures (`daily_savings`, `co2_saved_today`) |
-| Notifications | 5 min | New cloud push notifications → `onekommafive_notification` bus event |
-| Price | 1 h | Today + tomorrow's dynamic tariff forecast (timestamps are slot ENDs) |
-| Weather | 1 h | 48 h hourly forecast + sunshine totals |
-| Heartbeat prices | 1 h | Five aggregation windows backing the §14a Modul 1 sensor (v0.1.66) |
-
-The intervals are compile-time constants; they can be temporarily overridden by calling `onekommafive.refresh_now` from an automation or the Developer Tools (see [Services & bus events](#services--bus-events)).
-
-**Slot-boundary redraws.** A few sensors (`cheap_electricity`, `cheapest_hour_now`, the two `stable_electricity_price`-derived cost accumulators) need to re-evaluate at `:00`/`:15`/`:30`/`:45` even if no coordinator has refreshed yet. A shared `QuarterHourUpdateMixin` triggers those state writes from a single time-listener; individual coordinators do NOT re-poll on the quarter, which would waste four polls per hour for no new data.
-
----
+| Area | What it covers | Full page |
+|------|----------------|-----------|
+| Live power & battery | PV, battery (power + SoC), grid (bidirectional + split), household, EV charger, heat pump, AC, self-sufficiency — 30 s cadence | [docs](https://mrebbert.github.io/1komma5-ha/features/live-power/) |
+| Dynamic pricing | Dynamischer Stromtarif, 15-min slots, 30 h forecast, cheapest-window sensors, negative-price counters | [docs](https://mrebbert.github.io/1komma5-ha/features/pricing/) |
+| Energy & cost | kWh integration (Energy Dashboard-ready), per-consumer cost allocation, feed-in revenue, daily savings | [docs](https://mrebbert.github.io/1komma5-ha/features/energy-cost/) |
+| §14a EnWG grid-fee | Modul 1 flat annual rebate + Modul 3 variable Netzentgelte HT/NT (both diagnostic) | [docs](https://mrebbert.github.io/1komma5-ha/features/enwg14a/) |
+| Contract overview | Active subscriptions, 1KOMMA5°Care add-on eligibility, EMP backend | [docs](https://mrebbert.github.io/1komma5-ha/features/contract/) |
+| AI optimization | Six decision binaries, last-decision sensor, bus event | [docs](https://mrebbert.github.io/1komma5-ha/features/ai-optimization/) |
+| EV & wallbox | Per-vehicle controls (mode, SoC, departure), wallbox-to-vehicle assignment select | [docs](https://mrebbert.github.io/1komma5-ha/features/ev-wallbox/) |
+| Weather | 48 h hourly forecast + sunshine totals | [docs](https://mrebbert.github.io/1komma5-ha/features/weather/) |
+| Diagnostics | Per-coordinator timestamps, device-connectivity binaries, EMS auto-mode switch | [docs](https://mrebbert.github.io/1komma5-ha/features/diagnostics/) |
 
 ## Services & bus events
 
-### `onekommafive.get_cheapest_window` / `get_most_expensive_window`
+The integration registers four HA services (`get_cheapest_window`, `refresh_now`, `get_heartbeat_metrics`, `assign_ev_to_wallbox`) and three automation bus events (`onekommafive_notification`, `_optimization_decision`, `_negative_price_started/_ended`).
 
-Find the cheapest (or most expensive) contiguous slot in the price forecast — for scheduling flexible loads or load shedding.
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `duration_minutes` | yes | Window length (multiple of 15) |
-| `earliest_start` | no | Window must not start before |
-| `latest_end` | no | Window must not end after |
-| `config_entry_id` | no | Only required with multiple systems configured |
-
-**Response:**
-
-```yaml
-found: true
-start: "2026-04-27T01:30:00+00:00"
-end: "2026-04-27T03:30:00+00:00"
-average_price: 0.0823
-slot_count: 8
-```
-
-<details>
-<summary>Example: start the dishwasher at the cheapest 2-hour window before 7 AM</summary>
-
-```yaml
-trigger:
-  - platform: time
-    at: "20:00:00"
-action:
-  - service: onekommafive.get_cheapest_window
-    data:
-      duration_minutes: 120
-      latest_end: "{{ (now().replace(hour=7, minute=0, second=0) + timedelta(days=1)).isoformat() }}"
-    response_variable: window
-  - if: "{{ window.found }}"
-    then:
-      - service: switch.turn_on
-        target:
-          entity_id: switch.dishwasher_start
-```
-
-</details>
-
-### `onekommafive.refresh_now`
-
-Force an immediate refresh of one (or all) data coordinators. Useful after a power outage, for debugging, and as a reset hook in automations.
-
-| Field | Default | Description |
-|-------|---------|-------------|
-| `coordinator` | `live` | One of `live`, `price`, `optimization`, `weather`, `system_status`, `energy`, `notifications`, `heartbeat_prices`, `all` |
-| `config_entry_id` | — | Only required with multiple systems configured |
-
-Response: `{"refreshed": [...], "failed": [...]}`. `all` runs every coordinator in parallel; per-coordinator failures land in `failed` but don't raise.
-
-### `onekommafive.get_heartbeat_metrics`
-
-On-demand fetch of aggregated 1KOMMA5° Heartbeat metrics for a chosen time window — PV production, grid consumption/feed-in, tariffs, costs, revenue. Cloud-computed, so the numbers reflect what 1KOMMA5° itself sees, useful for comparing against your locally-integrated `*_energy` / `electricity_cost` / `feed_in_revenue` Long-Term Statistics.
-
-| Field | Values | Description |
-|-------|--------|-------------|
-| `window` | `day` \| `week` \| `month` \| `half_year` \| `year` | Aggregation window (required) |
-| `config_entry_id` | — | Only required with multiple systems configured |
-
-Response is a flat dict with all populated `HeartbeatPriceWindow` fields (~22 fields per window: `pv_produced_kwh`, `grid_feed_in_kwh`, `grid_feed_in_compensation_eur`, `grid_consumed_kwh`, `grid_consumption_cost_eur`, `total_consumption_kwh`, `total_energy_cost_eur`, `vat`, plus a couple of composite/marketing metrics you can choose to ignore). Absent windows respond `{"window": ..., "available": false}` so callers can branch on it.
-
-<details>
-<summary>Example: compare cloud vs local monthly grid-import figure</summary>
-
-```yaml
-alias: 1KOMMA5° cloud vs local monthly grid check
-trigger:
-  - platform: time
-    at: "03:00:00"
-action:
-  - service: onekommafive.get_heartbeat_metrics
-    data:
-      window: month
-    response_variable: cloud
-  - service: notify.persistent_notification
-    data:
-      title: Grid import — cloud vs local
-      message: >
-        Cloud month: {{ cloud.grid_consumed_kwh | round(1) }} kWh /
-        {{ cloud.grid_consumption_cost_eur | round(2) }} EUR.
-        Compare against `sensor.<sys>_grid_consumption_power_energy` Long-Term
-        Statistics for the same window in the History panel.
-```
-
-</details>
-
-### `onekommafive.assign_ev_to_wallbox` (v0.1.63)
-
-Bind a vehicle profile to a wallbox — the id-addressed counterpart to the `select.<sys>_<wallbox>_assigned_vehicle` entity, for scripts that carry the identifiers as data. Wraps the same SDK write path (`EVCharger.assign_charger`, v0.5.0+).
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `wallbox_id` | yes | UUID of the target wallbox — from the wallbox sub-device's diagnostics dump or from the SDK's `system.get_wallboxes()` |
-| `ev_id` | yes | UUID of the vehicle profile |
-| `config_entry_id` | no | Only required with multiple systems configured |
-
-**Response:**
-
-```yaml
-success: true
-previous_ev_id: "ev-uuid-a"   # null when the wallbox had no assignment
-```
-
-`previous_ev_id` is captured from the local system-status cache before the write, so an automation can log the swap. Unknown ids raise a clear `HomeAssistantError`. There is no detach path: `ev_id` is required — the 1KOMMA5° model is 1:1 exclusive, and setting one vehicle releases the previously bound one automatically in the same call.
-
-### Bus events
-
-Three automation-triggerable events; full payload shapes and example automations in [`docs/bus-events.md`](docs/bus-events.md).
-
-| Event | Fires on | Key fields |
-|---|---|---|
-| `onekommafive_notification` (v0.1.52) | Each new 1KOMMA5° cloud notification; dedup state persists across restarts | `type`, `title`, `body`, `locale`, `meta` |
-| `onekommafive_optimization_decision` | Each new Heartbeat AI decision (BATTERY / HEATPUMP) | `asset`, `decision`, `from`, `to`, `market_price`, `state_of_charge` |
-| `onekommafive_negative_price_started` / `_ended` | Positive↔negative edge of the active 15-min slot | `price`, `negative_price_slots_remaining` |
-
-Which notification types reach HA is controlled entirely by your **1KOMMA5° app** notification settings — the API filters at source.
-
----
+Full field tables and example automations: [Services & bus events](https://mrebbert.github.io/1komma5-ha/services/).
 
 ## Ready-made dashboards & automation blueprints
 
-**Dashboards** — [`dashboard/`](dashboard/) contains two ready-to-import Home Assistant dashboards (energy & grid + EV charger). All cards are native HA types, no extra frontend components needed. [Dashboard README with screenshots](dashboard/README.md).
+- **Dashboards** — [`dashboard/`](dashboard/) contains two ready-to-import Lovelace dashboards (energy & grid + EV charger). All cards are native HA types; the showcase dashboard needs `apexcharts-card`, `button-card` and the `input_select.stromkosten_zeitspanne` helper. See [dashboard README](dashboard/README.md).
+- **Automation blueprints** — nine importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/) covering cheapest-window scheduling, AI-decision notifications, PV-surplus charging, vehicle-at-wallbox binding and more. See [blueprints README](blueprints/automation/onekommafive/README.md).
 
-**Automation blueprints** — nine importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/):
-
-- **Run during cheapest window** — schedule a switch for the cheapest N-min window daily (dishwasher, washer, EV)
-- **Follow cheap electricity** — mirror a switch to `binary_sensor…_cheap_electricity` for opportunistic loads
-- **Notify on AI grid-charge decision** — ping on `BATTERY_CHARGE_FROM_GRID`
-- **Notify on negative prices tomorrow** — heads-up when tomorrow has ≥ N negative slots (fires ~13:00 CET)
-- **Notify when the grid pays you** — instant alert on positive↔negative edge, built on the bus event
-- **EV charge on PV surplus** — toggle a switch ON when battery is full AND PV exceeds a threshold
-- **Vehicle at wallbox** — bind a vehicle profile when its plug-in sensor goes ON (one automation per car)
-- **Notify when a device goes offline** — connectivity-based alerts with debounce
-- **Forward 1KOMMA5° cloud notifications** — passthrough for `onekommafive_notification` events with optional `type_filter`
-
-→ [Blueprints README with import instructions](blueprints/automation/onekommafive/README.md)
-
----
-
-## Supported devices
-
-The integration exposes whatever the 1KOMMA5° cloud reports for your site: every device it recognises comes through the shared `status_and_assets` endpoint, so any hardware 1KOMMA5° has certified for the Heartbeat platform surfaces automatically. No allowlist inside the integration.
-
-Observed hardware from live installs (diagnostic dumps, developer + reporter reports):
-
-| Sub-device | Manufacturers seen | Notes |
-|---|---|---|
-| Inverter (`HYBRID` asset) | Sungrow (`SH*RT-V112`), Enphase | Hybrid inverters carry the battery entities on the same sub-device |
-| Inverter + separate battery | FoxESS | Reports `PV_SYSTEM` + `BATTERY` split; `battery` sub-device is created only in that case |
-| Heat pump | Stiebel Eltron (`WPMsystem`), Vaillant, Buderus | Optional; sub-device only when 1KOMMA5° reports it |
-| Smart meter | Chint (`DTSU666`), Iskra | Backs the meter connectivity + feed-in revenue sensors |
-| Wallbox | go-e (`HOMEfix 11kW`), MENNEKES (`AMTRON`), Enphase (`EVSE_IQ2`), KEBA | Multi-wallbox sites get one sub-device per wallbox since v0.1.58 |
-| Vehicle profile | Any brand configured in the 1KOMMA5° app (Volkswagen, BMW, Tesla, Škoda, …) | Managed in the app under *Settings → Vehicles*; no HA-side pairing |
-
-**Unrecognised assets** (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the system parent; the integration deliberately does not create empty placeholder sub-devices for hardware it can't classify.
-
-If your hardware isn't on this list, that's expected: the entry surfaces the same way as long as 1KOMMA5° reports it. Please attach a diagnostics dump to an issue if a fresh device shows up as `UNKNOWN` or landed on the wrong sub-device.
-
----
+Full tour: [Dashboards & blueprints](https://mrebbert.github.io/1komma5-ha/dashboards/).
 
 ## Devices & entity structure
 
-Entities are grouped under one system parent device plus per-asset sub-devices — read off each hardware component's manufacturer, model and firmware version at a glance, assign areas / disable sensors per device:
+Entities are grouped under one system parent device plus per-asset sub-devices — one each for inverter, battery (split from inverter only when the asset model requires it), heat pump, smart meter, wallbox (one per physical wallbox since v0.1.58), vehicle. Sub-device data is PII-safe: only `manufacturer`, `model`, `firmware` from the cloud `status_and_assets` payload. `entity_id`s and `unique_id`s are stable across releases.
 
-```
-1k5° System (parent)
-├── Inverter        (Sungrow / SH6.0RT-V112 / …)
-├── Battery         — entities live on the inverter sub-device (hybrid inverter)
-├── Heat pump       (Stiebel Eltron / WPMsystem / …)
-├── Smart meter     (Chint / DTSU666 / …)
-├── Wallbox         (go-e / HOMEfix 11kW / …)
-└── Vehicle         (Volkswagen / ID.5 / …)
-```
+Full topology (including multi-wallbox) and PII guardrails: [Devices & entity structure](https://mrebbert.github.io/1komma5-ha/entity-structure/).
 
-**Multi-wallbox sites (since v0.1.58)** get one sub-device per physical wallbox, each with its own manufacturer / model / firmware, and vehicles parent under the wallbox they are actually paired to (via `Wallbox.assigned_ev_id ↔ EVCharger.assigned_charger_id`):
-
-```
-1k5° System (parent)
-├── … (inverter / heat pump / meter as above)
-├── Wallbox (aggregate)           — carries the aggregate ev_chargers_power / _cost / wallbox_connected sensors
-├── Wallbox Garage  (go-e / HOMEfix / 60.5)
-│   └── Vehicle     (Volkswagen / ID.5 / …)
-└── Wallbox Carport (Enphase / EVSE_IQ2 / 1.2.3)
-    └── Vehicle     (Tesla / Model 3 / …)
-```
-
-Single-wallbox sites (the historical default) keep the exact sub-device identifier and label they had before v0.1.58: no migration, no renamed entities, no broken area assignments.
-
-Sub-device data is **PII-safe**: only `manufacturer`, `model`, `firmware` are pulled from the cloud `status_and_assets` payload; the Vehicle sub-device pulls `manufacturer` and `model` from the EV profile. Unclassified assets (`Asset.type = UNKNOWN`, e.g. a Shelly Pro 3EM CT-clamp meter behind the smart meter) stay attached to the parent — no empty placeholder devices.
-
-`entity_id`s and `unique_id`s are stable across releases — long-term statistics, automations, Energy-Dashboard configuration and dashboard cards keep working without migration.
-
-Installs missing an asset type (e.g. no heat pump, or grid-only without PV) have the corresponding sensors **disabled by default**. The entities still exist in the registry so history stays continuous if hardware is added later. Re-enable manually under **Settings → Devices & Services → 1KOMMA5° → Entities**.
-
----
-
-## Compatibility & requirements
+## Compatibility
 
 - **Home Assistant** 2024.10 or newer
 - A **1KOMMA5° account** with at least one active system
 - The [`onekommafive`](https://github.com/mrebbert/1komma5-api) Python library (installed automatically)
+- Seven supported markets: DE, AT, NL, FI, ES, DK, SE, AU (per-locale currency auto-detected)
+- Authentication: OAuth2 PKCE against `auth.1komma5grad.com` (the current Auth0 flow). Accounts that still sign in only via `my.1komma5.io` are not supported; the EMP backend (GridX or 1KOMMA5°-native) is independent and both work.
 
-### Supported markets
-
-1KOMMA5° operates in seven markets. The integration ships translations and per-locale currency for all of them, auto-detected from the site's country code:
-
-| Locale | Translations | Currency |
-|--------|--------------|----------|
-| Germany, Austria | German | EUR |
-| Netherlands | Dutch | EUR |
-| Finland | Finnish | EUR |
-| Spain | Spanish | EUR |
-| Denmark | Danish | DKK |
-| Sweden | Swedish | SEK |
-| Australia | English | AUD |
-
-Cost, revenue and price sensors render in the local currency without manual configuration.
-
-> **Caveat:** end-to-end functional verification exists only for **Germany** (the developer's own setup). The SDK targets a single global API endpoint, so the integration *should* work in other markets — but auth flows, data shapes and feature availability may vary regionally. If something doesn't work in a non-DE market, please open a [GitHub issue](https://github.com/mrebbert/1komma5-ha/issues) with the diagnostics dump.
-
-### Technical details
-
-| Property | Value |
-|----------|-------|
-| API library | [mrebbert/1komma5-api](https://github.com/mrebbert/1komma5-api) |
-| Authentication | OAuth2 PKCE against `auth.1komma5grad.com` (the current Auth0 flow, matches the official iOS app). Accounts that still sign in only via `my.1komma5.io` are not supported; the EMP backend behind the account (GridX or 1KOMMA5°-native) is independent and both work. |
-| IoT class | `cloud_polling` |
-| Coordinators | 8 (live 30 s, price 1 h, optimization 15 min, weather 1 h, system_status 5 min, energy 15 min, notifications 5 min, heartbeat_prices 1 h) |
-| HA domain | `onekommafive` |
-
----
+End-to-end verification exists only for **Germany** — see [Compatibility](https://mrebbert.github.io/1komma5-ha/compatibility/) for the detailed caveat and the full technical details table.
 
 ## Known limitations
 
-Three cloud-API realities the integration cannot design around. Documenting them here so nobody wastes time modelling them as bugs.
-
-**The optimization binaries reflect the Cloud recommendation, not the local HEMS.** `binary_sensor.<sys>_optimization_battery_grid_charge` and `binary_sensor.<sys>_heatpump_recommendation` mirror the latest `Decision` returned by the AI endpoint: what 1KOMMA5°'s Cloud AI thinks *should* happen. The Heartbeat HEMS decides locally whether to act; the two can diverge for days. Owner-verified example (2026-09-10): heat-pump-recommended stayed `off` while SG-Ready ran the pump anyway. Automations that assume `recommended = on ⇔ device runs` will be wrong.
-
-**Optimization settlement fields are permanently `unknown`.** `optimization_total_cost`, `optimization_energy_bought`, `optimization_energy_sold` come from `OptimizationEvent` fields the backend does not populate ("or None when not settled yet" per the SDK docstring, never seen non-`null` in the wild). The sensors stay because they are semantically correct and would start reporting if 1KOMMA5° ever ships settlement data; the showcase dashboard parks them in a commented-out block.
-
-**The EMS auto-mode switch is likely cosmetic.** `switch.<sys>_ems_auto_mode` (GRIDX backends only) POSTs to `/systems/{id}/ems/actions/set-manual-override`. The read model (`EmsSettings.manual_devices`) and the official 1KOMMA5° app both suggest there is no user-facing way to override automatic optimisation; the endpoint accepts writes without an observable side effect. Kept as diagnostic-category in case the cloud starts honouring it.
-
----
+Three cloud-API realities the integration cannot design around (optimization binaries reflect the Cloud recommendation, not the HEMS; settlement fields stay empty; EMS auto-mode switch is likely cosmetic). Full detail: [Known limitations](https://mrebbert.github.io/1komma5-ha/limitations/).
 
 ## FAQ / troubleshooting
 
-Three questions that cover most installations; the full list sits in [`docs/faq.md`](docs/faq.md).
-
-### Why are the charging-mode / target-SoC / departure-time entities missing?
-
-Since v0.1.58 the wallbox / EV endpoints use the site-scoped v2 route, which works on both `GRIDX` and `1K5` backends. If the entities are still missing, assign a vehicle profile in the 1KOMMA5° app (*Settings → Vehicles*) and restart Home Assistant. If an assignment is already in place, download diagnostics and open an issue — see [`docs/faq.md`](docs/faq.md#why-are-the-charging-mode--target-soc--departure-time-entities-missing).
-
-### Is `dynamic_pulse_price_guarantee` the max price I'll pay per kWh?
-
-**No.** The guarantee comes with terms and conditions on the 1KOMMA5° side that this integration doesn't model. Treat the sensor as informational; don't wire automations that assume "current price ≤ guarantee" semantics.
-
-### How do I file a good bug report?
-
-Grab the **System Information** dump from **Settings → System → Repairs → System Information** (PII-safe — no customer/system identifiers or addresses). Attach it to a [GitHub issue](https://github.com/mrebbert/1komma5-ha/issues) with a short reproducer.
-
-For HACS cache lag, EMS switch availability, optimization-sensor behaviour, diagnostic-timestamp warmup, notification-type scope, entity naming, §14a-Modul-1-and-Modul-3 reading, Energy Dashboard wiring, the `invalid_auth` + `my.1komma5.io` case and the `/ems 30401` log line, see [`docs/faq.md`](docs/faq.md).
-
----
+Common questions sit on [the FAQ page](https://mrebbert.github.io/1komma5-ha/faq/): HACS cache lag, `invalid_auth` + `my.1komma5.io`, EMS auto-mode switch unavailable, missing EV entities, Energy Dashboard wiring, §14a Modul 1 / Modul 3 semantics, `30401 /ems` log line, bug-report checklist.
 
 ## Contributing
 
 For setup, PR workflow, code style and translation guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-<details>
-<summary>Running the test suite</summary>
-
-Pure-helper unit tests (no HA dependency):
-
-```bash
-python3.13 -m venv .venv
-.venv/bin/pip install -e ".[test]"
-.venv/bin/pytest
-```
-
-Full integration tests (require HA):
-
-```bash
-.venv/bin/pip install -e ".[test-integration]"
-.venv/bin/pytest tests/integration
-```
-
-With coverage:
-
-```bash
-.venv/bin/pytest --cov=custom_components/onekommafive --cov-report=term-missing
-```
-
-</details>
-
----
-
 ## Credits
 
 Large parts of this project are inspired by and based on the work of [Alex Birkner](https://github.com/BirknerAlex) and his [hacs_1komma5grad](https://github.com/BirknerAlex/hacs_1komma5grad) integration. Many thanks for paving the way.
 
----
-
 ## Disclaimer
 
-This project is **not affiliated with or endorsed by 1KOMMA5°**. The API is undocumented and may change without notice.
-
-This is an unofficial integration based on a reverse-engineered API, built 100 % vibe-coded with AI assistance. It may break if 1KOMMA5° changes their backend. Use at your own risk.
-
-The developer does not have the means to test broadly across hardware configurations — a lot of it is "it works for me". Personal test setup:
-
-| Component | Model |
-|-----------|-------|
-| Hybrid Inverter | Sungrow SH6.0RT-V112 |
-| Battery | Sungrow SBR256 |
-| Wallbox | go-e homeFix 11 kW |
-| EV | Volkswagen ID.5 |
-| Heat pump | Stiebel Eltron WPL-A 10 HK 400 Premium |
-| Smart meter | DTSU666 |
+This project is **not affiliated with or endorsed by 1KOMMA5°**. The API is undocumented and may change without notice. This is an unofficial integration based on a reverse-engineered API, built 100 % vibe-coded with AI assistance. It may break if 1KOMMA5° changes their backend. Use at your own risk.

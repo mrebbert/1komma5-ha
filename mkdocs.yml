@@ -1,0 +1,101 @@
+site_name: 1KOMMA5° Home Assistant Integration
+site_description: Home Assistant custom integration for the 1KOMMA5° Heartbeat energy platform — dynamic pricing, AI optimization, EV wallbox, §14a EnWG, cloud notifications.
+site_url: https://mrebbert.github.io/1komma5-ha/
+site_author: Markus Rebbert
+
+repo_url: https://github.com/mrebbert/1komma5-ha
+repo_name: mrebbert/1komma5-ha
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - content.action.view
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: Link to this section
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path:
+        - docs
+        - .
+      check_paths: true
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Install & setup: install.md
+  - Features:
+      - Overview: features/index.md
+      - Live power & battery: features/live-power.md
+      - Dynamic pricing: features/pricing.md
+      - Energy & cost: features/energy-cost.md
+      - §14a EnWG grid-fee: features/enwg14a.md
+      - Contract overview: features/contract.md
+      - AI optimization: features/ai-optimization.md
+      - EV charger & wallbox: features/ev-wallbox.md
+      - Weather: features/weather.md
+      - Diagnostics: features/diagnostics.md
+  - Services & bus events: services.md
+  - Dashboards & blueprints: dashboards.md
+  - Devices & entity structure: entity-structure.md
+  - Compatibility: compatibility.md
+  - Known limitations: limitations.md
+  - FAQ: faq.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mrebbert/1komma5-ha
+    - icon: simple/homeassistant
+      link: https://www.home-assistant.io/
+    - icon: simple/homeassistantcommunitystore
+      link: https://hacs.xyz/

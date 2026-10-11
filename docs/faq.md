@@ -1,6 +1,11 @@
+---
+title: FAQ / troubleshooting
+description: Troubleshooting for the 1KOMMA5° Home Assistant integration — invalid_auth, HACS cache lag, EMS switch unavailable, 30401 log line, Energy Dashboard wiring, §14a semantics.
+---
+
 # FAQ / troubleshooting
 
-Common questions when installing or running the 1KOMMA5° Home Assistant integration. See the main [README](../README.md) for setup and feature overviews.
+Common questions when installing or running the 1KOMMA5° Home Assistant integration. See [Install & setup](install.md) and the [Features overview](features/index.md) for the full tour.
 
 ## Why does HACS not show the latest release yet?
 
@@ -68,7 +73,7 @@ Entity naming is composed from `device.name + entity original_name` unless you r
 
 ## The Energy Dashboard shows no data / wrong data
 
-See [`dashboard/ENERGY_DASHBOARD.md`](../dashboard/ENERGY_DASHBOARD.md) for the slot-to-sensor mapping. The two most common misconfigurations: (a) using `battery_power` (bidirectional) instead of `battery_charge_power_energy` + `battery_discharge_power_energy`; (b) using the raw `grid_power` instead of the split `grid_consumption_power_energy` + `grid_feed_in_power_energy`.
+See [`dashboard/ENERGY_DASHBOARD.md`](https://github.com/mrebbert/1komma5-ha/blob/main/dashboard/ENERGY_DASHBOARD.md) for the slot-to-sensor mapping. The two most common misconfigurations: (a) using `battery_power` (bidirectional) instead of `battery_charge_power_energy` + `battery_discharge_power_energy`; (b) using the raw `grid_power` instead of the split `grid_consumption_power_energy` + `grid_feed_in_power_energy`.
 
 ## The log shows repeated `30401` errors for `/ems`
 

@@ -141,4 +141,4 @@ When something is broken and waiting for Sunday isn't acceptable:
 
 ## License
 
-By contributing you agree that your contribution will be licensed under the [MIT License](LICENSE) of this repository.
+By contributing you agree that your contribution will be licensed under the [MIT License](https://github.com/mrebbert/1komma5-ha/blob/main/LICENSE) of this repository.
