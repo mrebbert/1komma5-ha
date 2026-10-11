@@ -36,3 +36,6 @@ Thumbs.db
 .claude/
 tasks/
 mutants/
+
+# MkDocs build output
+site/

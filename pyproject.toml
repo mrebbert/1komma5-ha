@@ -47,6 +47,12 @@ typecheck = [
     "onekommafive>=1.1.7,<2",
 ]
 
+# Documentation site generator. Pin matches .github/workflows/docs.yml so a
+# local `mkdocs build --strict` reproduces CI behaviour exactly.
+docs = [
+    "mkdocs-material==9.6.14",
+]
+
 [tool.setuptools]
 # This is a Home Assistant custom component, not a normal pip-installable package.
 # Tell setuptools that the project ships zero Python packages so the editable
