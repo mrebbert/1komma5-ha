@@ -50,7 +50,7 @@ typecheck = [
 # Documentation site generator. Pin matches .github/workflows/docs.yml so a
 # local `mkdocs build --strict` reproduces CI behaviour exactly.
 docs = [
-    "mkdocs-material==9.6.14",
+    "mkdocs-material==9.7.7",
 ]
 
 [tool.setuptools]
