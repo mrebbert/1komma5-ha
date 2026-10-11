@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -233,12 +234,51 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
             # so Issue reports carry something more actionable than
             # "Starting OAuth2 PKCE login" followed by silence. The config-flow
             # user still sees the generic "invalid_auth" form; operators get
-            # the detail in home-assistant.log at WARNING level.
-            _LOGGER.warning("1KOMMA5° authentication failed: %s", err)
+            # the detail in home-assistant.log at WARNING level. HTML bodies
+            # (Auth0 Universal Login re-render on step-2 failure) are reduced
+            # to their <title>; non-HTML bodies are clipped at 300 chars.
+            _LOGGER.warning(
+                "1KOMMA5° authentication failed: %s", _summarize_sdk_error(err)
+            )
             raise InvalidAuth from err
         except RequestError as err:
-            _LOGGER.warning("1KOMMA5° request failed during login: %s", err)
+            _LOGGER.warning(
+                "1KOMMA5° request failed during login: %s",
+                _summarize_sdk_error(err),
+            )
             raise CannotConnect from err
+
+
+_HTML_TITLE_RE = re.compile(r"<title[^>]*>([^<]+)</title>", re.IGNORECASE)
+_MAX_BODY_CHARS = 300
+
+
+def _summarize_sdk_error(err: Exception) -> str:
+    """Collapse an SDK error message so the log line stays readable.
+
+    The SDK raises ``AuthenticationError`` with messages shaped as
+    ``"<step label>: <http body or status>"``. Step 2 of the Auth0 flow
+    (credentials POST) hands back a full ``<!DOCTYPE html>`` login page on
+    rejection; dumping that into ``home-assistant.log`` is ~68 KB of noise.
+
+    Returns the step label with either the HTML page's ``<title>`` plus a
+    byte count, or the original body clipped to :data:`_MAX_BODY_CHARS`.
+    Messages without a ``: body`` suffix pass through unchanged.
+    """
+    message = str(err)
+    label, sep, body = message.partition(":")
+    if not sep:
+        return message
+    body = body.strip()
+    if body.startswith("<!DOCTYPE") or body.lower().startswith("<html"):
+        match = _HTML_TITLE_RE.search(body)
+        title = match.group(1).strip() if match else "(HTML page)"
+        return f"{label}: {title} [HTML body suppressed, {len(body)} bytes]"
+    if len(body) > _MAX_BODY_CHARS:
+        return (
+            f"{label}: {body[:_MAX_BODY_CHARS]}… [truncated, {len(body)} bytes total]"
+        )
+    return f"{label}: {body}"
 
 
 async def _async_system_title(system: System) -> str:

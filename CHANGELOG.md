@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.69] - 2026-10-17
+
+Config-flow diagnostic refinement. No new entities, services or configuration surfaces; no change to existing automations.
+
+### Changed
+- Shorter config-flow failure WARNING line. v0.1.68 included the full response body in the WARNING, which turned out to be a ~68 KB Auth0 Universal Login HTML page when step 2 of the OAuth2/PKCE login rejects credentials. The line now reduces HTML bodies to their `<title>` plus the byte count (`Login failed: 1KOMMA5° Sign-in [HTML body suppressed, N bytes]`); non-HTML bodies above 300 chars are clipped with a `[truncated, N bytes total]` tag. Messages without the `<label>: <body>` shape pass through unchanged. See Issue #37 for the signal this refines.
+
 ## [0.1.68] - 2026-10-10
 
 SDK pin bump plus a diagnostic log line for failed logins. No new entities, services or configuration surfaces; no change to existing automations.
