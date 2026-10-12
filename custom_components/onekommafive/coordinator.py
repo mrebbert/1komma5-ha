@@ -24,6 +24,7 @@ from onekommafive.models import (
     MarketPrices,
     Notification,
     OptimizationEvent,
+    SiteSystemInfo,
     Wallbox,
 )
 from onekommafive.models import WeatherData as SdkWeatherData
@@ -108,6 +109,10 @@ class SystemStatusData:
     # full list per asset type; needed wherever more than one asset of a type
     # may realistically appear (currently EV_CHARGER for multi-wallbox setups)
     assets_by_type_list: dict[str, list[Asset]]
+    # Authoritative §14a-EnWG enrolment readout (SDK v1.1.8+); None when the
+    # `/api/v1/sites/{id}/system-info` fetch fails. The nested `enwg14a_module`
+    # is None for sites that are not enrolled.
+    system_info: SiteSystemInfo | None = None
 
 
 @dataclass
@@ -580,6 +585,11 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
                 )
             except Exception as err:
                 _LOGGER.debug("Active features fetch failed: %s", err)
+        system_info: SiteSystemInfo | None = None
+        try:
+            system_info = await self._system.get_system_info()
+        except Exception as err:
+            _LOGGER.debug("Site system-info fetch failed: %s", err)
         assets: list[Asset] = list(site.assets or [])
         assets_by_type_list: dict[str, list[Asset]] = {}
         for asset in assets:
@@ -596,6 +606,7 @@ class OneKomma5SystemStatusCoordinator(OneKomma5BaseCoordinator[SystemStatusData
             active_features=features,
             assets_by_type=assets_by_type,
             assets_by_type_list=assets_by_type_list,
+            system_info=system_info,
         )
 
 

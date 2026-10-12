@@ -374,6 +374,15 @@
           "unknown": "Onbekend"
         }
       },
+      "enwg14a_module": {
+        "name": "§14a EnWG-inschrijving",
+        "state": {
+          "none": "Geen",
+          "module_1": "Module 1 (vaste korting)",
+          "module_3": "Module 3 (variabele HT/NT)",
+          "unknown": "Onbekend"
+        }
+      },
       "system_age_days": {
         "name": "Systeemleeftijd"
       },

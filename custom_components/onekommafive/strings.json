@@ -374,6 +374,15 @@
           "unknown": "Unbekannt"
         }
       },
+      "enwg14a_module": {
+        "name": "§14a-EnWG-Teilnahme",
+        "state": {
+          "none": "Keine",
+          "module_1": "Modul 1 (pauschale Reduktion)",
+          "module_3": "Modul 3 (variable HT/NT)",
+          "unknown": "Unbekannt"
+        }
+      },
       "system_age_days": {
         "name": "Systemalter"
       },

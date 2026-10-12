@@ -374,6 +374,15 @@
           "unknown": "Tuntematon"
         }
       },
+      "enwg14a_module": {
+        "name": "§14a EnWG -ilmoittautuminen",
+        "state": {
+          "none": "Ei mitään",
+          "module_1": "Moduuli 1 (kiinteä alennus)",
+          "module_3": "Moduuli 3 (muuttuva HT/NT)",
+          "unknown": "Tuntematon"
+        }
+      },
       "system_age_days": {
         "name": "Järjestelmän ikä"
       },
