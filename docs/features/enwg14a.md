@@ -5,16 +5,20 @@ description: BNetzA BK6-22-300 Modul 1 (flat annual rebate) and Modul 3 (variabl
 
 # §14a EnWG grid-fee reduction
 
-Two diagnostic sensors on the meter sub-device for accounts that the 1KOMMA5° backend has provisioned under **BNetzA BK6-22-300** (iMSys plus a controllable consumption device: wallbox, heat pump, PV battery). Available since **v0.1.66**.
+Three diagnostic sensors on the meter sub-device for accounts that the 1KOMMA5° backend has provisioned under **BNetzA BK6-22-300** (iMSys plus a controllable consumption device: wallbox, heat pump, PV battery). Available since **v0.1.66**.
 
 | Entity | Key | Semantic |
 |--------|-----|----------|
+| §14a enrolment (authoritative) | `enwg14a_module` | ENUM diagnostic reading `SiteSystemInfo.enwg14a_module` from the dedicated `/api/v1/sites/{id}/system-info` endpoint. States: `none` (not enrolled), `module_1` (pauschale Reduktion), `module_3` (variable HT/NT), `unknown` (fetch failed or returned an unmapped slug). Always registers. *New in v0.1.69.* |
 | §14a Modul 1 (annual) | `module1_grid_fee_reduction_annual` | Annual **net** grid-fee reduction (EUR/year), from `HeartbeatPriceWindow.module1_savings_per_year_eur`. Diagnostic category. Stays `unavailable` on accounts without a provisioning date (no iMSys + SteuVE). |
 | §14a Modul 3 (annual) | `module3_grid_fee_savings_annual` | Annual **net** savings from variable Netzentgelte (HT/NT), from `HeartbeatPriceWindow.module3_total_savings_eur`. Diagnostic category. Stays `unavailable` until the site opts into Modul 3. *New in v0.1.67.* |
+
+The authoritative `enwg14a_module` sensor and the two savings sensors are complementary: the ENUM is the explicit backend-side enrolment flag; the two savings sensors read values from the heartbeat-prices window and remain `unavailable` until the backend starts populating them.
 
 ## Modul 1 attributes
 
 - `provisioning_date` — ISO date the Modul 1 bundle went live on the account.
+- `enwg14a_module_valid_from` — ISO-8601 date from `SiteSystemInfo.enwg14a_module.valid_from_date` (SDK v1.1.8+); `None` when the authoritative endpoint reports no enrolment. *New in v0.1.69.*
 - `gross_estimate_eur_assumption` — `value × 1.19`, flagged as an assumption pending a second-grid-area data point. Matches the published gross figure on the first observed account (121 EUR API net vs 144 EUR tariff-area gross).
 - `basis` — `"§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"`.
 
@@ -22,8 +26,10 @@ Two diagnostic sensors on the meter sub-device for accounts that the 1KOMMA5° b
 
 - `comparison_grid_fee_eur_per_kwh` — the flat reference tariff the HT/NT tariff is compared against.
 - `comparison_grid_fees_total_eur` — annual grid fees under the flat reference tariff.
+- `variable_grid_fee_eur_per_kwh` — effective variable (HT/NT) grid-fee rate per window, counterpart to `comparison_grid_fee_eur_per_kwh`. *New in v0.1.69.*
 - `variable_grid_fees_total_eur` — annual grid fees under the HT/NT tariff.
 - `enwg14a_total_savings_eur` — combined Modul-1-plus-Modul-3 savings for the window.
+- `enwg14a_module_valid_from` — ISO-8601 date from the authoritative endpoint. *New in v0.1.69.*
 - `gross_estimate_eur_assumption` — `value × 1.19` on the net savings.
 - `basis` — `"§14a EnWG Modul 3 (BNetzA BK6-22-300, variable Netzentgelte HT/NT); net figure"`.
 

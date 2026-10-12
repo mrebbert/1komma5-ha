@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from .coordinator import (
         OneKomma5HeartbeatPricesCoordinator,
         OneKomma5LiveCoordinator,
+        OneKomma5SystemStatusCoordinator,
     )
 
 from homeassistant.components.sensor import (
@@ -1137,6 +1138,67 @@ class OneKomma5EmpBackendSensor(OneKomma5SystemStatusEntity, SensorEntity):
         return self._emp_type
 
 
+# ENUM option keys for the authoritative §14a-EnWG enrolment sensor. The SDK
+# returns the raw slug (`"module-1"` observed, `"module-3"` hypothesis) with a
+# hyphen; hassfest's translation-key pattern [a-z0-9-_]+ accepts both, but HA
+# ENUM options conventionally use underscores, and we keep the mapping tight.
+_ENWG14A_MODULE_OPTIONS: tuple[str, ...] = ("none", "module_1", "module_3", "unknown")
+_ENWG14A_SDK_TO_OPTION: dict[str, str] = {
+    "module-1": "module_1",
+    "module-3": "module_3",
+}
+
+
+class OneKomma5Enwg14aModuleSensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """§14a EnWG enrolment ENUM sensor backed by the authoritative site-info endpoint."""
+
+    _attr_translation_key = "enwg14a_module"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(_ENWG14A_MODULE_OPTIONS)
+    _attr_icon = "mdi:gavel"
+    _device_key = "meter"
+
+    def __init__(
+        self,
+        coordinator: OneKomma5SystemStatusCoordinator,
+        system_id: str,
+        system_name: str,
+        *,
+        asset: Asset | None = None,
+        parent_device_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "enwg14a_module",
+            asset=asset,
+            parent_device_id=parent_device_id,
+        )
+
+    @property
+    def native_value(self) -> str:
+        data = self.coordinator.data
+        if data is None or data.system_info is None:
+            return "unknown"
+        module = data.system_info.enwg14a_module
+        if module is None:
+            return "none"
+        value = module.value or ""
+        return _ENWG14A_SDK_TO_OPTION.get(value, "unknown")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        data = self.coordinator.data
+        if data is None or data.system_info is None:
+            return None
+        module = data.system_info.enwg14a_module
+        if module is None:
+            return {"valid_from_date": None}
+        return {"valid_from_date": module.valid_from_date}
+
+
 # Working-Hypothesis basis string surfaced as the `basis` attribute on the
 # Modul-1 sensor. Pending a second-grid-area data point for confirmation.
 _MODULE1_BASIS = "§14a EnWG Modul 1 (BNetzA BK6-22-300); working hypothesis, net figure"
@@ -1164,6 +1226,7 @@ class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEnti
         asset: Asset | None = None,
         currency: str = "EUR",
         parent_device_id: str | None = None,
+        system_status_coordinator: OneKomma5SystemStatusCoordinator | None = None,
     ) -> None:
         super().__init__(
             coordinator,
@@ -1174,12 +1237,24 @@ class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEnti
             parent_device_id=parent_device_id,
         )
         self._attr_native_unit_of_measurement = currency
+        self._system_status_coordinator = system_status_coordinator
 
     def _window(self) -> HeartbeatPriceWindow | None:
         prices = self.coordinator.data
         if prices is None:
             return None
         return prices.year
+
+    def _enwg14a_valid_from(self) -> str | None:
+        if self._system_status_coordinator is None:
+            return None
+        data = self._system_status_coordinator.data
+        if data is None or data.system_info is None:
+            return None
+        module = data.system_info.enwg14a_module
+        if module is None:
+            return None
+        return module.valid_from_date
 
     @property
     def available(self) -> bool:
@@ -1204,6 +1279,7 @@ class OneKomma5GridFeeReductionSensor(OneKomma5HeartbeatPricesEntity, SensorEnti
         gross = round(base * _GERMAN_VAT_MULTIPLIER, 2) if base is not None else None
         return {
             "provisioning_date": window.module1_provisioning_date,
+            "enwg14a_module_valid_from": self._enwg14a_valid_from(),
             "gross_estimate_eur_assumption": gross,
             "basis": _MODULE1_BASIS,
         }
@@ -1237,6 +1313,7 @@ class OneKomma5Module3SavingsSensor(OneKomma5HeartbeatPricesEntity, SensorEntity
         asset: Asset | None = None,
         currency: str = "EUR",
         parent_device_id: str | None = None,
+        system_status_coordinator: OneKomma5SystemStatusCoordinator | None = None,
     ) -> None:
         super().__init__(
             coordinator,
@@ -1247,12 +1324,24 @@ class OneKomma5Module3SavingsSensor(OneKomma5HeartbeatPricesEntity, SensorEntity
             parent_device_id=parent_device_id,
         )
         self._attr_native_unit_of_measurement = currency
+        self._system_status_coordinator = system_status_coordinator
 
     def _window(self) -> HeartbeatPriceWindow | None:
         prices = self.coordinator.data
         if prices is None:
             return None
         return prices.year
+
+    def _enwg14a_valid_from(self) -> str | None:
+        if self._system_status_coordinator is None:
+            return None
+        data = self._system_status_coordinator.data
+        if data is None or data.system_info is None:
+            return None
+        module = data.system_info.enwg14a_module
+        if module is None:
+            return None
+        return module.valid_from_date
 
     @property
     def available(self) -> bool:
@@ -1278,8 +1367,10 @@ class OneKomma5Module3SavingsSensor(OneKomma5HeartbeatPricesEntity, SensorEntity
         return {
             "comparison_grid_fee_eur_per_kwh": window.comparison_grid_fee_eur_per_kwh,
             "comparison_grid_fees_total_eur": window.comparison_grid_fees_total_eur,
+            "variable_grid_fee_eur_per_kwh": window.variable_grid_fee_eur_per_kwh,
             "variable_grid_fees_total_eur": window.variable_grid_fees_total_eur,
             "enwg14a_total_savings_eur": window.enwg14a_total_savings_eur,
+            "enwg14a_module_valid_from": self._enwg14a_valid_from(),
             "gross_estimate_eur_assumption": gross,
             "basis": _MODULE3_BASIS,
         }

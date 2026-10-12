@@ -374,6 +374,15 @@
           "unknown": "Unknown"
         }
       },
+      "enwg14a_module": {
+        "name": "§14a EnWG enrolment",
+        "state": {
+          "none": "None",
+          "module_1": "Module 1 (flat-rate reduction)",
+          "module_3": "Module 3 (variable HT/NT)",
+          "unknown": "Unknown"
+        }
+      },
       "system_age_days": {
         "name": "System age"
       },

@@ -374,6 +374,15 @@
           "unknown": "Desconocido"
         }
       },
+      "enwg14a_module": {
+        "name": "Inscripción §14a EnWG",
+        "state": {
+          "none": "Ninguna",
+          "module_1": "Módulo 1 (reducción fija)",
+          "module_3": "Módulo 3 (HT/NT variable)",
+          "unknown": "Desconocido"
+        }
+      },
       "system_age_days": {
         "name": "Edad del sistema"
       },

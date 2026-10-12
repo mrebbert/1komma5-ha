@@ -50,6 +50,7 @@ from .sensor_entities import (
     OneKomma5DynamicPulsePriceGuaranteeSensor,
     OneKomma5EmpBackendSensor,
     OneKomma5EnergySensor,
+    OneKomma5Enwg14aModuleSensor,
     OneKomma5EVSensor,
     OneKomma5FeedInRevenueSensor,
     OneKomma5GridFeeReductionSensor,
@@ -244,6 +245,7 @@ async def async_setup_entry(
             asset=_resolve_asset("meter"),
             currency=currency,
             parent_device_id=data.system_device_id,
+            system_status_coordinator=data.system_status_coordinator,
         )
     )
 
@@ -255,6 +257,21 @@ async def async_setup_entry(
             system_name,
             asset=_resolve_asset("meter"),
             currency=currency,
+            parent_device_id=data.system_device_id,
+            system_status_coordinator=data.system_status_coordinator,
+        )
+    )
+
+    # §14a enrolment ENUM sensor (authoritative read from the site system-info
+    # endpoint, SDK v1.1.8+). Always registers; state is "none" for a site
+    # that is not enrolled, "module_1" / "module_3" when enrolled, "unknown"
+    # when the site-info fetch failed or returned a slug we do not map yet.
+    entities.append(
+        OneKomma5Enwg14aModuleSensor(
+            data.system_status_coordinator,
+            system_id,
+            system_name,
+            asset=_resolve_asset("meter"),
             parent_device_id=data.system_device_id,
         )
     )

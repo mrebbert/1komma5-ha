@@ -31,6 +31,7 @@ def _window(
     module3_total_savings_eur: float | None = 42.5,
     comparison_grid_fee_eur_per_kwh: float | None = 0.12,
     comparison_grid_fees_total_eur: float | None = 180.0,
+    variable_grid_fee_eur_per_kwh: float | None = 0.07,
     variable_grid_fees_total_eur: float | None = 137.5,
     enwg14a_total_savings_eur: float | None = 163.5,
 ) -> MagicMock:
@@ -44,6 +45,7 @@ def _window(
         module3_total_savings_eur=module3_total_savings_eur,
         comparison_grid_fee_eur_per_kwh=comparison_grid_fee_eur_per_kwh,
         comparison_grid_fees_total_eur=comparison_grid_fees_total_eur,
+        variable_grid_fee_eur_per_kwh=variable_grid_fee_eur_per_kwh,
         variable_grid_fees_total_eur=variable_grid_fees_total_eur,
         enwg14a_total_savings_eur=enwg14a_total_savings_eur,
     )
@@ -128,10 +130,12 @@ async def test_attributes_expose_comparison_and_combined_savings(
     attrs = hass.states.get(_resolve(hass)).attributes
     assert attrs["comparison_grid_fee_eur_per_kwh"] == 0.12
     assert attrs["comparison_grid_fees_total_eur"] == 180.0
+    assert attrs["variable_grid_fee_eur_per_kwh"] == 0.07
     assert attrs["variable_grid_fees_total_eur"] == 137.5
     assert attrs["enwg14a_total_savings_eur"] == 163.5
     # 42.5 × 1.19 = 50.5749999… → rounded 50.57 (float precision, not banker's).
     assert attrs["gross_estimate_eur_assumption"] == 50.57
+    assert attrs["enwg14a_module_valid_from"] is None
     assert "§14a EnWG Modul 3" in attrs["basis"]
 
 

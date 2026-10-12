@@ -77,6 +77,7 @@ def mock_system_factory():
         heartbeat_prices: MagicMock | None = None,
         impact: MagicMock | None = None,
         price_guarantee: MagicMock | None = None,
+        system_info: MagicMock | None = None,
     ) -> MagicMock:
         system = MagicMock()
         # ``System.id()`` is sync in the SDK; keep MagicMock semantics.
@@ -237,6 +238,13 @@ def mock_system_factory():
         if impact is None:
             impact = MagicMock(co2_savings_kg=None)
         system.get_impact_overview = AsyncMock(return_value=impact)
+
+        # SiteSystemInfo (SDK v1.1.8+). Default to a stub reporting a READY
+        # site with no §14a enrolment so tests boot cleanly without needing to
+        # care about the authoritative §14a readout.
+        if system_info is None:
+            system_info = MagicMock(availability="READY", enwg14a_module=None)
+        system.get_system_info = AsyncMock(return_value=system_info)
 
         return system
 

@@ -135,6 +135,19 @@ def _heartbeat_prices_summary(data: Any) -> dict[str, Any]:
 @_null_safe
 def _system_status_summary(data: Any) -> dict[str, Any]:
     asset_types = sorted({a.type for a in (data.assets or [])})
+    system_info_summary: dict[str, Any] | None = None
+    info = getattr(data, "system_info", None)
+    if info is not None:
+        module = getattr(info, "enwg14a_module", None)
+        system_info_summary = {
+            "availability": getattr(info, "availability", None),
+            "enwg14a_module_value": getattr(module, "value", None)
+            if module is not None
+            else None,
+            "enwg14a_module_valid_from": getattr(module, "valid_from_date", None)
+            if module is not None
+            else None,
+        }
     return {
         "site_status": data.site_status,
         "asset_count": len(data.assets) if data.assets else 0,
@@ -142,6 +155,7 @@ def _system_status_summary(data: Any) -> dict[str, Any]:
         "active_feature_count": len(data.active_features)
         if data.active_features
         else 0,
+        "system_info": system_info_summary,
     }
 
 

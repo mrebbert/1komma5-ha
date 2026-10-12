@@ -363,6 +363,15 @@
         'unique_id': 'sys-1_energy_trader_active',
       }),
       dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_module',
+        'unique_id': 'sys-1_enwg14a_module',
+      }),
+      dict({
         'device_slug': 'onekommafive:sys-1_wallbox',
         'disabled_by': None,
         'entity_category': None,
@@ -1174,6 +1183,15 @@
         'unique_id': 'sys-1_energy_trader_active',
       }),
       dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_module',
+        'unique_id': 'sys-1_enwg14a_module',
+      }),
+      dict({
         'device_slug': 'onekommafive:sys-1_wallbox',
         'disabled_by': None,
         'entity_category': None,
@@ -1974,6 +1992,15 @@
         'platform': 'onekommafive',
         'translation_key': 'energy_trader_active',
         'unique_id': 'sys-1_energy_trader_active',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_module',
+        'unique_id': 'sys-1_enwg14a_module',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1',
@@ -2781,6 +2808,15 @@
         'platform': 'onekommafive',
         'translation_key': 'energy_trader_active',
         'unique_id': 'sys-1_energy_trader_active',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_module',
+        'unique_id': 'sys-1_enwg14a_module',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1_wallbox',

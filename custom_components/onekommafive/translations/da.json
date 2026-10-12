@@ -374,6 +374,15 @@
           "unknown": "Ukendt"
         }
       },
+      "enwg14a_module": {
+        "name": "§14a EnWG-tilmelding",
+        "state": {
+          "none": "Ingen",
+          "module_1": "Modul 1 (fast reduktion)",
+          "module_3": "Modul 3 (variabel HT/NT)",
+          "unknown": "Ukendt"
+        }
+      },
       "system_age_days": {
         "name": "Systemets alder"
       },
