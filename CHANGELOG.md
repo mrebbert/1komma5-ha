@@ -7,9 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.69] - 2026-10-17
 
-Config-flow diagnostic refinement. No new entities, services or configuration surfaces; no change to existing automations.
+Config-flow diagnostic refinement plus an SDK pin bump. No new entities, services or configuration surfaces; no change to existing automations.
 
 ### Changed
+- Bumped the `onekommafive` SDK pin to `>=1.1.8,<2` (from `>=1.1.7,<2`). v1.1.8 adds `/api/v1/sites/{id}/system-info` (`SiteSystemInfo.enwg14a_module`) as an authoritative §14a-module readout, and per-window `HeartbeatPriceWindow.variable_grid_fee_eur_per_kwh` as the counterpart to the already-mapped comparison grid fee. Additive, consumed by a follow-up change.
 - Shorter config-flow failure WARNING line. v0.1.68 included the full response body in the WARNING, which turned out to be a ~68 KB Auth0 Universal Login HTML page when step 2 of the OAuth2/PKCE login rejects credentials. The line now reduces HTML bodies to their `<title>` plus the byte count (`Login failed: 1KOMMA5° Sign-in [HTML body suppressed, N bytes]`); non-HTML bodies above 300 chars are clipped with a `[truncated, N bytes total]` tag. Messages without the `<label>: <body>` shape pass through unchanged. See Issue #37 for the signal this refines.
 
 ## [0.1.68] - 2026-10-10
