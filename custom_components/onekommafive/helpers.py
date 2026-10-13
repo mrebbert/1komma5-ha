@@ -68,7 +68,7 @@ def get_current_price(prices: dict[str, float]) -> float | None:
 
     for key, value in prices.items():
         try:
-            slot_time = datetime.datetime.fromisoformat(key.replace("Z", "+00:00"))
+            slot_time = datetime.datetime.fromisoformat(key)
             if slot_time.tzinfo is None:
                 slot_time = slot_time.replace(tzinfo=datetime.UTC)
             if slot_time > now and (best_time is None or slot_time < best_time):
@@ -99,7 +99,7 @@ def build_forecast(
 
     for key, value in prices.items():
         try:
-            end = datetime.datetime.fromisoformat(key.replace("Z", "+00:00"))
+            end = datetime.datetime.fromisoformat(key)
             if end.tzinfo is None:
                 end = end.replace(tzinfo=datetime.UTC)
             start = end - slot_duration
@@ -179,8 +179,8 @@ def active_optimization_event(
         if not isinstance(from_raw, str) or not isinstance(end_raw, str):
             continue
         try:
-            from_dt = datetime.datetime.fromisoformat(from_raw.replace("Z", "+00:00"))
-            end_dt = datetime.datetime.fromisoformat(end_raw.replace("Z", "+00:00"))
+            from_dt = datetime.datetime.fromisoformat(from_raw)
+            end_dt = datetime.datetime.fromisoformat(end_raw)
         except ValueError:
             continue
         if from_dt.tzinfo is None:
