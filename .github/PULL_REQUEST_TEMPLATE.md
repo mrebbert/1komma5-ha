@@ -39,3 +39,18 @@ instance — note the HA version and any hardware specifics that matter.
 - [ ] User-visible changes are reflected in `README.md` and (where applicable) `dashboard/README.md`.
 - [ ] Translation parity: every new key in `strings.json` is also in `translations/de.json` and `translations/en.json`.
 - [ ] `CHANGELOG.md` has an entry under `[Unreleased]`.
+
+## Test-quality review (for PRs that add or change tests)
+
+<!--
+Skip this block for PRs without test changes.
+
+Full pattern list in `project_mutation_backlog.md` / `feedback_mutation_test_patterns.md`.
+These five questions catch the mutations our MagicMock-based tests used to miss.
+-->
+
+- [ ] Assertions check a **concrete value** (specific number, string, dict key), not just "something came back".
+- [ ] **Boundary cases exact**: for `<` / `<=` logic, assert at `== boundary` explicitly.
+- [ ] Mocks carry **only the attributes the code reads** — prefer `types.SimpleNamespace(**wanted)` over `MagicMock` wherever the test asserts something that depends on attribute presence.
+- [ ] For every `if … else …` branch, **both sides** have a test.
+- [ ] If the test defends code that could be redundant on current Python (e.g. `.replace("Z", "+00:00")` on 3.11+), consider deleting the code instead of asserting on it.
