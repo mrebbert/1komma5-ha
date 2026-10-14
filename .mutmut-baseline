@@ -1,7 +1,7 @@
 {
   "comment": "Mutation-score baseline \u2014 see .github/scripts/mutation_score_gate.py for semantics. Only lower these caps; never raise them.",
   "updated_at": "2026-10-14",
-  "total_survivors_max": 152,
+  "total_survivors_max": 143,
   "per_function_max": {
     "helpers._find_window": 5,
     "helpers.build_forecast": 1,
@@ -41,7 +41,6 @@
     "sensor_entities.OneKomma5Module3SavingsSensor._enwg14a_valid_from": 6,
     "sensor_entities.OneKomma5OptimizationSensor.__init__": 4,
     "sensor_entities.OneKomma5PriceSensor.__init__": 2,
-    "sensor_entities.OneKomma5PriceSensor._price_breakdown": 9,
     "sensor_entities.OneKomma5PriceSensor.async_added_to_hass": 3,
     "sensor_entities.OneKomma5StablePriceSensor.__init__": 4,
     "sensor_entities.OneKomma5StablePriceSensor._update_stable_price": 2,
