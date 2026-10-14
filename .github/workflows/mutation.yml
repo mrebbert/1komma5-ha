@@ -2,8 +2,14 @@ name: Mutation testing
 
 # Opt-in: runs on main pushes and manual dispatch. Not a required check for PRs
 # because a full run on helpers.py + sensor_entities.py takes 10–20 min.
-# The job uploads the raw mutmut results as an artifact; the Mutation Score
-# surfaces in the job summary so it can trend over time without blocking merges.
+# The job uploads the raw mutmut results as an artifact; the Mutation Score and
+# the top surviving functions surface in the job summary.
+#
+# The final step gates the job against `.mutmut-baseline`: if the total survivor
+# count or any tracked per-function cap regresses, the main-branch run fails.
+# To lower the baseline after a mutation lane kills survivors, re-run
+# `python .github/scripts/mutation_score_gate.py --results mutation-results.txt
+# --baseline .mutmut-baseline --write-baseline` locally and commit the diff.
 
 on:
   push:
@@ -40,12 +46,7 @@ jobs:
 
       - name: Dump results
         if: always()
-        run: |
-          mutmut results | tee mutation-results.txt
-          echo "## Mutation score" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          mutmut results >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+        run: mutmut results | tee mutation-results.txt
 
       - name: Upload mutmut results
         if: always()
@@ -54,3 +55,11 @@ jobs:
           name: mutation-results
           path: mutation-results.txt
           retention-days: 30
+
+      - name: Score gate + summary
+        if: always()
+        run: |
+          python .github/scripts/mutation_score_gate.py \
+            --results mutation-results.txt \
+            --baseline .mutmut-baseline \
+            --write-summary >> "$GITHUB_STEP_SUMMARY"
