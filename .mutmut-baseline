@@ -1,10 +1,9 @@
 {
   "comment": "Mutation-score baseline \u2014 see .github/scripts/mutation_score_gate.py for semantics. Only lower these caps; never raise them.",
   "updated_at": "2026-10-14",
-  "total_survivors_max": 154,
+  "total_survivors_max": 152,
   "per_function_max": {
     "helpers._find_window": 5,
-    "helpers.aggregate_optimization_events": 2,
     "helpers.build_forecast": 1,
     "helpers.find_cheapest_window": 1,
     "helpers.find_most_expensive_window": 3,
