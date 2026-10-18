@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.70] - 2026-10-24
+
+Live-regression fix on the "cheapest hour now" binary sensor. Behaviour-only, no new entities, services or configuration surfaces; no change to existing automations.
+
 ### Fixed
 - **`binary_sensor.<sys>_cheapest_hour_now`** now bounds the comparison to the next 24h. The price coordinator fetches today + tomorrow (up to 30h), so a marginally cheaper slot on the next calendar day kept the sensor stuck at OFF the whole current day; a live install observed 730 state changes without a single ON. The sensor now ignores forecast slots whose start is ≥ `now + 24h`, matching the entity's docstring. `extra_state_attributes.cheapest_slot_start` reflects the same window.
 
