@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **`binary_sensor.<sys>_cheapest_hour_now`** now bounds the comparison to the next 24h. The price coordinator fetches today + tomorrow (up to 30h), so a marginally cheaper slot on the next calendar day kept the sensor stuck at OFF the whole current day; a live install observed 730 state changes without a single ON. The sensor now ignores forecast slots whose start is ≥ `now + 24h`, matching the entity's docstring. `extra_state_attributes.cheapest_slot_start` reflects the same window.
+
 ## [0.1.69] - 2026-10-17
 
 Authoritative §14a readout plus config-flow diagnostic refinement. One new diagnostic entity and two new attributes on the existing §14a sensors; no change to existing automations.

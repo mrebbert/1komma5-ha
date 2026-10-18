@@ -217,12 +217,26 @@ class OneKomma5CheapestHourNowSensor(
         await super().async_added_to_hass()
         self._async_register_quarter_hour_update()
 
-    def _min_forecast_price(self) -> float | None:
-        """Return the minimum price in the upcoming 24h forecast."""
+    def _forecast_within_24h(self) -> list[dict[str, Any]]:
+        """Return forecast slots starting within the next 24h.
+
+        The price coordinator fetches today + tomorrow (up to 30h), so without
+        this filter the sensor would compare against a slot on the next day
+        and almost never flip ON.
+        """
         if self.coordinator.data is None or not self.coordinator.data.forecast:
-            return None
-        prices = [s["price"] for s in self.coordinator.data.forecast]
-        return min(prices) if prices else None
+            return []
+        horizon = datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=24)
+        return [
+            s
+            for s in self.coordinator.data.forecast
+            if datetime.datetime.fromisoformat(s["start"]) < horizon
+        ]
+
+    def _min_forecast_price(self) -> float | None:
+        """Return the minimum price among slots starting within the next 24h."""
+        slots = self._forecast_within_24h()
+        return min((s["price"] for s in slots), default=None)
 
     @property
     def is_on(self) -> bool | None:
@@ -240,10 +254,10 @@ class OneKomma5CheapestHourNowSensor(
         if self.coordinator.data is None:
             return None
         current = self._dynamic_current_price()
-        forecast = self.coordinator.data.forecast
-        if not forecast:
+        slots = self._forecast_within_24h()
+        if not slots:
             return {"current_price": current}
-        cheapest = min(forecast, key=lambda s: s["price"])
+        cheapest = min(slots, key=lambda s: s["price"])
         return {
             "current_price": current,
             "cheapest_price": cheapest["price"],
