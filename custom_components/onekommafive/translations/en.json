@@ -185,7 +185,7 @@
         "name": "Smart charging active"
       },
       "energy_trader_active": {
-        "name": "Energy trading active"
+        "name": "Energy trading (virtual power plant)"
       },
       "dynamic_pulse_compatible": {
         "name": "Dynamic Pulse compatible"

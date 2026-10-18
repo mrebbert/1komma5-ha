@@ -185,7 +185,7 @@
         "name": "Intelligentes Laden aktiv"
       },
       "energy_trader_active": {
-        "name": "Energiehandel aktiv"
+        "name": "Energiehandel (virtuelles Kraftwerk)"
       },
       "dynamic_pulse_compatible": {
         "name": "Dynamic-Pulse-fähig"

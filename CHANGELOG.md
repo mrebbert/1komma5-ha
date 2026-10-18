@@ -7,10 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.70] - 2026-10-24
 
-Live-regression fix on the "cheapest hour now" binary sensor. Behaviour-only, no new entities, services or configuration surfaces; no change to existing automations.
+Live-regression fix on the "cheapest hour now" binary sensor plus a label refinement on the energy-trader diagnostic. Behaviour-only, no new entities, services or configuration surfaces; no change to existing automations.
 
 ### Fixed
 - **`binary_sensor.<sys>_cheapest_hour_now`** now bounds the comparison to the next 24h. The price coordinator fetches today + tomorrow (up to 30h), so a marginally cheaper slot on the next calendar day kept the sensor stuck at OFF the whole current day; a live install observed 730 state changes without a single ON. The sensor now ignores forecast slots whose start is ≥ `now + 24h`, matching the entity's docstring. `extra_state_attributes.cheapest_slot_start` reflects the same window.
+
+### Changed
+- **`binary_sensor.<sys>_energy_trader_active`** label sharpened to `Energiehandel (virtuelles Kraftwerk)` / `Energy trading (virtual power plant)`. The old `Energiehandel aktiv` / `Energy trading active` label read like a feature-flag counterpart to the `active_features` list, which caused confusion when it was ON while `active_features` did not list "Energiehandel". The flag reflects enrolment in 1KOMMA5°'s VPP (`SystemDetails.energy_trader_active`), a separate concept from the per-site optimisation features (Dynamic Tariff, Time-of-Use, Smart Charging). Entity ID and unique_id unchanged; only the display name changes.
 
 ## [0.1.69] - 2026-10-17
 
