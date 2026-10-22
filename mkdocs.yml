@@ -87,6 +87,8 @@ nav:
   - Devices & entity structure: entity-structure.md
   - Compatibility: compatibility.md
   - Known limitations: limitations.md
+  - Troubleshooting: troubleshooting.md
+  - Removal: removal.md
   - FAQ: faq.md
   - Contributing: contributing.md
   - Changelog: changelog.md
