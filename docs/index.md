@@ -7,6 +7,8 @@ description: Home Assistant custom integration for the 1KOMMA5° Heartbeat energ
 
 ![1KOMMA5° logo](https://raw.githubusercontent.com/mrebbert/1komma5-ha/main/custom_components/onekommafive/brand/icon.png){ width="128" align=right }
 
+[![Quality Scale: Platinum](https://img.shields.io/badge/quality%20scale-platinum-brightgreen.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
+
 **1KOMMA5°** (also written **1komma5**, **1k5**) runs the **Heartbeat** energy platform for solar + battery + heat pump + EV wallbox setups. This is the Home Assistant integration for it, distributed via HACS at [github.com/mrebbert/1komma5-ha](https://github.com/mrebbert/1komma5-ha).
 
 Dynamic electricity prices (dynamischer Stromtarif), 30-hour price forecast, AI optimization decisions, per-device cost allocation, cheapest-charging-window scheduling, weather forecast, and cloud push notifications — all as native HA sensors, services and bus events. Works on both 1KOMMA5°-backend accounts (`emp_type: "1K5"`, most newer installs) and legacy GridX-backed accounts (`emp_type: "GRIDX"`).
