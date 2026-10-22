@@ -14,6 +14,7 @@ Live-regression fix on the "cheapest hour now" binary sensor plus a label refine
 
 ### Changed
 - **`binary_sensor.<sys>_energy_trader_active`** label sharpened to `Energiehandel (virtuelles Kraftwerk)` / `Energy trading (virtual power plant)`. The old `Energiehandel aktiv` / `Energy trading active` label read like a feature-flag counterpart to the `active_features` list, which caused confusion when it was ON while `active_features` did not list "Energiehandel". The flag reflects enrolment in 1KOMMA5°'s VPP (`SystemDetails.energy_trader_active`), a separate concept from the per-site optimisation features (Dynamic Tariff, Time-of-Use, Smart Charging). Entity ID and unique_id unchanged; only the display name changes.
+- **Blueprint README gained one-click import badges.** Each of the nine automation blueprints now carries a `my.home-assistant.io` import badge that prefills HA's blueprint import dialog, matching the "ready-to-import" claim in the Dashboards & blueprints doc page. Manual URL-paste still works as fallback.
 
 ## [0.1.69] - 2026-10-17
 
