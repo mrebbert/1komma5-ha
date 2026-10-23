@@ -172,12 +172,19 @@ async def test_health_info_skips_entry_without_runtime_data(
     )
     entry.add_to_hass(hass)
 
-    info = await system_health_info(hass)
+    # No runtime_data means no cached SDK version; the panel must fall back
+    # via async_add_executor_job rather than block the loop.
+    with patch(
+        "custom_components.onekommafive.helpers.sdk_version", return_value="9.9.9"
+    ):
+        info = await system_health_info(hass)
     _close_pending_coroutines(info)
 
     assert info["config_entries"] == 1
     # No coordinator fields — the entry was skipped because runtime_data is None.
     assert "live_last_update_success" not in info
+    # Fallback path populated via executor.
+    assert info["sdk_version"] == "9.9.9"
 
 
 async def test_health_info_includes_last_update_age_when_available(
@@ -228,9 +235,29 @@ def test_format_age_covers_all_branches() -> None:
     assert _format_age(now - dt.timedelta(days=4)).endswith("d ago")
 
 
-def test_sdk_version_falls_back_to_unknown() -> None:
-    """When ``helpers.sdk_version`` returns None the health panel gets ``"unknown"``."""
-    from custom_components.onekommafive.system_health import _sdk_version
+async def test_health_info_reads_sdk_version_from_runtime_data_without_blocking_io(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """SDK version comes from runtime_data; helpers.sdk_version is not re-invoked."""
+    system = mock_system_factory(system_id="sys-cached")
+    await _setup(hass, system)
 
+    with patch("custom_components.onekommafive.helpers.sdk_version") as spy:
+        info = await system_health_info(hass)
+    _close_pending_coroutines(info)
+
+    assert isinstance(info["sdk_version"], str) and info["sdk_version"]
+    # The cached runtime_data path must not re-enter helpers.sdk_version — doing
+    # so is exactly the blocking importlib.metadata call HA warned about.
+    spy.assert_not_called()
+
+
+async def test_health_info_falls_back_to_unknown_when_sdk_missing(
+    hass: HomeAssistant,
+) -> None:
+    """Without an entry and no installed SDK, the panel reports ``"unknown"``."""
     with patch("custom_components.onekommafive.helpers.sdk_version", return_value=None):
-        assert _sdk_version() == "unknown"
+        info = await system_health_info(hass)
+    _close_pending_coroutines(info)
+
+    assert info["sdk_version"] == "unknown"
