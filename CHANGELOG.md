@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.71] - 2026-10-23
+
+Hotfix for a blocking-call warning on the System Information panel. Behaviour-only.
+
 ### Fixed
 - **`system_health`** no longer blocks the event loop on `importlib.metadata`. The System Information panel used to call `helpers.sdk_version()` synchronously on every render, which traverses `site-packages` via `listdir` + `open` + `read_text`. Setup already resolves the SDK version in an executor; the panel now reads that cached value from `runtime_data` instead. The executor fallback kicks in only when no config entry has finished setup yet.
 

@@ -8,5 +8,5 @@
   "issue_tracker": "https://github.com/mrebbert/1komma5-ha/issues",
   "quality_scale": "platinum",
   "requirements": ["onekommafive>=1.1.8,<2"],
-  "version": "0.1.70"
+  "version": "0.1.71"
 }
