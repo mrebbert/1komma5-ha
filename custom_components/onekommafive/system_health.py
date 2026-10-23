@@ -34,17 +34,20 @@ async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
         "can_reach_api": async_check_can_reach_url(
             hass, "https://heartbeat.1komma5grad.com"
         ),
-        "sdk_version": _sdk_version(),
     }
 
     # Per-coordinator status for the loaded config entry.
     entries = list(hass.config_entries.async_entries(DOMAIN))
     info["config_entries"] = len(entries)
 
+    sdk_ver: str | None = None
     for entry in entries:
         data = getattr(entry, "runtime_data", None)
         if data is None:
             continue
+        # Setup already resolved the SDK version in an executor; reuse that
+        # cached value so the panel never blocks the loop on importlib.metadata.
+        sdk_ver = getattr(data, "sdk_version", None)
         for label, coord in data.named_coordinators().items():
             info[f"{label}_last_update_success"] = bool(coord.last_update_success)
             # DataUpdateCoordinator's `last_update_success_time` was added in
@@ -63,18 +66,15 @@ async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
             info["country"] = country
         break  # only one entry in practice
 
+    # Edge case: panel queried before any entry finished setup. Executor keeps
+    # importlib.metadata off the loop.
+    if sdk_ver is None:
+        from .helpers import sdk_version
+
+        sdk_ver = await hass.async_add_executor_job(sdk_version)
+
+    info["sdk_version"] = sdk_ver or "unknown"
     return info
-
-
-def _sdk_version() -> str:
-    """Return the installed onekommafive SDK version, or ``"unknown"``.
-
-    Wraps :func:`onekommafive.helpers.sdk_version` with the sentinel that
-    the System Health card expects on a broken install.
-    """
-    from .helpers import sdk_version
-
-    return sdk_version() or "unknown"
 
 
 def _format_age(then: dt.datetime) -> str:
