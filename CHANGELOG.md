@@ -5,14 +5,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Changed
-- **Dev / CI stack bumped to Python 3.14 + Home Assistant 2026.10.2.** `pytest-homeassistant-custom-component` pin `0.13.316` → `0.13.373`, which pulls `homeassistant==2026.10.2` (matches the HA version shipping on homie). All CI jobs pin Python 3.14, and the nightly matrix drops the 3.13 lane since `pytest-homeassistant-custom-component` requires 3.14+ from `0.13.317` onward. Runtime support for HA ≥ 2024.10 is unchanged — `manifest.json` still declares `"homeassistant": "2024.10"` and users on older HA installs continue to work.
-- Four follow-on code tweaks to track HA Core API drift between 2026.2 and 2026.10, all contained in dev/test paths:
-  - `voluptuous as vol` → `probatio as vol` in `config_flow.py` + `services.py` (HA 2026.10 ships probatio, a voluptuous fork, as the canonical schema library via `install_as_voluptuous()`).
-  - `test_wallbox_lifecycle.py` switched from `device_registry.async_get_device({identifier})` (deprecated, removed in HA 2027.8) to `async_get_device_by_identifier` / `async_get_child_device_by_identifier`.
-  - `binary_sensor.py` imports `DOMAIN` and `BinarySensorDeviceClass` from the `.const` submodule because HA 2026.10 removed them from the package namespace.
-  - `entity.py` loses a stale `# type: ignore[typeddict-unknown-key]` on the `via_device_id` key (DeviceInfo now knows it) and gains the suppression on the legacy `via_device` fallback (DeviceInfo dropped the key in 2026.7).
-
 ## [0.1.71] - 2026-10-23
 
 Hotfix for a blocking-call warning on the System Information panel. Behaviour-only.
