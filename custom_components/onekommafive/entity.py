@@ -55,14 +55,14 @@ def _set_via(
     sub-devices parented under a paired wallbox.
     """
     if _HAS_VIA_DEVICE_ID and parent_device_id is not None:
-        # via_device_id exists on HA ≥ 2026.7 only; local test HA (2026.2)
-        # lacks the TypedDict key so mypy complains — runtime guard makes
-        # this safe.
-        di["via_device_id"] = parent_device_id  # type: ignore[typeddict-unknown-key]
+        di["via_device_id"] = parent_device_id
     elif parent_identifier is not None:
-        di["via_device"] = parent_identifier
+        # via_device (tuple form) was dropped from DeviceInfo in HA 2026.7+;
+        # the key only exists on legacy installs the runtime guard above
+        # already excluded. Suppress the TypedDict warning for those.
+        di["via_device"] = parent_identifier  # type: ignore[typeddict-unknown-key]
     else:
-        di["via_device"] = (DOMAIN, system_id)
+        di["via_device"] = (DOMAIN, system_id)  # type: ignore[typeddict-unknown-key]
     return di
 
 

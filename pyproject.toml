@@ -31,7 +31,7 @@ test-integration = [
     # Pin to the latest known-good version: a loose `>=` makes the resolver
     # back-track over hundreds of older releases (some of which pull in
     # pre-Python-3.13 numpy wheels that fail to build).
-    "pytest-homeassistant-custom-component==0.13.316",
+    "pytest-homeassistant-custom-component==0.13.373",
     "onekommafive>=1.1.8,<2",
     # The integration tests tree includes property-based + docstring-coverage
     # tests. They must also install in the Tier-2 job because that job runs
