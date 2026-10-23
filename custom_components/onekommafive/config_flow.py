@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-import voluptuous as vol
+import probatio as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError

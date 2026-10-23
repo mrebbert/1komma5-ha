@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import asdict
 from typing import Any, cast
 
-import voluptuous as vol
+import probatio as vol
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,

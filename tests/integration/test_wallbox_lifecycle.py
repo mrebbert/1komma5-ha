@@ -74,7 +74,16 @@ async def test_stale_wallbox_sub_device_is_removed_on_reload(
     entry = await _setup(hass, system)
 
     registry = dr.async_get(hass)
-    assert registry.async_get_device({(DOMAIN, "sys-1_wallbox_wb-b")}) is not None
+
+    def _device(identifier: str) -> dr.DeviceEntry | None:
+        """Lookup helper covering main + child devices under the test entry."""
+        return registry.async_get_device_by_identifier(
+            (DOMAIN, identifier), entry.entry_id
+        ) or registry.async_get_child_device_by_identifier(
+            (DOMAIN, identifier), entry.entry_id
+        )
+
+    assert _device("sys-1_wallbox_wb-b") is not None
 
     # Second setup: wb-b is gone. The reload rebuilds the entry so patches must
     # cover it too, otherwise the SDK tries a real socket.
@@ -90,9 +99,9 @@ async def test_stale_wallbox_sub_device_is_removed_on_reload(
 
     # After reload the count drops to 1, so the identifier collapses to the
     # single-wallbox form ``sys-1_wallbox``. Both per-wb identifiers must be gone.
-    assert registry.async_get_device({(DOMAIN, "sys-1_wallbox_wb-a")}) is None
-    assert registry.async_get_device({(DOMAIN, "sys-1_wallbox_wb-b")}) is None
-    assert registry.async_get_device({(DOMAIN, "sys-1_wallbox")}) is not None
+    assert _device("sys-1_wallbox_wb-a") is None
+    assert _device("sys-1_wallbox_wb-b") is None
+    assert _device("sys-1_wallbox") is not None
 
 
 async def test_wallbox_added_between_refreshes_triggers_reload(

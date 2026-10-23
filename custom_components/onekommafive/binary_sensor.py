@@ -9,13 +9,11 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from onekommafive.models import Wallbox
 
-from homeassistant.components.binary_sensor import (
+from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor.const import (
     DOMAIN as BINARY_SENSOR_DOMAIN,
 )
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-)
+from homeassistant.components.binary_sensor.const import BinarySensorDeviceClass
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
