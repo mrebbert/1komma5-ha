@@ -23,7 +23,7 @@ entities.
 
 ### `cheapest_window.yaml` — Run during cheapest window
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fcheapest_window.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fcheapest_window.yaml)
 
 Schedules a switch (or `input_boolean`) to run for an exact duration during
 the cheapest contiguous window in the price forecast. Calls
@@ -36,7 +36,7 @@ start (HH:MM), latest end (HH:MM).
 
 ### `follow_cheap_electricity.yaml` — Follow cheap electricity
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Ffollow_cheap_electricity.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Ffollow_cheap_electricity.yaml)
 
 Mirrors a switch's state to the `…_cheap_electricity` binary sensor —
 opportunistic on/off whenever the current price is below today's average.
@@ -49,7 +49,7 @@ earliest/latest hour-of-day window.
 
 ### `notify_grid_charge.yaml` — Notify on AI grid-charge decision
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_grid_charge.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_grid_charge.yaml)
 
 Fires a notification whenever the Heartbeat AI flips
 `…_optimization_battery_grid_charge` to ON (i.e. it just decided that *now*
@@ -63,7 +63,7 @@ Inputs: grid-charge binary sensor, notify service, title, message
 
 ### `notify_negative_prices_tomorrow.yaml` — Notify on negative prices tomorrow
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_negative_prices_tomorrow.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_negative_prices_tomorrow.yaml)
 
 Fires a notification when tomorrow's price forecast contains at least one
 negative-price slot (i.e. the spot market pays you to consume). The price
@@ -78,7 +78,7 @@ notify service, title, message (Jinja-templatable).
 
 ### `vehicle_at_wallbox.yaml` — Bind vehicle profile when it plugs in
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fvehicle_at_wallbox.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fvehicle_at_wallbox.yaml)
 
 Watches a binary sensor that reads ON when *one specific vehicle* is plugged
 into your wallbox. When it fires, calls `select.select_option` on the
@@ -96,7 +96,7 @@ option slug (e.g. `bmw_i3`; look up in the select's `options` attribute).
 
 ### `ev_charge_on_pv_surplus.yaml` — EV charge on PV surplus
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fev_charge_on_pv_surplus.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fev_charge_on_pv_surplus.yaml)
 
 Toggles a target switch (smart plug, `input_boolean`, or hand-off to the
 wallbox charging-mode selector) ON when the home battery is full **AND**
@@ -112,7 +112,7 @@ deactivation delay (default 5 min).
 
 ### `notify_negative_price_started.yaml` — Notify when the grid pays you
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_negative_price_started.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_negative_price_started.yaml)
 
 Fires a notification the moment the active 15-min electricity price
 becomes ≤ 0. Listens to the
@@ -129,7 +129,7 @@ Inputs: notify service, title, message (Jinja-templatable with
 
 ### `notify_cloud_notification.yaml` — Forward 1KOMMA5° cloud notifications
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_cloud_notification.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_cloud_notification.yaml)
 
 Fires a notification for each new `onekommafive_notification` bus event
 (v0.1.52) — the same push notifications the 1KOMMA5° mobile app receives
@@ -148,7 +148,7 @@ Inputs: notify service, optional type filter, title, message
 
 ### `notify_connectivity_lost.yaml` — Notify when a device goes offline
 
-[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmrebbert%2F1komma5-ha%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_connectivity_lost.yaml)
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fnotify_connectivity_lost.yaml)
 
 Sends a notification when one of the v0.1.38 connectivity sensors (site,
 inverter, heat pump, meter, wallbox) stays OFF for a debounce duration
