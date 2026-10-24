@@ -407,6 +407,9 @@
       "dynamic_pulse_price_guarantee": {
         "name": "DP-Preisgarantie"
       },
+      "enwg14a_grid_fee_current": {
+        "name": "§14a-Netzentgelt"
+      },
       "module1_grid_fee_reduction_annual": {
         "name": "§14a Modul 1 (jährlich)"
       },

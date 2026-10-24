@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **`sensor.<sys>_enwg14a_grid_fee_current`** — live §14a EnWG grid fee per kWh for the active 15-minute slot, exposed on the meter sub-device. Reads the new `MarketPrices.enwg14a_grid_fee` dict (SDK 1.2.1+). State is the net value in `€/kWh`; the VAT-inclusive counterpart lives on the `price_with_vat` attribute. The sensor stays unavailable on sites that do not surface §14a prices (SDK then returns an empty dict), so automations keying on it degrade cleanly.
+
+### Changed
+- SDK pin `onekommafive>=1.1.8,<2` → `>=1.2.1,<2` across `pyproject.toml` and `manifest.json`. Needed for the per-slot §14a grid-fee data.
+
 ## [0.1.71] - 2026-10-23
 
 Hotfix for a blocking-call warning on the System Information panel. Behaviour-only.

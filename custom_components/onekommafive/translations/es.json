@@ -407,6 +407,9 @@
       "dynamic_pulse_price_guarantee": {
         "name": "Garantía de precio DP"
       },
+      "enwg14a_grid_fee_current": {
+        "name": "§14a tarifa de red"
+      },
       "module1_grid_fee_reduction_annual": {
         "name": "§14a módulo 1 (anual)"
       },

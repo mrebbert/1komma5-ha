@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from .coordinator import (
         OneKomma5HeartbeatPricesCoordinator,
         OneKomma5LiveCoordinator,
+        OneKomma5PriceCoordinator,
         OneKomma5SystemStatusCoordinator,
     )
 
@@ -1374,3 +1375,78 @@ class OneKomma5Module3SavingsSensor(OneKomma5HeartbeatPricesEntity, SensorEntity
             "gross_estimate_eur_assumption": gross,
             "basis": _MODULE3_BASIS,
         }
+
+
+class OneKomma5Enwg14aGridFeeCurrentSensor(
+    QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity
+):
+    """Live §14a EnWG grid-fee per kWh for the active 15-minute slot.
+
+    Sources the per-slot ``enwg14a_grid_fee`` dict added to ``MarketPrices``
+    in SDK 1.2.1. State is the net value; the VAT-inclusive counterpart is
+    exposed as the ``price_with_vat`` attribute so automations can key off
+    either number. Unavailable on sites that do not surface §14a prices
+    (the SDK then returns an empty dict).
+    """
+
+    _attr_translation_key = "enwg14a_grid_fee_current"
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 4
+    _attr_icon = "mdi:transmission-tower-import"
+    _device_key = "meter"
+
+    def __init__(
+        self,
+        coordinator: OneKomma5PriceCoordinator,
+        system_id: str,
+        system_name: str,
+        *,
+        asset: Asset | None = None,
+        currency: str = "EUR",
+        parent_device_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            coordinator,
+            system_id,
+            system_name,
+            "enwg14a_grid_fee_current",
+            asset=asset,
+            parent_device_id=parent_device_id,
+        )
+        self._attr_native_unit_of_measurement = currency_per_kwh(currency)
+
+    async def async_added_to_hass(self) -> None:
+        """Re-render at every :00/:15/:30/:45 to track the active slot."""
+        await super().async_added_to_hass()
+        self._async_register_quarter_hour_update()
+
+    def _grid_fees(self) -> dict[str, float] | None:
+        if self.coordinator.data is None:
+            return None
+        return getattr(self.coordinator.data.market_prices, "enwg14a_grid_fee", None)
+
+    def _grid_fees_with_vat(self) -> dict[str, float] | None:
+        if self.coordinator.data is None:
+            return None
+        return getattr(
+            self.coordinator.data.market_prices, "enwg14a_grid_fee_with_vat", None
+        )
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        fees = self._grid_fees()
+        return bool(fees)
+
+    @property
+    def native_value(self) -> float | None:
+        return get_current_price(self._grid_fees() or {})
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        with_vat = get_current_price(self._grid_fees_with_vat() or {})
+        if with_vat is None:
+            return None
+        return {"price_with_vat": with_vat}

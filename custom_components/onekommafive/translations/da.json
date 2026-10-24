@@ -407,6 +407,9 @@
       "dynamic_pulse_price_guarantee": {
         "name": "DP-prisgaranti"
       },
+      "enwg14a_grid_fee_current": {
+        "name": "§14a nettafgift"
+      },
       "module1_grid_fee_reduction_annual": {
         "name": "§14a modul 1 (årlig)"
       },
