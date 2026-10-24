@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.72] - 2026-10-24
+
+A new live §14a-Modul-3 grid-fee sensor plus a vendor-side rate-limit mitigation. Behaviour-only on existing entities; one new entity added.
+
 ### Added
 - **`sensor.<sys>_enwg14a_grid_fee_current`** — live §14a-EnWG-Netzentgelt per kWh for the active 15-minute slot, exposed on the meter sub-device. Reads the new `MarketPrices.enwg14a_grid_fee` dict (SDK 1.2.1+). State is the net value in `€/kWh`; the VAT-inclusive counterpart lives on the `price_with_vat` attribute. Populated for **§14a Modul 3** sites (variable Netzentgelte HT/NT); stays unavailable on **Modul 1** sites (flat annual rebate — the annual value lives on `module1_grid_fee_reduction_annual`) because Modul 1 has no per-slot component. Non-§14a sites see the same unavailable state, so automations degrade cleanly.
 
