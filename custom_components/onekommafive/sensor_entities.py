@@ -1380,13 +1380,18 @@ class OneKomma5Module3SavingsSensor(OneKomma5HeartbeatPricesEntity, SensorEntity
 class OneKomma5Enwg14aGridFeeCurrentSensor(
     QuarterHourUpdateMixin, OneKomma5PriceEntity, SensorEntity
 ):
-    """Live §14a EnWG grid-fee per kWh for the active 15-minute slot.
+    """Live §14a-EnWG-Netzentgelt per kWh for the active 15-minute slot.
 
     Sources the per-slot ``enwg14a_grid_fee`` dict added to ``MarketPrices``
     in SDK 1.2.1. State is the net value; the VAT-inclusive counterpart is
     exposed as the ``price_with_vat`` attribute so automations can key off
-    either number. Unavailable on sites that do not surface §14a prices
-    (the SDK then returns an empty dict).
+    either number.
+
+    Populated for §14a **Modul 3** sites (variable Netzentgelte HT/NT); the
+    time-of-day rate is the point of Modul 3. Stays unavailable on **Modul 1**
+    sites (flat annual rebate) and on non-§14a sites — Modul 1 has no per-slot
+    component, so the backend returns an empty dict. The annual Modul-1-rebate
+    is covered by ``module1_grid_fee_reduction_annual``.
     """
 
     _attr_translation_key = "enwg14a_grid_fee_current"

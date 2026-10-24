@@ -67,6 +67,10 @@ The site hasn't been enrolled in Modul 3 by the 1KOMMA5° backend. The five SDK 
 
 A `unavailable` state is therefore **not an integration bug** — it means your meter is still on a flat Netzentgelt. The Modul-1 sensor can be `unavailable` for the same class of reason: no provisioning date yet.
 
+## Why does `enwg14a_grid_fee_current` show `unavailable` even though I'm Modul 1?
+
+By design. The live per-slot sensor reflects the **time-of-day Modul-3** rate (variable Netzentgelte HT/NT). Modul 1 is a **flat annual rebate** on the grid-fee position of the year-end bill — there is no per-slot component, so the backend returns an empty `enwg14aGridFee` dict and the sensor stays `unavailable`. Your Modul-1 benefit lives on `module1_grid_fee_reduction_annual` (annual EUR figure); the live sensor only becomes meaningful if your account later migrates to Modul 3.
+
 ## My entity names look wrong ("1k5 …" prefix vs. plain name)
 
 Entity naming is composed from `device.name + entity original_name` unless you renamed the entity in the HA UI. Mixed prefixes in one install typically mean some entities were renamed manually. The `entity_id` and long-term statistics are unaffected.

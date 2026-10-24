@@ -384,7 +384,16 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
     async def _fetch_today_and_tomorrow(
         self, now: datetime.datetime
     ) -> tuple[MarketPrices, dict[str, float]]:
-        """Fetch today's price slots plus tomorrow's (best-effort), merged."""
+        """Fetch today's price slots plus tomorrow's (gated on EPEX publication).
+
+        EPEX publishes day-ahead prices at 12:00 UTC (13:00 CET winter / 14:00
+        CEST summer). The 1KOMMA5° ``/charts/market-prices`` endpoint is BigQuery-
+        backed with a 100-second rolling JobService.query quota shared across
+        all clients of the same account, so firing a guaranteed-empty tomorrow
+        request before noon UTC just chips at the quota and raises the chance
+        of 403 "Exceeded rate limits" bursts when the hourly refresh lines up
+        with user activity. Skip it until EPEX has published.
+        """
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
         market_prices = await self._system.get_prices(
@@ -394,7 +403,11 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             market_prices.prices_with_grid_costs_and_vat
         )
 
-        # Tomorrow's prices are best-effort — often not yet available in the morning.
+        utc_now = datetime.datetime.now(datetime.UTC)
+        if utc_now.hour < 12:
+            # EPEX day-ahead publication is 12:00 UTC; skip the empty call.
+            return market_prices, all_in_prices
+
         tomorrow_start = (now + datetime.timedelta(days=1)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
