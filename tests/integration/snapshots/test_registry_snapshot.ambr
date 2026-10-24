@@ -365,6 +365,15 @@
       dict({
         'device_slug': 'onekommafive:sys-1_meter',
         'disabled_by': None,
+        'entity_category': None,
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_grid_fee_current',
+        'unique_id': 'sys-1_enwg14a_grid_fee_current',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
         'entity_category': 'diagnostic',
         'hidden_by': None,
         'platform': 'onekommafive',
@@ -1185,6 +1194,15 @@
       dict({
         'device_slug': 'onekommafive:sys-1_meter',
         'disabled_by': None,
+        'entity_category': None,
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_grid_fee_current',
+        'unique_id': 'sys-1_enwg14a_grid_fee_current',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
         'entity_category': 'diagnostic',
         'hidden_by': None,
         'platform': 'onekommafive',
@@ -1992,6 +2010,15 @@
         'platform': 'onekommafive',
         'translation_key': 'energy_trader_active',
         'unique_id': 'sys-1_energy_trader_active',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': None,
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_grid_fee_current',
+        'unique_id': 'sys-1_enwg14a_grid_fee_current',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1_meter',
@@ -2808,6 +2835,15 @@
         'platform': 'onekommafive',
         'translation_key': 'energy_trader_active',
         'unique_id': 'sys-1_energy_trader_active',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1_meter',
+        'disabled_by': None,
+        'entity_category': None,
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'enwg14a_grid_fee_current',
+        'unique_id': 'sys-1_enwg14a_grid_fee_current',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1_meter',

@@ -50,6 +50,7 @@ from .sensor_entities import (
     OneKomma5DynamicPulsePriceGuaranteeSensor,
     OneKomma5EmpBackendSensor,
     OneKomma5EnergySensor,
+    OneKomma5Enwg14aGridFeeCurrentSensor,
     OneKomma5Enwg14aModuleSensor,
     OneKomma5EVSensor,
     OneKomma5FeedInRevenueSensor,
@@ -272,6 +273,20 @@ async def async_setup_entry(
             system_id,
             system_name,
             asset=_resolve_asset("meter"),
+            parent_device_id=data.system_device_id,
+        )
+    )
+
+    # Live §14a grid-fee per kWh (SDK 1.2.1+). Reads MarketPrices.enwg14a_grid_fee
+    # for the active 15-min slot; stays unavailable when the SDK returns an
+    # empty dict (sites not enrolled in §14a, or regions not yet exposing it).
+    entities.append(
+        OneKomma5Enwg14aGridFeeCurrentSensor(
+            data.price_coordinator,
+            system_id,
+            system_name,
+            asset=_resolve_asset("meter"),
+            currency=currency,
             parent_device_id=data.system_device_id,
         )
     )
