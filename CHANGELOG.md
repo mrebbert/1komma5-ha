@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- **`sensor.<sys>_enwg14a_grid_fee_current`** — live §14a EnWG grid fee per kWh for the active 15-minute slot, exposed on the meter sub-device. Reads the new `MarketPrices.enwg14a_grid_fee` dict (SDK 1.2.1+). State is the net value in `€/kWh`; the VAT-inclusive counterpart lives on the `price_with_vat` attribute. The sensor stays unavailable on sites that do not surface §14a prices (SDK then returns an empty dict), so automations keying on it degrade cleanly.
+- **`sensor.<sys>_enwg14a_grid_fee_current`** — live §14a-EnWG-Netzentgelt per kWh for the active 15-minute slot, exposed on the meter sub-device. Reads the new `MarketPrices.enwg14a_grid_fee` dict (SDK 1.2.1+). State is the net value in `€/kWh`; the VAT-inclusive counterpart lives on the `price_with_vat` attribute. Populated for **§14a Modul 3** sites (variable Netzentgelte HT/NT); stays unavailable on **Modul 1** sites (flat annual rebate — the annual value lives on `module1_grid_fee_reduction_annual`) because Modul 1 has no per-slot component. Non-§14a sites see the same unavailable state, so automations degrade cleanly.
 
 ### Changed
-- SDK pin `onekommafive>=1.1.8,<2` → `>=1.2.1,<2` across `pyproject.toml` and `manifest.json`. Needed for the per-slot §14a grid-fee data.
+- Price coordinator skips the tomorrow-fetch before 12:00 UTC. The 1KOMMA5° `/charts/market-prices` endpoint is BigQuery-backed with a shared 100-second `JobService.query` quota per account; a tomorrow request before EPEX day-ahead publication (12:00 UTC) is guaranteed empty and only chips at that quota, raising the risk of 403 "Exceeded rate limits" when the hourly refresh lines up with Flutter-app traffic. Saves ~12 requests per day per instance. Today's fetch stays unconditional.
+- SDK pin `onekommafive>=1.1.8,<2` → `>=1.2.1,<2` across `pyproject.toml` and `manifest.json`. Needed for the per-slot §14a-Modul-3 grid-fee data.
 
 ## [0.1.71] - 2026-10-23
 
