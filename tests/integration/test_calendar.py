@@ -368,6 +368,8 @@ async def test_calendar_async_get_events_history(
 
     assert returned[0]["start"] == _snap_floor(phase_start).isoformat()
     assert returned[0]["end"] == _snap_ceil(phase_end).isoformat()
+    # Stable machine-readable match key for blueprints (language-independent).
+    assert returned[0]["description"] == "optimization_battery_no_charge"
 
 
 async def test_calendar_async_get_events_proxy(
@@ -403,6 +405,8 @@ async def test_calendar_async_get_events_proxy(
     returned = reply["events"]
     assert returned, "expected at least one proxy event from the forecast"
     assert all(e["start"] >= now.isoformat() for e in returned)
+    # Each proxy event carries a stable description key for blueprint matching.
+    assert all(e["description"] in {"proxy_cheap", "proxy_expensive"} for e in returned)
 
 
 def test_calendar_event_wraps_matching_spec_label() -> None:

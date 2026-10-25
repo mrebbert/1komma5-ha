@@ -1,6 +1,6 @@
 # 1KOMMA5° automation blueprints
 
-Nine ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
+Ten ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
 common automations on top of this integration.
 
 ## Importing
@@ -46,6 +46,26 @@ chargers (e-bike, power tools).
 
 Inputs: cheap-electricity binary sensor, switch entity, optional
 earliest/latest hour-of-day window.
+
+### `ai_decision_calendar_trigger.yaml` — Act on any AI-decision calendar event
+
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fai_decision_calendar_trigger.yaml)
+
+Universal calendar-driven trigger on the AI-decisions calendar
+(`calendar.<system>_ai_decisions_calendar`, v0.1.73+). Pick one of the
+eight event classes — the six AI decision types plus `proxy_cheap` /
+`proxy_expensive` — choose `start` or `end`, add an optional offset, and
+plug in any action sequence.
+
+Match uses the event's stable `description` key, so the blueprint works
+regardless of HA UI language.
+
+Typical use: EV quick-charge during cheap proxy slots, run a script on
+`optimization_heat_pump_recommended`, notify when the AI decides to
+grid-charge the battery.
+
+Inputs: calendar entity, decision key (dropdown), event phase
+(start/end), offset (±60 min), action sequence.
 
 ### `notify_grid_charge.yaml` — Notify on AI grid-charge decision
 

@@ -18,7 +18,7 @@ from homeassistant.components.binary_sensor.const import (
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.components.recorder.util import (
-    get_instance,  # type: ignore[attr-defined]
+    get_instance,  # type: ignore[attr-defined]  # noqa: E501
 )
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
@@ -48,8 +48,11 @@ CHEAP_PERCENTILE = 0.33
 EXPENSIVE_PERCENTILE = 0.67
 SLOT_MINUTES = 15  # AI decisions are rendered on the native 15-min grid
 
-PROXY_CHEAP_SPEC_KEY = "optimization_ev_grid_charge"
-PROXY_EXPENSIVE_SPEC_KEY = "optimization_battery_grid_discharge"
+PROXY_CHEAP_KEY = "proxy_cheap"
+PROXY_EXPENSIVE_KEY = "proxy_expensive"
+# Back-compat aliases (previous public names).
+PROXY_CHEAP_SPEC_KEY = PROXY_CHEAP_KEY
+PROXY_EXPENSIVE_SPEC_KEY = PROXY_EXPENSIVE_KEY
 
 # Fallback proxy labels per supported HA language. Kept inline because the
 # strings live outside the standard HA translation categories; the Decision
@@ -57,14 +60,12 @@ PROXY_EXPENSIVE_SPEC_KEY = "optimization_battery_grid_discharge"
 # binary_sensor entries so they stay in sync with Lovelace.
 _PROXY_LABELS: dict[str, dict[str, str]] = {
     "de": {
-        PROXY_CHEAP_SPEC_KEY: "Preis-Proxy: günstig (EV-Laden empfohlen)",
-        PROXY_EXPENSIVE_SPEC_KEY: ("Preis-Proxy: teuer (Batterieentladung empfohlen)"),
+        PROXY_CHEAP_KEY: "Preis-Proxy: günstig (EV-Laden empfohlen)",
+        PROXY_EXPENSIVE_KEY: "Preis-Proxy: teuer (Batterieentladung empfohlen)",
     },
     "en": {
-        PROXY_CHEAP_SPEC_KEY: "Price proxy: cheap (EV charging suggested)",
-        PROXY_EXPENSIVE_SPEC_KEY: (
-            "Price proxy: expensive (battery discharge suggested)"
-        ),
+        PROXY_CHEAP_KEY: "Price proxy: cheap (EV charging suggested)",
+        PROXY_EXPENSIVE_KEY: "Price proxy: expensive (battery discharge suggested)",
     },
 }
 
@@ -346,9 +347,9 @@ def _proxy_blocks(
             continue
         price = slot["price"]
         if price < cheap_threshold:
-            slot_class: str | None = PROXY_CHEAP_SPEC_KEY
+            slot_class: str | None = PROXY_CHEAP_KEY
         elif price > expensive_threshold:
-            slot_class = PROXY_EXPENSIVE_SPEC_KEY
+            slot_class = PROXY_EXPENSIVE_KEY
         else:
             slot_class = None
 
@@ -479,7 +480,9 @@ class OneKomma5DecisionCalendar(CalendarEntity, OneKomma5OptimizationEntity):
         if end is None:
             return None
         summary = self._decision_labels.get(spec.key, spec.key)
-        return CalendarEvent(start=start, end=end, summary=summary)
+        return CalendarEvent(
+            start=start, end=end, summary=summary, description=spec.key
+        )
 
     async def async_get_events(
         self,
@@ -536,20 +539,25 @@ class OneKomma5DecisionCalendar(CalendarEntity, OneKomma5OptimizationEntity):
             True,
             True,
         )
-        phases_per_summary: dict[str, list[tuple[dt.datetime, dt.datetime]]] = {}
+        phases_per_key: dict[str, list[tuple[dt.datetime, dt.datetime]]] = {}
         for spec_key, entity_id in entity_id_map.items():
             states = state_map.get(entity_id, [])
             phases = _reconstruct_phases(states, end)
             if not phases:
                 continue
-            summary = self._decision_labels.get(spec_key, spec_key)
-            phases_per_summary.setdefault(summary, []).extend(phases)
-        slot_winners = _slot_dominant_decisions(phases_per_summary, start, end)
+            phases_per_key.setdefault(spec_key, []).extend(phases)
+        slot_winners = _slot_dominant_decisions(phases_per_key, start, end)
         events: list[CalendarEvent] = []
-        for block_start, block_end, summary in _collapse_slot_winners(slot_winners):
+        for block_start, block_end, spec_key in _collapse_slot_winners(slot_winners):
+            summary = self._decision_labels.get(spec_key, spec_key)
             for sub_start, sub_end in _split_at_dst_transition(block_start, block_end):
                 events.append(
-                    CalendarEvent(start=sub_start, end=sub_end, summary=summary)
+                    CalendarEvent(
+                        start=sub_start,
+                        end=sub_end,
+                        summary=summary,
+                        description=spec_key,
+                    )
                 )
         return events
 
@@ -566,9 +574,10 @@ class OneKomma5DecisionCalendar(CalendarEntity, OneKomma5OptimizationEntity):
             CalendarEvent(
                 start=block_start,
                 end=block_end,
-                summary=self._proxy_label(spec_key),
+                summary=self._proxy_label(category),
+                description=category,
             )
-            for spec_key, block_start, block_end in blocks
+            for category, block_start, block_end in blocks
         ]
 
 

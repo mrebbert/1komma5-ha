@@ -1,0 +1,126 @@
+blueprint:
+  name: 1KOMMA5° — AI decision calendar trigger
+  description: >
+    Run any action when a specific 1KOMMA5° AI decision (or price-proxy
+    hint) starts or ends in the AI-decisions calendar.
+
+
+    The AI-decisions calendar (`calendar.<system>_ai_decisions_calendar`,
+    added in v0.1.73) exposes both historical AI decisions and
+    forward-looking price-proxy hints. Each event carries a stable,
+    language-independent key in its `description` field — this blueprint
+    uses that key for matching so your automation keeps working whether
+    the UI language is German, English or anything else.
+
+
+    Typical use cases:
+
+    - EV: switch the charging mode to Quick-Charge when a cheap price
+      window starts (`proxy_cheap`), switch back on event end.
+
+    - Battery: send a notification when the AI chooses
+      `optimization_battery_grid_charge` so you know a high-price period
+      is being bridged.
+
+    - Heat pump: run a script when
+      `optimization_heat_pump_recommended` starts.
+
+
+    Pair with the `notify_grid_charge` blueprint for a specific-sensor
+    alert, or with `cheapest_window` for a price-only approach.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/ai_decision_calendar_trigger.yaml
+
+  input:
+    calendar_entity:
+      name: AI decisions calendar
+      description: >
+        The `calendar.<system>_ai_decisions_calendar` entity to watch.
+      selector:
+        entity:
+          domain: calendar
+          integration: onekommafive
+    decision_key:
+      name: Decision to react to
+      description: >
+        The language-independent `description` key emitted by the
+        calendar. Pick the exact decision or price-proxy class you want
+        this automation to fire on.
+      selector:
+        select:
+          options:
+            - label: "Price proxy: cheap (EV charging suggested)"
+              value: proxy_cheap
+            - label: "Price proxy: expensive (battery discharge suggested)"
+              value: proxy_expensive
+            - label: "AI: Battery grid charging"
+              value: optimization_battery_grid_charge
+            - label: "AI: Battery grid discharging"
+              value: optimization_battery_grid_discharge
+            - label: "AI: Battery no-charge lock"
+              value: optimization_battery_no_charge
+            - label: "AI: Battery no-discharge lock"
+              value: optimization_battery_no_discharge
+            - label: "AI: EV grid charging"
+              value: optimization_ev_grid_charge
+            - label: "AI: Heat pump recommended on"
+              value: optimization_heat_pump_recommended
+    event_phase:
+      name: Fire on event start or end
+      description: >
+        `start` fires when the decision block begins, `end` when it ends.
+        For a mode-switch pattern (e.g. "quick-charge during cheap slot,
+        back to normal after"), pair two automations — one with `start`
+        and one with `end` — on the same decision key.
+      default: start
+      selector:
+        select:
+          options:
+            - label: Event start
+              value: start
+            - label: Event end
+              value: end
+    offset:
+      name: Trigger offset (optional)
+      description: >
+        Fire the action N minutes before (negative) or after (positive)
+        the event boundary. Example: `-5` to pre-warm something 5 min
+        before a cheap window starts.
+      default: 0
+      selector:
+        number:
+          min: -60
+          max: 60
+          unit_of_measurement: minutes
+          mode: box
+    action:
+      name: Action to run
+      description: >
+        The action sequence to execute when the matching decision event
+        fires. The following Jinja variables are available:
+        `trigger.calendar_event.summary` (localized label),
+        `trigger.calendar_event.description` (stable key, equals the
+        selected decision), `trigger.calendar_event.start`,
+        `trigger.calendar_event.end`, `trigger.offset`.
+      selector:
+        action: {}
+
+mode: single
+max_exceeded: silent
+
+variables:
+  selected_decision_key: !input decision_key
+
+trigger:
+  - platform: calendar
+    entity_id: !input calendar_entity
+    event: !input event_phase
+    offset: !input offset
+
+condition:
+  - condition: template
+    value_template: >
+      {{ trigger.calendar_event.description == selected_decision_key }}
+
+action: !input action
