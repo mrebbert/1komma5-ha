@@ -5,19 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.75] - 2026-11-08 (armed)
+## [0.1.74] - 2026-11-01 (armed)
 
-New automation blueprint for the EV departure time. No code changes.
+Three focused improvements on top of v0.1.73: calendar hygiene after the skill-audit, defensive Recorder-error-handling, and a new automation blueprint for the EV departure time.
 
 ### Added
 - **Blueprint `ev_departure_from_calendar.yaml`** — pushes the next relevant HA-calendar event into `time.<sys>_<ev>_ev_departure_time` twice daily (evening preplan + morning reconfirm). Dedicated-calendar or summary-keyword match mode, optional home-office suppression via exclude keyword, optional travel-time sensor override (waze/google/here), configurable fallback time for event-free days. One instance per vehicle.
 
-## [0.1.74] - 2026-11-01 (armed)
-
-Follow-up pass on the v0.1.73 calendar platform. No behaviour changes.
-
 ### Changed
 - `custom_components/onekommafive/calendar.py` cleanup after a two-skill audit (`python-quality-baseline` + `home-assistant-integration`): module and helper docstrings compressed to one line each (the DST-fall-back and slot-dominance background stays in release-notes/v0.1.73.md). Removed internal back-compat aliases `PROXY_CHEAP_SPEC_KEY` / `PROXY_EXPENSIVE_SPEC_KEY` (only ever existed inside the v0.1.73 development window). Dropped the unused `_LOGGER` module constant. Net: 52 fewer lines.
+- Price-proxy summaries now localized in all seven HA locales (da, de, en, es, fi, nl, sv) via the standard HA translation framework instead of a hardcoded DE/EN dict. Users on da/es/fi/nl/sv see localized proxy summaries instead of the English fallback.
+
+### Fixed
+- AI-decisions calendar degrades gracefully when the Recorder lookup fails. A Recorder exception used to propagate out of `async_get_events` and drop the forward-looking proxy events as well; the method now catches, logs a WARNING with traceback, and returns an empty history — the proxy half of the window still renders.
 
 ## [0.1.73] - 2026-11-01 (armed)
 
