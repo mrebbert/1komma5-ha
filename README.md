@@ -89,6 +89,19 @@ Full field tables and example automations: [Services & bus events](https://mrebb
 
 Full tour: [Dashboards & blueprints](https://mrebbert.github.io/1komma5-ha/dashboards/).
 
+<details>
+<summary>Preview the six showcase views</summary>
+
+| Grid (Netz) | Vehicle (Fahrzeug) | Prices & costs |
+|-------------|--------------------|----------------|
+| <a href="dashboard/showcase-netz.png"><img src="dashboard/showcase-netz.png" alt="Grid view" width="320"></a> | <a href="dashboard/showcase-fahrzeug.png"><img src="dashboard/showcase-fahrzeug.png" alt="Vehicle view" width="320"></a> | <a href="dashboard/showcase-preise-kosten.png"><img src="dashboard/showcase-preise-kosten.png" alt="Prices & costs view" width="320"></a> |
+
+| Optimization | Weather | System |
+|--------------|---------|--------|
+| <a href="dashboard/showcase-optimierung.png"><img src="dashboard/showcase-optimierung.png" alt="Optimization view" width="320"></a> | <a href="dashboard/showcase-wetter.png"><img src="dashboard/showcase-wetter.png" alt="Weather view" width="320"></a> | <a href="dashboard/showcase-system.png"><img src="dashboard/showcase-system.png" alt="System view" width="320"></a> |
+
+</details>
+
 ## Devices & entity structure
 
 Entities are grouped under one system parent device plus per-asset sub-devices — one each for inverter, battery (split from inverter only when the asset model requires it), heat pump, smart meter, wallbox (one per physical wallbox since v0.1.58), vehicle. Sub-device data is PII-safe: only `manufacturer`, `model`, `firmware` from the cloud `status_and_assets` payload. `entity_id`s and `unique_id`s are stable across releases.
