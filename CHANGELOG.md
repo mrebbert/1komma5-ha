@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.73] - 2026-11-01 (armed)
+
+New AI-decisions calendar entity plus a universal calendar-driven blueprint. Additive — no breaking changes.
+
+### Added
+- **`calendar.<sys>_ai_decisions_calendar`** — a Home Assistant calendar entity on the system parent device. Historical blocks come from the Recorder state history of the six `optimization_*` binary sensors; future blocks come from a price-derived proxy over the next 30 h (33/67 percentile classification). Lovelace calendar card, mobile app and `calendar.get_events` consume it natively.
+- **Each `CalendarEvent` carries a stable `description` key** alongside the localized `summary` — `optimization_ev_grid_charge`, `optimization_battery_grid_charge`, …, `proxy_cheap`, `proxy_expensive`. Blueprints and automations match on `trigger.calendar_event.description` to stay language-independent.
+- **New blueprint `ai_decision_calendar_trigger.yaml`** — universal trigger on the AI-decisions calendar. Pick one of the eight event classes, choose `start` or `end`, add an optional ±60 min offset, plug in any action.
+
+### Behaviour notes
+- Historical phases collapse to one event per contiguous 15-min run of the same winning decision. If multiple decision sensors are `on` concurrently (coordinator-refresh jitter), the decision with the most on-seconds in that slot wins.
+- Historical blocks run up to the current UTC instant; price-proxy blocks start from it. No event spans the handover.
+- The DST fall-back ambiguous local hour (one hour per year, Oktober) is deliberately skipped — HA's calendar is local-time only and cannot distinguish two instants that share a wall clock.
+- Proxy blocks shorter than 30 min are dropped as noise.
+
+### Changed
+- `manifest.json` declares `recorder` in `after_dependencies` (needed for the historical-block lookup via `recorder.history.get_significant_states`).
+
 ## [0.1.72] - 2026-10-24
 
 A new live §14a-Modul-3 grid-fee sensor plus a vendor-side rate-limit mitigation. Behaviour-only on existing entities; one new entity added.

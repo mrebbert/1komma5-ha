@@ -1,11 +1,11 @@
 ---
 title: Known limitations
-description: Three cloud-API realities the integration cannot design around — optimization binaries mirror the Cloud recommendation (not the HEMS), settlement fields are empty, EMS override is likely cosmetic.
+description: Four cloud-API and HA realities the integration cannot design around — optimization binaries mirror the Cloud recommendation (not the HEMS), settlement fields are empty, EMS override is likely cosmetic, and the AI-decisions calendar drops the DST fall-back ambiguous hour.
 ---
 
 # Known limitations
 
-Three cloud-API realities the integration cannot design around. Documenting them here so nobody wastes time modelling them as bugs.
+Four cloud-API and HA realities the integration cannot design around. Documenting them here so nobody wastes time modelling them as bugs.
 
 ## Optimization binaries reflect the Cloud recommendation, not the local HEMS
 
@@ -18,3 +18,7 @@ Three cloud-API realities the integration cannot design around. Documenting them
 ## The EMS auto-mode switch is likely cosmetic
 
 `switch.<sys>_ems_auto_mode` (GRIDX backends only) POSTs to `/systems/{id}/ems/actions/set-manual-override`. The read model (`EmsSettings.manual_devices`) and the official 1KOMMA5° app both suggest there is no user-facing way to override automatic optimisation; the endpoint accepts writes without an observable side effect. Kept as diagnostic-category in case the cloud starts honouring it.
+
+## The AI-decisions calendar drops the DST fall-back ambiguous hour
+
+`calendar.<sys>_ai_decisions_calendar` deliberately skips the local hour that repeats at Oktober fall-back (02:00–03:00 in Europe/Berlin, appearing once CEST and once CET on the Sunday of the switch). HA's calendar validator (`has_min_duration`) computes `end - start` on `as_local_timezone`-converted datetimes; when both carry the same `ZoneInfo` but different UTC offsets, Python subtracts the naive wall clocks and rejects the event as "duration 0:00:00". Even without the validator, two different UTC instants with identical wall clocks cannot be rendered unambiguously in a local-time calendar. The trade-off: one hour of decisions per year is lost in exchange for a clean, overlap-free display. Spring-forward is unaffected.

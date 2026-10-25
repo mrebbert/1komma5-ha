@@ -17,12 +17,27 @@ The showcase dashboard needs two custom Lovelace cards and one helper:
 
 The dashboard YAML carries two placeholders you fill in once at import: `SYSTEM_NAME` and `CAR_IDENTIFIER`.
 
+### AI decisions calendar card
+
+Since v0.1.73 the integration ships a `calendar.<system>_ai_decisions_calendar` entity. Drop this native HA card anywhere in Lovelace to see the full AI-decision timeline plus the 30 h price proxy:
+
+```yaml
+type: calendar
+title: KI-Entscheidungen
+initial_view: listWeek
+entities:
+  - calendar.<system>_ai_decisions_calendar
+```
+
+`initial_view` accepts `listWeek` (compact agenda, best for mobile), `dayGridMonth` (month overview), or `timeGridDay` (hourly day view). The card is included in HA core — no extra frontend components.
+
 ## Automation blueprints
 
-Nine importable blueprints in [`blueprints/automation/onekommafive/`](https://github.com/mrebbert/1komma5-ha/tree/main/blueprints/automation/onekommafive):
+Ten importable blueprints in [`blueprints/automation/onekommafive/`](https://github.com/mrebbert/1komma5-ha/tree/main/blueprints/automation/onekommafive):
 
 | Blueprint | What it does |
 |-----------|-------------|
+| **AI decision calendar trigger** | Universal trigger on the AI-decisions calendar — pick one of eight event classes (six AI decisions + `proxy_cheap` / `proxy_expensive`), choose `start` or `end` with optional ±60 min offset, plug in any action. Matches the event's stable `description` key, so the automation stays language-independent. |
 | **Run during cheapest window** | Schedules a switch for the cheapest N-min window daily (dishwasher, washer, EV). |
 | **Follow cheap electricity** | Mirrors a switch to `binary_sensor…_cheap_electricity` for opportunistic loads. |
 | **Notify on AI grid-charge decision** | Pings when the AI decides `BATTERY_CHARGE_FROM_GRID`. |
