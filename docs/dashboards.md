@@ -1,15 +1,15 @@
 ---
 title: Dashboards & blueprints
-description: Two ready-to-import Lovelace dashboards (energy, EV charger) and nine automation blueprints for the 1KOMMA5° integration — all cards are native HA types.
+description: One ready-to-import Showcase Lovelace dashboard (six views) and eleven automation blueprints for the 1KOMMA5° integration — most cards are native HA types.
 ---
 
 # Dashboards & automation blueprints
 
-## Dashboards
+## Showcase dashboard
 
-[`dashboard/`](https://github.com/mrebbert/1komma5-ha/tree/main/dashboard) in the repo contains two ready-to-import Home Assistant dashboards (energy & grid + EV charger). All cards are native HA types — no extra frontend components needed. See the [dashboard README](https://github.com/mrebbert/1komma5-ha/blob/main/dashboard/README.md) for screenshots and import instructions.
+[`dashboard/`](https://github.com/mrebbert/1komma5-ha/tree/main/dashboard) in the repo ships one ready-to-import Home Assistant dashboard: six views (Grid / Vehicle / Prices & costs / Optimization / Weather / System) that cover the full integration surface. Most cards are native HA types; `apexcharts-card`, `button-card` and the `input_select.stromkosten_zeitspanne` helper cover the remaining ones. See the [dashboard README](https://github.com/mrebbert/1komma5-ha/blob/main/dashboard/README.md) for screenshots and import instructions.
 
-The showcase dashboard needs two custom Lovelace cards and one helper:
+The dashboard needs two custom Lovelace cards and one helper:
 
 - `apexcharts-card` — the 30 h price-forecast chart in the "Preise und Kosten" view.
 - `button-card` — the cost time-range switcher.

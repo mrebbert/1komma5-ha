@@ -63,7 +63,7 @@ cheapest_future_hour: "2026-02-28T22:00:00+00:00"
 cheapest_future_price: 0.198400
 ```
 
-For a ready-made 30-hour price-forecast chart (`apexcharts-card`, `color_threshold`-coloured), see the "Preise und Kosten" view in [`dashboard/dashboard.yaml`](https://github.com/mrebbert/1komma5-ha/blob/main/dashboard/dashboard.yaml). Copy the `custom:apexcharts-card` block, replace the entity prefix, done.
+For a ready-made 30-hour price-forecast chart (`apexcharts-card`, `color_threshold`-coloured), see the "Preise und Kosten" view in [`dashboard/dashboard-showcase.yaml`](https://github.com/mrebbert/1komma5-ha/blob/main/dashboard/dashboard-showcase.yaml). Copy the `custom:apexcharts-card` block, replace the entity prefix, done.
 
 ## Dynamic-Pulse price guarantee
 
