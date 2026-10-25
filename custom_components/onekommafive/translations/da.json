@@ -456,7 +456,15 @@
     },
     "calendar": {
       "ai_decisions": {
-        "name": "AI-beslutninger"
+        "name": "AI-beslutninger",
+        "state_attributes": {
+          "proxy_cheap": {
+            "name": "Pris-proxy: billig (EV-opladning anbefales)"
+          },
+          "proxy_expensive": {
+            "name": "Pris-proxy: dyr (batteriafladning anbefales)"
+          }
+        }
       }
     }
   },

@@ -456,7 +456,15 @@
     },
     "calendar": {
       "ai_decisions": {
-        "name": "AI-päätökset"
+        "name": "AI-päätökset",
+        "state_attributes": {
+          "proxy_cheap": {
+            "name": "Hintaproxy: halpa (sähköauton lataus suositellaan)"
+          },
+          "proxy_expensive": {
+            "name": "Hintaproxy: kallis (akun purku suositellaan)"
+          }
+        }
       }
     }
   },

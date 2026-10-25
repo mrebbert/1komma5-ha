@@ -456,7 +456,15 @@
     },
     "calendar": {
       "ai_decisions": {
-        "name": "AI decisions"
+        "name": "AI decisions",
+        "state_attributes": {
+          "proxy_cheap": {
+            "name": "Price proxy: cheap (EV charging suggested)"
+          },
+          "proxy_expensive": {
+            "name": "Price proxy: expensive (battery discharge suggested)"
+          }
+        }
       }
     }
   },
