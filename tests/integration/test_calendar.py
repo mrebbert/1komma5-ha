@@ -372,6 +372,51 @@ async def test_calendar_async_get_events_history(
     assert returned[0]["description"] == "optimization_battery_no_charge"
 
 
+async def test_calendar_recorder_failure_degrades_gracefully(
+    hass: HomeAssistant, mock_system_factory, setup_integration, caplog
+) -> None:
+    """Recorder exceptions skip history but still return proxy events."""
+    import logging
+
+    system = mock_system_factory(system_id="sys-1", optimizations=MagicMock(events=[]))
+    entry = await setup_integration(system)
+    now = dt.datetime.now(UTC)
+    forecast = _price_forecast(now + dt.timedelta(minutes=5), 12, 0.20)
+    entry.runtime_data.price_coordinator.data = MagicMock(forecast=forecast)
+
+    with (
+        patch.object(
+            calendar_module,
+            "get_significant_states",
+            side_effect=RuntimeError("recorder exploded"),
+        ),
+        patch.object(calendar_module, "get_instance") as get_instance_mock,
+        caplog.at_level(
+            logging.WARNING, logger="custom_components.onekommafive.calendar"
+        ),
+    ):
+        get_instance_mock.return_value.async_add_executor_job = AsyncMock(
+            side_effect=lambda fn, *a, **kw: fn(*a, **kw)
+        )
+        events = await hass.services.async_call(
+            "calendar",
+            "get_events",
+            {
+                "entity_id": "calendar.test_home_ai_decisions_calendar",
+                "start_date_time": (now - dt.timedelta(hours=2)).isoformat(),
+                "end_date_time": (now + dt.timedelta(hours=4)).isoformat(),
+            },
+            blocking=True,
+            return_response=True,
+        )
+    reply = events["calendar.test_home_ai_decisions_calendar"]  # type: ignore[index]
+    returned = reply["events"]
+    # History collapses to zero, but proxy events still materialize.
+    assert returned, "expected proxy events despite recorder failure"
+    assert all(e["description"] in {"proxy_cheap", "proxy_expensive"} for e in returned)
+    assert "Recorder history fetch failed" in caplog.text
+
+
 async def test_calendar_async_get_events_proxy(
     hass: HomeAssistant, mock_system_factory, setup_integration
 ) -> None:

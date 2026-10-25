@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import recorder as _recorder
@@ -29,6 +30,8 @@ if TYPE_CHECKING:
         OneKomma5OptimizationCoordinator,
         OneKomma5PriceCoordinator,
     )
+
+_LOGGER = logging.getLogger(__name__)
 
 # `get_instance` is exposed by recorder/__init__.py via `from .util import
 # get_instance`; mypy's strict mode treats that as a non-exported attribute
@@ -481,16 +484,28 @@ class OneKomma5DecisionCalendar(CalendarEntity, OneKomma5OptimizationEntity):
             return []
         entity_ids = list(entity_id_map.values())
         recorder = get_instance(hass)
-        state_map = await recorder.async_add_executor_job(
-            get_significant_states,
-            hass,
-            start,
-            end,
-            entity_ids,
-            None,
-            True,
-            True,
-        )
+        try:
+            state_map = await recorder.async_add_executor_job(
+                get_significant_states,
+                hass,
+                start,
+                end,
+                entity_ids,
+                None,
+                True,
+                True,
+            )
+        except Exception:
+            # Recorder lookups are best-effort for calendar rendering —
+            # degrade to an empty history rather than failing the whole
+            # get_events call, which would also drop the forward-looking
+            # proxy events.
+            _LOGGER.warning(
+                "Recorder history fetch failed for AI-decisions calendar; "
+                "returning no historical events",
+                exc_info=True,
+            )
+            return []
         phases_per_key: dict[str, list[tuple[dt.datetime, dt.datetime]]] = {}
         for spec_key, entity_id in entity_id_map.items():
             states = state_map.get(entity_id, [])
