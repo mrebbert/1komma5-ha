@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.74] - 2026-11-01 (armed)
+
+Follow-up pass on the v0.1.73 calendar platform. No behaviour changes.
+
+### Changed
+- `custom_components/onekommafive/calendar.py` cleanup after a two-skill audit (`python-quality-baseline` + `home-assistant-integration`): module and helper docstrings compressed to one line each (the DST-fall-back and slot-dominance background stays in release-notes/v0.1.73.md). Removed internal back-compat aliases `PROXY_CHEAP_SPEC_KEY` / `PROXY_EXPENSIVE_SPEC_KEY` (only ever existed inside the v0.1.73 development window). Dropped the unused `_LOGGER` module constant. Net: 52 fewer lines.
+
 ## [0.1.73] - 2026-11-01 (armed)
 
 New AI-decisions calendar entity plus a universal calendar-driven blueprint. Additive — no breaking changes.
