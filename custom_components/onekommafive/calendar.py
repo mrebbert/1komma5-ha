@@ -46,21 +46,6 @@ SLOT_MINUTES = 15  # AI decisions are rendered on the native 15-min grid
 PROXY_CHEAP_KEY = "proxy_cheap"
 PROXY_EXPENSIVE_KEY = "proxy_expensive"
 
-# Fallback proxy labels per supported HA language. Kept inline because the
-# strings live outside the standard HA translation categories; the Decision
-# labels themselves are fetched via async_get_translations from the existing
-# binary_sensor entries so they stay in sync with Lovelace.
-_PROXY_LABELS: dict[str, dict[str, str]] = {
-    "de": {
-        PROXY_CHEAP_KEY: "Preis-Proxy: günstig (EV-Laden empfohlen)",
-        PROXY_EXPENSIVE_KEY: "Preis-Proxy: teuer (Batterieentladung empfohlen)",
-    },
-    "en": {
-        PROXY_CHEAP_KEY: "Price proxy: cheap (EV charging suggested)",
-        PROXY_EXPENSIVE_KEY: "Price proxy: expensive (battery discharge suggested)",
-    },
-}
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -385,14 +370,14 @@ class OneKomma5DecisionCalendar(CalendarEntity, OneKomma5OptimizationEntity):
         for spec in OPTIMIZATION_DECISION_SENSORS:
             tkey = f"component.{DOMAIN}.entity.binary_sensor.{spec.key}.name"
             labels[spec.key] = translations.get(tkey, spec.key)
+        for proxy_key in (PROXY_CHEAP_KEY, PROXY_EXPENSIVE_KEY):
+            tkey = (
+                f"component.{DOMAIN}.entity.calendar.ai_decisions"
+                f".state_attributes.{proxy_key}.name"
+            )
+            labels[proxy_key] = translations.get(tkey, proxy_key)
         self._decision_labels = labels
         self._translations_lang = language
-
-    def _proxy_label(self, spec_key: str) -> str:
-        """Return the inline proxy label for the current UI language."""
-        language = (self.hass.config.language or "en").split("-")[0]
-        table = _PROXY_LABELS.get(language, _PROXY_LABELS["en"])
-        return table.get(spec_key, spec_key)
 
     @property
     def event(self) -> CalendarEvent | None:
@@ -526,7 +511,7 @@ class OneKomma5DecisionCalendar(CalendarEntity, OneKomma5OptimizationEntity):
             CalendarEvent(
                 start=block_start,
                 end=block_end,
-                summary=self._proxy_label(category),
+                summary=self._decision_labels.get(category, category),
                 description=category,
             )
             for category, block_start, block_end in blocks

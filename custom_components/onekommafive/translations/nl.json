@@ -456,7 +456,15 @@
     },
     "calendar": {
       "ai_decisions": {
-        "name": "AI-beslissingen"
+        "name": "AI-beslissingen",
+        "state_attributes": {
+          "proxy_cheap": {
+            "name": "Prijsproxy: goedkoop (EV-laden aanbevolen)"
+          },
+          "proxy_expensive": {
+            "name": "Prijsproxy: duur (batterij ontladen aanbevolen)"
+          }
+        }
       }
     }
   },
