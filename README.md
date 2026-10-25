@@ -71,7 +71,7 @@ Full install, config-options and re-authentication / reconfigure flows: [Install
 | Energy & cost | kWh integration (Energy Dashboard-ready), per-consumer cost allocation, feed-in revenue, daily savings | [docs](https://mrebbert.github.io/1komma5-ha/features/energy-cost/) |
 | §14a EnWG grid-fee | Modul 1 flat annual rebate + Modul 3 variable Netzentgelte HT/NT (both diagnostic, annual), plus `enwg14a_grid_fee_current` for the live per-slot Modul-3 rate (SDK 1.2.1+). Modul 1 sites see unavailable on the live sensor — Modul 1 has no per-slot component. | [docs](https://mrebbert.github.io/1komma5-ha/features/enwg14a/) |
 | Contract overview | Active subscriptions, 1KOMMA5°Care add-on eligibility, EMP backend | [docs](https://mrebbert.github.io/1komma5-ha/features/contract/) |
-| AI optimization | Six decision binaries, last-decision sensor, bus event | [docs](https://mrebbert.github.io/1komma5-ha/features/ai-optimization/) |
+| AI optimization | Six decision binaries, last-decision sensor, bus event, aggregated AI-decisions calendar (`calendar.<system>_ai_decisions_calendar`) with historical blocks plus a 30 h price-based proxy | [docs](https://mrebbert.github.io/1komma5-ha/features/ai-optimization/) |
 | EV & wallbox | Per-vehicle controls (mode, SoC, departure), wallbox-to-vehicle assignment select | [docs](https://mrebbert.github.io/1komma5-ha/features/ev-wallbox/) |
 | Weather | 48 h hourly forecast + sunshine totals | [docs](https://mrebbert.github.io/1komma5-ha/features/weather/) |
 | Diagnostics | Per-coordinator timestamps, device-connectivity binaries, EMS auto-mode switch | [docs](https://mrebbert.github.io/1komma5-ha/features/diagnostics/) |

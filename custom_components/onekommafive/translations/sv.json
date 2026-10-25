@@ -453,6 +453,11 @@
       "ev_departure_time": {
         "name": "Avresetid"
       }
+    },
+    "calendar": {
+      "ai_decisions": {
+        "name": "AI-beslut"
+      }
     }
   },
   "device": {

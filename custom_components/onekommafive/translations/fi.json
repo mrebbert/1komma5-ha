@@ -453,6 +453,11 @@
       "ev_departure_time": {
         "name": "Lähtöaika"
       }
+    },
+    "calendar": {
+      "ai_decisions": {
+        "name": "AI-päätökset"
+      }
     }
   },
   "device": {

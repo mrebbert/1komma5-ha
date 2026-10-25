@@ -453,6 +453,11 @@
       "ev_departure_time": {
         "name": "Afgangstid"
       }
+    },
+    "calendar": {
+      "ai_decisions": {
+        "name": "AI-beslutninger"
+      }
     }
   },
   "device": {

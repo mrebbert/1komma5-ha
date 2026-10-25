@@ -49,6 +49,11 @@
           "on": "mdi:heat-pump"
         }
       }
+    },
+    "calendar": {
+      "ai_decisions": {
+        "default": "mdi:brain"
+      }
     }
   }
 }

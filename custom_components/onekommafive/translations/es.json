@@ -453,6 +453,11 @@
       "ev_departure_time": {
         "name": "Hora de salida"
       }
+    },
+    "calendar": {
+      "ai_decisions": {
+        "name": "Decisiones de IA"
+      }
     }
   },
   "device": {
