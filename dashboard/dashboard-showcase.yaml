@@ -983,26 +983,20 @@ views:
         show_name: true
         show_state: true
         show_icon: true
-        entity: binary_sensor.SYSTEM_NAME_optimization_battery_grid_charge
-        name: AI Batterie
-      - type: entity
-        show_name: true
-        show_state: true
-        show_icon: true
-        entity: binary_sensor.SYSTEM_NAME_optimization_heat_pump_recommended
-        name: AI Wärmepumpe
+        entity: sensor.SYSTEM_NAME_optimization_last_decision
+        name: Letzte Decision
       - type: entity
         show_name: true
         show_state: true
         show_icon: true
         entity: sensor.SYSTEM_NAME_optimization_event_count
-        name: Entscheidungen
+        name: Entscheidungen heute
     sections:
-      # ── Letzte AI-Entscheidung (mit translated enum, NEU v0.1.45) ──
+      # ── Alle sechs AI-Decision-Binaries (seit v0.1.66 vollständig) ──
       - type: grid
         cards:
           - type: heading
-            heading: Letzte AI-Entscheidung
+            heading: Aktive AI-Entscheidung
             heading_style: title
             icon: mdi:brain
           - type: entity
@@ -1012,11 +1006,47 @@ views:
               columns: 12
               rows: auto
           - type: entities
+            title: Battery-Decisions
             entities:
               - entity: binary_sensor.SYSTEM_NAME_optimization_battery_grid_charge
-                name: AI lädt Batterie aus Netz
+                name: Batterie aus Netz laden
+              - entity: binary_sensor.SYSTEM_NAME_optimization_battery_grid_discharge
+                name: Batterie ins Netz verkaufen
+              - entity: binary_sensor.SYSTEM_NAME_optimization_battery_no_charge
+                name: Lade-Sperre
+              - entity: binary_sensor.SYSTEM_NAME_optimization_battery_no_discharge
+                name: Entlade-Sperre
+          - type: entities
+            title: EV & Wärmepumpe
+            entities:
+              - entity: binary_sensor.SYSTEM_NAME_optimization_ev_grid_charge
+                name: EV aus Netz laden
               - entity: binary_sensor.SYSTEM_NAME_optimization_heat_pump_recommended
-                name: AI empfiehlt Wärmepumpe
+                name: Wärmepumpe empfohlen
+
+      # ── AI-Decisions-Timeline (seit v0.1.73) ──────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: AI-Decisions-Verlauf
+            heading_style: title
+            icon: mdi:calendar-clock
+          - type: calendar
+            title: KI-Entscheidungen
+            initial_view: listWeek
+            entities:
+              - calendar.SYSTEM_NAME_ai_decisions_calendar
+            grid_options:
+              columns: 12
+              rows: auto
+          - type: markdown
+            content: >
+              Historische Blöcke aus den sechs AI-Decision-Binaries,
+              dazu ein Preis-Proxy für die nächsten 30 h aus dem
+              Forecast (`proxy_cheap` / `proxy_expensive`). Jedes Event
+              trägt einen sprach-unabhängigen `description`-Key — nutze
+              den im [Blueprint "AI decision calendar trigger"](https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/ai_decision_calendar_trigger.yaml)
+              für Automatisierungen.
 
       # ── Tages-Aggregat ────────────────────────────────────────
       - type: grid
@@ -1148,7 +1178,7 @@ views:
               - entity: binary_sensor.SYSTEM_NAME_smart_charging_active
                 name: Intelligentes Laden
 
-      # ── Letzte Updates pro Coordinator ────────────────────────
+      # ── Letzte Updates pro Coordinator (acht seit v0.1.65) ────
       - type: grid
         cards:
           - type: heading
@@ -1167,6 +1197,54 @@ views:
                 name: Wetter
               - entity: sensor.SYSTEM_NAME_diag_system_status_update
                 name: Konnektivität
+              - entity: sensor.SYSTEM_NAME_diag_energy_update
+                name: Energie
+              - entity: sensor.SYSTEM_NAME_diag_notification_update
+                name: Notifications
+              - entity: sensor.SYSTEM_NAME_diag_heartbeat_prices_update
+                name: Heartbeat-Preise
+
+      # ── §14a EnWG — Grid-Fee-Reduktion (seit v0.1.66 / v0.1.72) ──
+      - type: grid
+        cards:
+          - type: heading
+            heading: §14a EnWG — Netzentgelt
+            heading_style: title
+            icon: mdi:transmission-tower
+          - type: entities
+            entities:
+              - entity: sensor.SYSTEM_NAME_enwg14a_module
+                name: §14a-Modul (Anmeldung)
+              - entity: sensor.SYSTEM_NAME_enwg14a_grid_fee_current
+                name: Aktuelles Netzentgelt (Modul 3)
+              - entity: sensor.SYSTEM_NAME_module1_grid_fee_reduction_annual
+                name: §14a Modul 1 (jährlich)
+              - entity: sensor.SYSTEM_NAME_module3_grid_fee_savings_annual
+                name: §14a Modul 3 (jährlich)
+
+      # ── Contract-Overview (seit v0.1.68) ──────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Vertrag & Anbieter
+            heading_style: title
+            icon: mdi:file-document-outline
+          - type: entities
+            entities:
+              - entity: sensor.SYSTEM_NAME_emp_backend
+                name: EMP-Backend
+              - entity: sensor.SYSTEM_NAME_active_subscriptions
+                name: Aktive Pakete
+              - entity: sensor.SYSTEM_NAME_subscription_eligibility
+                name: Add-on-Verfügbarkeit
+              - entity: sensor.SYSTEM_NAME_dynamic_pulse_price_guarantee
+                name: DP-Preisgarantie
+              - entity: binary_sensor.SYSTEM_NAME_dynamic_pulse_compatible
+                name: Dynamic-Pulse-fähig
+              - entity: binary_sensor.SYSTEM_NAME_energy_trader_active
+                name: Energiehandel
+              - entity: sensor.SYSTEM_NAME_system_age_days
+                name: Systemalter
 
       # ── EMS (jetzt diagnostic, da Cloud-Override vermutlich no-op) ──
       - type: grid
