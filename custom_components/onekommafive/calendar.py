@@ -12,14 +12,12 @@ import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.components import recorder as _recorder
 from homeassistant.components.binary_sensor.const import (
     DOMAIN as BINARY_SENSOR_DOMAIN,
 )
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.components.recorder.history import get_significant_states
-from homeassistant.components.recorder.util import (
-    get_instance,  # type: ignore[attr-defined]  # noqa: E501
-)
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -40,6 +38,12 @@ if TYPE_CHECKING:
     )
 
 _LOGGER = logging.getLogger(__name__)
+
+# `get_instance` is exposed by recorder/__init__.py via `from .util import
+# get_instance`; mypy's strict mode treats that as a non-exported attribute
+# because recorder has no `__all__`. Access it via the already-imported
+# module to sidestep the attr-defined complaint uniformly.
+get_instance = _recorder.get_instance  # type: ignore[attr-defined]
 
 PARALLEL_UPDATES = 0
 
