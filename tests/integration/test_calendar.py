@@ -20,8 +20,8 @@ from homeassistant.helpers import entity_registry as er
 
 from custom_components.onekommafive import calendar as calendar_module
 from custom_components.onekommafive.calendar import (
-    PROXY_CHEAP_SPEC_KEY,
-    PROXY_EXPENSIVE_SPEC_KEY,
+    PROXY_CHEAP_KEY,
+    PROXY_EXPENSIVE_KEY,
     _percentile,
     _proxy_blocks,
     _quantize_and_merge,
@@ -205,8 +205,8 @@ def test_proxy_blocks_cheap_and_expensive_runs() -> None:
     blocks = _proxy_blocks(forecast, t0, t0 + dt.timedelta(hours=4))
     assert len(blocks) == 2
     cheap, expensive = blocks
-    assert cheap[0] == PROXY_CHEAP_SPEC_KEY
-    assert expensive[0] == PROXY_EXPENSIVE_SPEC_KEY
+    assert cheap[0] == PROXY_CHEAP_KEY
+    assert expensive[0] == PROXY_EXPENSIVE_KEY
     # cheap block covers at least the lowest two slots
     assert cheap[1] == t0
     assert cheap[2] >= t0 + dt.timedelta(minutes=30)
@@ -224,8 +224,8 @@ def test_proxy_blocks_drops_single_slot_blocks_as_noise() -> None:
     blocks = _proxy_blocks(forecast, t0, t0 + dt.timedelta(hours=4))
     # the single expensive run (two slots at the end) survives, each cheap
     # slot stands alone → no cheap block.
-    assert all(b[0] != PROXY_CHEAP_SPEC_KEY for b in blocks)
-    assert any(b[0] == PROXY_EXPENSIVE_SPEC_KEY for b in blocks)
+    assert all(b[0] != PROXY_CHEAP_KEY for b in blocks)
+    assert any(b[0] == PROXY_EXPENSIVE_KEY for b in blocks)
 
 
 def test_proxy_blocks_flat_forecast_returns_nothing() -> None:

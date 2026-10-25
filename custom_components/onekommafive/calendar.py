@@ -1,15 +1,8 @@
-"""Calendar platform for the 1KOMMA5° integration.
-
-Exposes an aggregated AI-decisions calendar: historical blocks reconstructed
-from the Recorder history of the six optimization-decision binary sensors,
-and a price-derived proxy for the next 30 h extracted from the price
-coordinator's forecast.
-"""
+"""Calendar platform for the 1KOMMA5° integration."""
 
 from __future__ import annotations
 
 import datetime as dt
-import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import recorder as _recorder
@@ -37,8 +30,6 @@ if TYPE_CHECKING:
         OneKomma5PriceCoordinator,
     )
 
-_LOGGER = logging.getLogger(__name__)
-
 # `get_instance` is exposed by recorder/__init__.py via `from .util import
 # get_instance`; mypy's strict mode treats that as a non-exported attribute
 # because recorder has no `__all__`. Access it via the already-imported
@@ -54,9 +45,6 @@ SLOT_MINUTES = 15  # AI decisions are rendered on the native 15-min grid
 
 PROXY_CHEAP_KEY = "proxy_cheap"
 PROXY_EXPENSIVE_KEY = "proxy_expensive"
-# Back-compat aliases (previous public names).
-PROXY_CHEAP_SPEC_KEY = PROXY_CHEAP_KEY
-PROXY_EXPENSIVE_SPEC_KEY = PROXY_EXPENSIVE_KEY
 
 # Fallback proxy labels per supported HA language. Kept inline because the
 # strings live outside the standard HA translation categories; the Decision
@@ -152,13 +140,7 @@ def _snap_ceil(t: dt.datetime) -> dt.datetime:
 def _quantize_and_merge(
     phases: list[tuple[dt.datetime, dt.datetime]],
 ) -> list[tuple[dt.datetime, dt.datetime]]:
-    """Snap each phase to 15-min boundaries, then merge adjacent/overlapping ones.
-
-    The AI-decision cadence is 15 min; recorder ``last_changed`` values
-    carry setup-latency jitter and sub-slot decision flips. Snapping the
-    phase bounds onto the slot grid and merging contiguous blocks (same
-    decision, no gap) matches what the API semantically meant.
-    """
+    """Snap phases to 15-min boundaries and merge adjacent or overlapping ones."""
     snapped: list[tuple[dt.datetime, dt.datetime]] = []
     for start, end in phases:
         s = _snap_floor(start)
@@ -198,14 +180,7 @@ def _slot_dominant_decisions(
     window_start: dt.datetime,
     window_end: dt.datetime,
 ) -> dict[dt.datetime, str]:
-    """Return the winning decision per 15-min slot in the window.
-
-    Winner = summary with the most ``on`` seconds inside the slot. Slots
-    with no on-time stay out of the result so no block is forced. Slots
-    inside the DST fall-back ambiguous local hour are skipped — the
-    local-time calendar cannot distinguish the two instants that share a
-    wall clock, and emitting both would show as a side-by-side duplicate.
-    """
+    """Return the decision with the most ``on`` seconds for each 15-min slot."""
     if not phases_per_summary:
         return {}
     slot_duration = dt.timedelta(minutes=SLOT_MINUTES)
@@ -253,19 +228,7 @@ def _collapse_slot_winners(
 def _split_at_dst_transition(
     start: dt.datetime, end: dt.datetime
 ) -> list[tuple[dt.datetime, dt.datetime]]:
-    """Split a phase around a HA-local DST transition.
-
-    HA's ``has_min_duration`` validator computes ``end - start`` on
-    ``as_local_timezone``-converted datetimes. During a fall-back transition
-    both ends can share the ``ZoneInfo`` instance but carry different UTC
-    offsets; Python then subtracts the naive wall clocks and HA raises
-    "Expected minimum event duration of 0:00:00".
-
-    This function returns up to two sub-phases, both aligned on 15-min
-    slot boundaries and both entirely inside a single UTC offset. The
-    ambiguous slot that straddles the transition itself is dropped —
-    cleaner than displaying a sub-second artefact or an inverted event.
-    """
+    """Split a phase around a DST transition; drops the ambiguous straddle slot."""
     local_tz = dt_util.DEFAULT_TIME_ZONE
     start_offset = start.astimezone(local_tz).utcoffset()
     end_offset = end.astimezone(local_tz).utcoffset()
@@ -291,15 +254,7 @@ def _split_at_dst_transition(
 def _reconstruct_phases(
     states: list[Any], window_end: dt.datetime
 ) -> list[tuple[dt.datetime, dt.datetime]]:
-    """Reconstruct contiguous ``on`` phases from a recorder state list.
-
-    Each returned tuple is ``(phase_start, phase_end)`` in UTC. A trailing
-    ``on`` state that extends past the Recorder window is clamped at
-    ``window_end``. Raw timing — quantisation to 15-min slots, same-decision
-    merging across sensors and DST-splitting happen downstream in
-    ``_history_events`` so that touching blocks from different sensors can
-    collapse into one event.
-    """
+    """Return raw UTC ``on`` phases; trailing ``on`` clamps to ``window_end``."""
     window_end_utc = dt_util.as_utc(window_end)
     phases: list[tuple[dt.datetime, dt.datetime]] = []
     phase_start: dt.datetime | None = None
@@ -321,14 +276,7 @@ def _proxy_blocks(
     window_start: dt.datetime,
     window_end: dt.datetime,
 ) -> list[tuple[str, dt.datetime, dt.datetime]]:
-    """Return proxy-event blocks for the given forecast window.
-
-    Each block is ``(spec_key, start, end)`` where ``spec_key`` is one of
-    ``PROXY_CHEAP_SPEC_KEY`` / ``PROXY_EXPENSIVE_SPEC_KEY``. Slots are
-    classified against the 33/67 percentiles of the entire forecast's
-    price distribution; contiguous same-class slots merge into one block.
-    Blocks shorter than ``MIN_PROXY_SLOTS`` 15-min slots are dropped as noise.
-    """
+    """Return ``(category, start, end)`` price-proxy blocks for the window."""
     if not forecast or window_end <= window_start:
         return []
     prices_sorted = sorted(s["price"] for s in forecast)
