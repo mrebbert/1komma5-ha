@@ -33,10 +33,11 @@ entities:
 
 ## Automation blueprints
 
-Ten importable blueprints in [`blueprints/automation/onekommafive/`](https://github.com/mrebbert/1komma5-ha/tree/main/blueprints/automation/onekommafive):
+Eleven importable blueprints in [`blueprints/automation/onekommafive/`](https://github.com/mrebbert/1komma5-ha/tree/main/blueprints/automation/onekommafive):
 
 | Blueprint | What it does |
 |-----------|-------------|
+| **EV departure time from HA calendar** | Automatically keeps `time.<sys>_<ev>_ev_departure_time` in sync with the next relevant HA-calendar event. Evening preplan (20:00) + morning reconfirm (05:00). Static commute buffer or live travel-time sensor. Fallback for event-free days. |
 | **AI decision calendar trigger** | Universal trigger on the AI-decisions calendar — pick one of eight event classes (six AI decisions + `proxy_cheap` / `proxy_expensive`), choose `start` or `end` with optional ±60 min offset, plug in any action. Matches the event's stable `description` key, so the automation stays language-independent. |
 | **Run during cheapest window** | Schedules a switch for the cheapest N-min window daily (dishwasher, washer, EV). |
 | **Follow cheap electricity** | Mirrors a switch to `binary_sensor…_cheap_electricity` for opportunistic loads. |

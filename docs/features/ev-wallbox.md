@@ -39,6 +39,18 @@ Automation shortcut: the [`vehicle_at_wallbox.yaml` blueprint](https://github.co
 
 Id-addressed alternative for scripts: the [`onekommafive.assign_ev_to_wallbox` service](../services.md#onekommafiveassign_ev_to_wallbox).
 
+## Automate departure time from your HA calendar
+
+The [`ev_departure_from_calendar.yaml` blueprint](https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/ev_departure_from_calendar.yaml) keeps `time.<sys>_<ev>_ev_departure_time` in sync with the next relevant event in any Home Assistant calendar. Commuters with shifting schedules (shift work, home-office days, business trips) don't have to touch the time entity by hand — the AI sees the right ready-by time and schedules charging to the cheapest slots overnight.
+
+- **Two triggers**: evening preplan (default 20:00) for tomorrow's departure, morning reconfirm (default 05:00) for overnight calendar changes.
+- **Match modes**: dedicated commute calendar (every event counts) or summary keyword (e.g. `#drive`, `[commute]`).
+- **Home-office suppression**: optional exclude keyword skips events whose summary or location contains it.
+- **Travel-time override**: optionally wire a `sensor.*_travel_time` from `waze_travel_time` / `google_travel_time` / `here_travel_time` to use live traffic data instead of a static commute buffer.
+- **Fallback**: a configurable fixed time is written when no event matches in the next 24 h (weekend, holiday, vacation), so the AI always has a planning target.
+
+One import per vehicle.
+
 ## Mirror your car's battery sensor
 
 Trigger on your EV integration's battery-level sensor, assert `is_number`, and `number.set_value` on `number.<car>_fahrzeug_akkustand_manuell`. The target entity is `unavailable` outside `SMART_CHARGE` mode, so the condition `not is_state(target, 'unavailable')` keeps the automation idle in the other modes.

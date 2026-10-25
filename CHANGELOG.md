@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.75] - 2026-11-08 (armed)
+
+New automation blueprint for the EV departure time. No code changes.
+
+### Added
+- **Blueprint `ev_departure_from_calendar.yaml`** — pushes the next relevant HA-calendar event into `time.<sys>_<ev>_ev_departure_time` twice daily (evening preplan + morning reconfirm). Dedicated-calendar or summary-keyword match mode, optional home-office suppression via exclude keyword, optional travel-time sensor override (waze/google/here), configurable fallback time for event-free days. One instance per vehicle.
+
 ## [0.1.74] - 2026-11-01 (armed)
 
 Follow-up pass on the v0.1.73 calendar platform. No behaviour changes.

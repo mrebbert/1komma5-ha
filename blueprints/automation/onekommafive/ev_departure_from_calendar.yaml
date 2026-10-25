@@ -1,0 +1,198 @@
+blueprint:
+  name: 1KOMMA5° — EV departure time from HA calendar
+  description: >
+    Automatically sets the 1KOMMA5° EV departure time from the next
+    relevant event in a Home Assistant calendar.
+
+
+    The 1KOMMA5° `time.<sys>_<ev>_ev_departure_time` entity is a
+    **ready-by** target: the AI schedules charging so the vehicle has
+    reached the configured SoC by that time. For commuters with
+    shifting schedules (shift work, home-office days, business trips),
+    maintaining this value by hand is error-prone — a wrong time either
+    costs comfort (car not ready) or money (charge lands on expensive
+    peak slots).
+
+
+    This blueprint reads the next event from a chosen HA calendar twice
+    daily, computes the departure time as `event.start - commute_buffer`,
+    and pushes it to the EV's departure-time entity. Two triggers:
+
+    - **Evening preplan** (default 20:00) sets tomorrow's departure so
+      the AI has the full night to plan charging.
+    - **Morning reconfirm** (default 05:00) catches calendar changes
+      made overnight. Set equal to planning_time to effectively disable.
+
+
+    **Event matching** supports two modes:
+
+    - Dedicated commute calendar: every event in the chosen calendar
+      counts. Set `summary_keyword` to empty.
+    - Keyword in summary: filter to events whose summary contains a
+      case-insensitive substring (e.g. `#drive`, `[commute]`).
+
+
+    `exclude_keyword` optionally skips events whose summary or location
+    contains a token (e.g. `homeoffice`, `remote`).
+
+
+    When no event matches in the next 24 h (weekend, holiday, vacation),
+    the fallback_departure_time is written so the AI always has a
+    planning target.
+
+
+    **Travel-time sensor override**: optionally wire a
+    `sensor.*_travel_time` from `waze_travel_time`, `google_travel_time`
+    or `here_travel_time` to use live traffic data as the commute
+    buffer instead of the static minutes value.
+
+  domain: automation
+  source_url: https://github.com/mrebbert/1komma5-ha/blob/main/blueprints/automation/onekommafive/ev_departure_from_calendar.yaml
+
+  input:
+    departure_time_entity:
+      name: EV departure time entity
+      description: >
+        The 1KOMMA5° `time.<sys>_<ev>_ev_departure_time` entity for the
+        vehicle you want to automate.
+      selector:
+        entity:
+          domain: time
+          integration: onekommafive
+    calendar_entity:
+      name: HA calendar
+      description: >
+        Any calendar entity. For a dedicated commute calendar, leave
+        `summary_keyword` empty. For a shared calendar, set
+        `summary_keyword` to filter.
+      selector:
+        entity:
+          domain: calendar
+    planning_time:
+      name: Planning time (evening preplan)
+      description: >
+        Fires once per day to set tomorrow's departure. 20:00 gives the
+        1KOMMA5° AI the full night to plan charging.
+      default: "20:00:00"
+      selector:
+        time: {}
+    reconfirm_time:
+      name: Reconfirm time (morning catch-up)
+      description: >
+        Second daily trigger to catch calendar changes made overnight.
+        Set equal to planning_time to effectively disable.
+      default: "05:00:00"
+      selector:
+        time: {}
+    commute_minutes:
+      name: Commute buffer (minutes)
+      description: >
+        Static drive time from home to the event location. Used unless
+        a travel_time_sensor is wired below.
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 180
+          unit_of_measurement: min
+          mode: box
+    travel_time_sensor:
+      name: Travel-time sensor (optional)
+      description: >
+        A sensor whose state is drive time in minutes (compatible with
+        waze_travel_time, google_travel_time, here_travel_time). When
+        set, its live value overrides `commute_minutes`.
+      default:
+      selector:
+        entity:
+          domain: sensor
+    summary_keyword:
+      name: Summary keyword (optional)
+      description: >
+        Case-insensitive substring that must appear in an event's
+        summary for it to count. Empty = any event.
+      default: ""
+      selector:
+        text: {}
+    exclude_keyword:
+      name: Exclude keyword (optional)
+      description: >
+        Case-insensitive substring that, if found in an event's summary
+        or location, skips the event. Useful for home-office days.
+      default: ""
+      selector:
+        text: {}
+    fallback_departure_time:
+      name: Fallback departure time
+      description: >
+        Written when no matching event is found in the next 24 h
+        (weekend, holiday, vacation).
+      default: "08:00:00"
+      selector:
+        time: {}
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: time
+    at: !input planning_time
+  - platform: time
+    at: !input reconfirm_time
+
+variables:
+  commute_minutes_input: !input commute_minutes
+  travel_time_sensor_input: !input travel_time_sensor
+  summary_keyword_input: !input summary_keyword
+  exclude_keyword_input: !input exclude_keyword
+  fallback_departure_time_input: !input fallback_departure_time
+
+action:
+  - alias: Fetch next 24 h of events from the calendar
+    service: calendar.get_events
+    target:
+      entity_id: !input calendar_entity
+    data:
+      duration:
+        hours: 24
+    response_variable: cal
+
+  - alias: Compute departure time from the first matching event
+    variables:
+      events: "{{ (cal.values() | list | first).events }}"
+      match: >
+        {% set kw = (summary_keyword_input or '') | lower %}
+        {% set ex = (exclude_keyword_input or '') | lower %}
+        {% set ns = namespace(hit=none) %}
+        {% for e in events %}
+          {% set summary = (e.summary | default('')) | lower %}
+          {% set location = (e.location | default('')) | lower %}
+          {% set kw_ok = kw == '' or kw in summary %}
+          {% set ex_hit = ex != '' and (ex in summary or ex in location) %}
+          {% if kw_ok and not ex_hit and ns.hit is none %}
+            {% set ns.hit = e %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.hit }}
+      effective_commute: >
+        {% set s = travel_time_sensor_input %}
+        {% if s and states(s) not in ('unknown', 'unavailable', none) %}
+          {{ states(s) | float(commute_minutes_input) }}
+        {% else %}
+          {{ commute_minutes_input }}
+        {% endif %}
+      departure: >
+        {% if match %}
+          {% set start = as_timestamp(match.start) %}
+          {% set depart = start - (effective_commute | float * 60) %}
+          {{ depart | timestamp_custom('%H:%M:%S', local=True) }}
+        {% else %}
+          {{ fallback_departure_time_input }}
+        {% endif %}
+
+  - alias: Push the computed time to the EV departure-time entity
+    service: time.set_value
+    target:
+      entity_id: !input departure_time_entity
+    data:
+      time: "{{ departure }}"

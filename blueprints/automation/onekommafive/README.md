@@ -1,6 +1,6 @@
 # 1KOMMA5° automation blueprints
 
-Ten ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
+Eleven ready-to-import [Home Assistant blueprints][ha-blueprints] for the most
 common automations on top of this integration.
 
 ## Importing
@@ -46,6 +46,28 @@ chargers (e-bike, power tools).
 
 Inputs: cheap-electricity binary sensor, switch entity, optional
 earliest/latest hour-of-day window.
+
+### `ev_departure_from_calendar.yaml` — EV departure time from HA calendar
+
+[![Open your Home Assistant instance and import this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrebbert%2F1komma5-ha%2Fmain%2Fblueprints%2Fautomation%2Fonekommafive%2Fev_departure_from_calendar.yaml)
+
+Automatically keeps `time.<sys>_<ev>_ev_departure_time` in sync with the next
+relevant HA-calendar event. Reads the calendar twice daily (evening preplan +
+morning reconfirm) and computes departure as `event.start − commute_buffer`.
+The 1KOMMA5° AI then schedules charging to be ready in time, picking the
+cheapest slots overnight.
+
+Supports two match modes (dedicated commute calendar OR summary-keyword filter)
+plus optional home-office suppression and optional live travel-time sensor
+(waze_travel_time / google_travel_time / here_travel_time) that overrides the
+static commute minutes with live traffic data.
+
+Falls back to a configurable fixed time on days without a matching event
+(weekend, holiday, vacation).
+
+Inputs: EV departure-time entity, HA calendar, planning time (default 20:00),
+reconfirm time (default 05:00), commute minutes (default 30), optional
+travel-time sensor, optional summary/exclude keywords, fallback departure time.
 
 ### `ai_decision_calendar_trigger.yaml` — Act on any AI-decision calendar event
 

@@ -85,7 +85,7 @@ Full field tables and example automations: [Services & bus events](https://mrebb
 ## Ready-made dashboards & automation blueprints
 
 - **Dashboards** — [`dashboard/`](dashboard/) contains two ready-to-import Lovelace dashboards (energy & grid + EV charger). All cards are native HA types; the showcase dashboard needs `apexcharts-card`, `button-card` and the `input_select.stromkosten_zeitspanne` helper. See [dashboard README](dashboard/README.md).
-- **Automation blueprints** — ten importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/) covering cheapest-window scheduling, AI-decision notifications, universal calendar-driven triggers, PV-surplus charging, vehicle-at-wallbox binding and more. See [blueprints README](blueprints/automation/onekommafive/README.md).
+- **Automation blueprints** — eleven importable blueprints in [`blueprints/automation/onekommafive/`](blueprints/automation/onekommafive/) covering cheapest-window scheduling, AI-decision notifications, universal calendar-driven triggers, EV-departure-time-from-calendar, PV-surplus charging, vehicle-at-wallbox binding and more. See [blueprints README](blueprints/automation/onekommafive/README.md).
 
 Full tour: [Dashboards & blueprints](https://mrebbert.github.io/1komma5-ha/dashboards/).
 
