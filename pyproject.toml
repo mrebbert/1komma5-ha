@@ -32,7 +32,7 @@ test-integration = [
     # back-track over hundreds of older releases (some of which pull in
     # pre-Python-3.13 numpy wheels that fail to build).
     "pytest-homeassistant-custom-component==0.13.373",
-    "onekommafive>=1.2.2,<2",
+    "onekommafive>=1.2.3,<2",
     # The integration tests tree includes property-based + docstring-coverage
     # tests. They must also install in the Tier-2 job because that job runs
     # the full `tests/` path with the coverage gate.
@@ -44,7 +44,7 @@ test-integration = [
 # Install alongside the integration extras so HA's own type hints are present.
 typecheck = [
     "mypy>=1.11",
-    "onekommafive>=1.2.2,<2",
+    "onekommafive>=1.2.3,<2",
 ]
 
 # Documentation site generator. Pin matches .github/workflows/docs.yml so a

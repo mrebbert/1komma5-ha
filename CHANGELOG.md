@@ -62,7 +62,7 @@ A new live §14a-Modul-3 grid-fee sensor plus a vendor-side rate-limit mitigatio
 
 ### Changed
 - Price coordinator skips the tomorrow-fetch before 12:00 UTC. The 1KOMMA5° `/charts/market-prices` endpoint is BigQuery-backed with a shared 100-second `JobService.query` quota per account; a tomorrow request before EPEX day-ahead publication (12:00 UTC) is guaranteed empty and only chips at that quota, raising the risk of 403 "Exceeded rate limits" when the hourly refresh lines up with Flutter-app traffic. Saves ~12 requests per day per instance. Today's fetch stays unconditional.
-- SDK pin `onekommafive>=1.1.8,<2` → `>=1.2.2,<2` across `pyproject.toml` and `manifest.json`. v1.2.1 adds the per-slot §14a-Modul-3 grid-fee data (`MarketPrices.enwg14a_grid_fee`); v1.2.2 adds a transparent client-side retry-with-backoff for the vendor's 403 "Exceeded rate limits" / 429 responses, so the price-coordinator's own 12-UTC gate above combines with SDK-level resilience against the shared BigQuery `JobService.query` quota.
+- SDK pin `onekommafive>=1.1.8,<2` → `>=1.2.3,<2` across `pyproject.toml` and `manifest.json`. v1.2.1 adds the per-slot §14a-Modul-3 grid-fee data (`MarketPrices.enwg14a_grid_fee`); v1.2.2 adds a transparent client-side retry-with-backoff for the vendor's 403 "Exceeded rate limits" / 429 responses, so the price-coordinator's own 12-UTC gate above combines with SDK-level resilience against the shared BigQuery `JobService.query` quota; v1.2.3 corrects the docstring on `MarketPrices.enwg14a_grid_fee` / `_with_vat` from "§14a Modul 1" to "§14a Modul 3" to match the actual payload semantics the integration consumes.
 
 ## [0.1.71] - 2026-10-23
 
