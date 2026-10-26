@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -48,6 +48,7 @@ from .const import (
 from .helpers import (
     aggregate_optimization_events,
     build_forecast,
+    compose_all_in_prices,
     get_current_price,
     split_prices_by_date,
 )
@@ -76,8 +77,16 @@ class PriceData:
     current_price: float | None
     forecast: list[dict[str, Any]]  # sorted list of {start, end, price} dicts
     all_in_prices: dict[str, float] | None = None  # full price dict for dynamic lookups
+    # §14a-Modul-3 per-slot grid fee, today + tomorrow merged. Empty dict on
+    # Modul-1 sites — compose_all_in_prices then falls back on the SDK's
+    # grid_cost_dynamic_markup scalar, which keeps those sites bit-identical.
+    enwg14a_grid_fee: dict[str, float] = field(default_factory=dict)
+    enwg14a_grid_fee_with_vat: dict[str, float] = field(default_factory=dict)
     negative_price_slots_today: int = 0
     negative_price_slots_tomorrow: int | None = None
+    today_average_price: float | None = None
+    today_lowest_price: float | None = None
+    today_highest_price: float | None = None
     tomorrow_average_price: float | None = None
     tomorrow_lowest_price: float | None = None
     tomorrow_highest_price: float | None = None
@@ -324,17 +333,30 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
 def _price_statistics(
     all_in_prices: dict[str, float], today: datetime.date
 ) -> dict[str, Any]:
-    """Compute the per-day price summary used by the price sensors."""
+    """Compute today + tomorrow price summaries from the composed all-in dict.
+
+    Both days feed from the same per-slot source so Modul-3-variable prices
+    and Modul-1 static ones share one aggregation path. Modul-1 sites get
+    bit-identical averages to the SDK scalars because the composed dict is
+    the SDK dict (±float jitter).
+    """
     today_prices, tomorrow_prices = split_prices_by_date(
         all_in_prices, today, today + datetime.timedelta(days=1)
     )
     stats: dict[str, Any] = {
         "negative_price_slots_today": sum(1 for p in today_prices if p < 0),
         "negative_price_slots_tomorrow": None,
+        "today_average": None,
+        "today_lowest": None,
+        "today_highest": None,
         "tomorrow_average": None,
         "tomorrow_lowest": None,
         "tomorrow_highest": None,
     }
+    if today_prices:
+        stats["today_average"] = sum(today_prices) / len(today_prices)
+        stats["today_lowest"] = min(today_prices)
+        stats["today_highest"] = max(today_prices)
     if tomorrow_prices:
         stats["negative_price_slots_tomorrow"] = sum(
             1 for p in tomorrow_prices if p < 0
@@ -343,6 +365,33 @@ def _price_statistics(
         stats["tomorrow_lowest"] = min(tomorrow_prices)
         stats["tomorrow_highest"] = max(tomorrow_prices)
     return stats
+
+
+def _fixed_grid_components_with_vat(market_prices: MarketPrices) -> float:
+    """Sum the four static grid-cost components (VAT-inclusive, EUR/kWh).
+
+    Excludes the dynamic markup — that one is swapped slot-by-slot in
+    :func:`compose_all_in_prices`. ``None`` components (older API payloads)
+    contribute 0.0.
+    """
+    vat_mult = 1.0 + float(market_prices.vat)
+    net = sum(
+        v or 0.0
+        for v in (
+            market_prices.grid_cost_energy_tax,
+            market_prices.grid_cost_purchasing,
+            market_prices.grid_cost_fixed_tariff,
+            market_prices.grid_cost_feed_in_remuneration_adj,
+        )
+    )
+    return net * vat_mult
+
+
+def _dynamic_markup_with_vat(market_prices: MarketPrices) -> float | None:
+    """VAT-inclusive scalar dynamic markup — Modul-1 fallback value."""
+    if market_prices.grid_cost_dynamic_markup is None:
+        return None
+    return market_prices.grid_cost_dynamic_markup * (1.0 + float(market_prices.vat))
 
 
 class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
@@ -364,7 +413,20 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         that case.
         """
         now = datetime.datetime.now()
-        market_prices, all_in_prices = await self._fetch_today_and_tomorrow(now)
+        (
+            market_prices,
+            prices_with_vat,
+            enwg14a_grid_fee,
+            enwg14a_grid_fee_with_vat,
+        ) = await self._fetch_today_and_tomorrow(now)
+        all_in_prices = compose_all_in_prices(
+            prices_with_vat,
+            enwg14a_grid_fee_with_vat=enwg14a_grid_fee_with_vat,
+            grid_cost_fixed_components_with_vat=_fixed_grid_components_with_vat(
+                market_prices
+            ),
+            grid_cost_dynamic_markup_with_vat=_dynamic_markup_with_vat(market_prices),
+        )
         current_price = get_current_price(all_in_prices)
         forecast = build_forecast(all_in_prices, horizon_hours=30)
         stats = _price_statistics(all_in_prices, now.date())
@@ -374,8 +436,13 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             current_price=current_price,
             forecast=forecast,
             all_in_prices=all_in_prices,
+            enwg14a_grid_fee=enwg14a_grid_fee,
+            enwg14a_grid_fee_with_vat=enwg14a_grid_fee_with_vat,
             negative_price_slots_today=stats["negative_price_slots_today"],
             negative_price_slots_tomorrow=stats["negative_price_slots_tomorrow"],
+            today_average_price=stats["today_average"],
+            today_lowest_price=stats["today_lowest"],
+            today_highest_price=stats["today_highest"],
             tomorrow_average_price=stats["tomorrow_average"],
             tomorrow_lowest_price=stats["tomorrow_lowest"],
             tomorrow_highest_price=stats["tomorrow_highest"],
@@ -383,7 +450,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
 
     async def _fetch_today_and_tomorrow(
         self, now: datetime.datetime
-    ) -> tuple[MarketPrices, dict[str, float]]:
+    ) -> tuple[MarketPrices, dict[str, float], dict[str, float], dict[str, float]]:
         """Fetch today's price slots plus tomorrow's (gated on EPEX publication).
 
         EPEX publishes day-ahead prices at 12:00 UTC (13:00 CET winter / 14:00
@@ -393,20 +460,32 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         request before noon UTC just chips at the quota and raises the chance
         of 403 "Exceeded rate limits" bursts when the hourly refresh lines up
         with user activity. Skip it until EPEX has published.
+
+        Returns the today :class:`MarketPrices` plus three merged
+        today+tomorrow dicts: VAT-inclusive spot prices and the two §14a
+        grid-fee series (net + VAT-inclusive). The all-in composition happens
+        on the caller side.
         """
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
         market_prices = await self._system.get_prices(
             today_start, today_end, resolution="15m"
         )
-        all_in_prices: dict[str, float] = dict(
-            market_prices.prices_with_grid_costs_and_vat
+        prices_with_vat: dict[str, float] = dict(market_prices.prices_with_vat)
+        enwg14a_grid_fee: dict[str, float] = dict(market_prices.enwg14a_grid_fee)
+        enwg14a_grid_fee_with_vat: dict[str, float] = dict(
+            market_prices.enwg14a_grid_fee_with_vat
         )
 
         utc_now = datetime.datetime.now(datetime.UTC)
         if utc_now.hour < 12:
             # EPEX day-ahead publication is 12:00 UTC; skip the empty call.
-            return market_prices, all_in_prices
+            return (
+                market_prices,
+                prices_with_vat,
+                enwg14a_grid_fee,
+                enwg14a_grid_fee_with_vat,
+            )
 
         tomorrow_start = (now + datetime.timedelta(days=1)).replace(
             hour=0, minute=0, second=0, microsecond=0
@@ -416,10 +495,17 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             tomorrow_prices = await self._system.get_prices(
                 tomorrow_start, tomorrow_end, resolution="15m"
             )
-            all_in_prices.update(tomorrow_prices.prices_with_grid_costs_and_vat)
+            prices_with_vat.update(tomorrow_prices.prices_with_vat)
+            enwg14a_grid_fee.update(tomorrow_prices.enwg14a_grid_fee)
+            enwg14a_grid_fee_with_vat.update(tomorrow_prices.enwg14a_grid_fee_with_vat)
         except Exception:
             _LOGGER.debug("Tomorrow's prices not yet available")
-        return market_prices, all_in_prices
+        return (
+            market_prices,
+            prices_with_vat,
+            enwg14a_grid_fee,
+            enwg14a_grid_fee_with_vat,
+        )
 
     async def _on_data(self, data: PriceData) -> None:
         """Fire HA bus events for negative-price edge transitions."""

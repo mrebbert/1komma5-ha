@@ -11,6 +11,8 @@ from helpers import (  # type: ignore[import-not-found]
     active_optimization_event,
     aggregate_optimization_events,
     build_forecast,
+    build_grid_fee_forecast,
+    compose_all_in_prices,
     find_cheapest_window,
     find_most_expensive_window,
     get_current_price,
@@ -121,6 +123,208 @@ class TestBuildForecast:
             "2026-04-26T12:00:00Z": 0.20,
         }
         result = build_forecast(prices, now=_at(2026, 4, 26, 10, 0))
+        starts = [s["start"] for s in result]
+        assert starts == sorted(starts)
+
+
+# ----------------------------------------------------------------------------
+# compose_all_in_prices
+# ----------------------------------------------------------------------------
+
+
+class TestComposeAllInPrices:
+    """Modul-3-aware all-in price composition.
+
+    Call-site convention: all four price inputs are VAT-inclusive EUR/kWh.
+    """
+
+    _VAT = 1.19
+    _ENERGY_TAX = 0.0205  # typical German EnergieStG rate, net
+    _PURCHASING = 0.015
+    _FIXED_TARIFF = 0.0712
+    _FEED_IN_ADJ = 0.0001
+    _DYNAMIC_STATIC = 0.065  # Modul-1 flat markup, net
+
+    @property
+    def _fixed_net(self) -> float:
+        return (
+            self._ENERGY_TAX + self._PURCHASING + self._FIXED_TARIFF + self._FEED_IN_ADJ
+        )
+
+    @property
+    def _fixed_with_vat(self) -> float:
+        return self._fixed_net * self._VAT
+
+    @property
+    def _dynamic_static_with_vat(self) -> float:
+        return self._DYNAMIC_STATIC * self._VAT
+
+    def test_modul1_fallback_matches_scalar_markup(self) -> None:
+        """Modul-1 site (empty grid-fee dict) → every slot uses the scalar."""
+        prices_with_vat = {
+            "2026-04-26T10:00:00Z": 0.30 * self._VAT,
+            "2026-04-26T10:15:00Z": 0.25 * self._VAT,
+        }
+        out = compose_all_in_prices(
+            prices_with_vat,
+            enwg14a_grid_fee_with_vat={},
+            grid_cost_fixed_components_with_vat=self._fixed_with_vat,
+            grid_cost_dynamic_markup_with_vat=self._dynamic_static_with_vat,
+        )
+        expected = {
+            k: v + self._fixed_with_vat + self._dynamic_static_with_vat
+            for k, v in prices_with_vat.items()
+        }
+        for k, v in expected.items():
+            assert out[k] == pytest.approx(v, abs=1e-9)
+
+    def test_modul3_dynamic_fee_varies_per_slot(self) -> None:
+        """Modul-3 site (grid-fee dict filled) → HT/NT varies the all-in."""
+        prices_with_vat = {
+            "2026-04-26T10:00:00Z": 0.30 * self._VAT,
+            "2026-04-26T22:00:00Z": 0.20 * self._VAT,
+        }
+        grid_fee_with_vat = {
+            "2026-04-26T10:00:00Z": 0.08 * self._VAT,  # HT
+            "2026-04-26T22:00:00Z": 0.03 * self._VAT,  # NT
+        }
+        out = compose_all_in_prices(
+            prices_with_vat,
+            enwg14a_grid_fee_with_vat=grid_fee_with_vat,
+            grid_cost_fixed_components_with_vat=self._fixed_with_vat,
+            grid_cost_dynamic_markup_with_vat=self._dynamic_static_with_vat,
+        )
+        ht_expected = (
+            prices_with_vat["2026-04-26T10:00:00Z"]
+            + self._fixed_with_vat
+            + grid_fee_with_vat["2026-04-26T10:00:00Z"]
+        )
+        nt_expected = (
+            prices_with_vat["2026-04-26T22:00:00Z"]
+            + self._fixed_with_vat
+            + grid_fee_with_vat["2026-04-26T22:00:00Z"]
+        )
+        assert out["2026-04-26T10:00:00Z"] == pytest.approx(ht_expected, abs=1e-9)
+        assert out["2026-04-26T22:00:00Z"] == pytest.approx(nt_expected, abs=1e-9)
+        # HT and NT must actually differ — the whole point of Modul 3.
+        assert out["2026-04-26T10:00:00Z"] != pytest.approx(
+            out["2026-04-26T22:00:00Z"], abs=1e-3
+        )
+
+    def test_modul3_slot_without_fee_falls_back_to_scalar(self) -> None:
+        """A Modul-3 slot missing from the fee dict uses the static scalar."""
+        prices_with_vat = {
+            "2026-04-26T10:00:00Z": 0.30 * self._VAT,
+            "2026-04-26T22:00:00Z": 0.20 * self._VAT,
+        }
+        grid_fee_with_vat = {"2026-04-26T10:00:00Z": 0.08 * self._VAT}
+        out = compose_all_in_prices(
+            prices_with_vat,
+            enwg14a_grid_fee_with_vat=grid_fee_with_vat,
+            grid_cost_fixed_components_with_vat=self._fixed_with_vat,
+            grid_cost_dynamic_markup_with_vat=self._dynamic_static_with_vat,
+        )
+        covered = (
+            prices_with_vat["2026-04-26T10:00:00Z"]
+            + self._fixed_with_vat
+            + grid_fee_with_vat["2026-04-26T10:00:00Z"]
+        )
+        fallback = (
+            prices_with_vat["2026-04-26T22:00:00Z"]
+            + self._fixed_with_vat
+            + self._dynamic_static_with_vat
+        )
+        assert out["2026-04-26T10:00:00Z"] == pytest.approx(covered, abs=1e-9)
+        assert out["2026-04-26T22:00:00Z"] == pytest.approx(fallback, abs=1e-9)
+
+    def test_none_grid_fee_dict_falls_back_to_scalar(self) -> None:
+        """``None`` for the fee dict is equivalent to an empty dict."""
+        prices_with_vat = {"2026-04-26T10:00:00Z": 0.30 * self._VAT}
+        out = compose_all_in_prices(
+            prices_with_vat,
+            enwg14a_grid_fee_with_vat=None,
+            grid_cost_fixed_components_with_vat=self._fixed_with_vat,
+            grid_cost_dynamic_markup_with_vat=self._dynamic_static_with_vat,
+        )
+        expected = (
+            prices_with_vat["2026-04-26T10:00:00Z"]
+            + self._fixed_with_vat
+            + self._dynamic_static_with_vat
+        )
+        assert out["2026-04-26T10:00:00Z"] == pytest.approx(expected, abs=1e-9)
+
+    def test_none_dynamic_markup_treated_as_zero(self) -> None:
+        """A None scalar must not raise — treat as 0.0."""
+        prices_with_vat = {"2026-04-26T10:00:00Z": 0.30 * self._VAT}
+        out = compose_all_in_prices(
+            prices_with_vat,
+            enwg14a_grid_fee_with_vat={},
+            grid_cost_fixed_components_with_vat=self._fixed_with_vat,
+            grid_cost_dynamic_markup_with_vat=None,
+        )
+        expected = prices_with_vat["2026-04-26T10:00:00Z"] + self._fixed_with_vat + 0.0
+        assert out["2026-04-26T10:00:00Z"] == pytest.approx(expected, abs=1e-9)
+
+    def test_negative_spot_price_composes_cleanly(self) -> None:
+        """Negative spot + positive grid fee stays composable (may still be negative)."""
+        prices_with_vat = {"2026-04-26T13:00:00Z": -0.10 * self._VAT}
+        grid_fee_with_vat = {"2026-04-26T13:00:00Z": 0.08 * self._VAT}
+        out = compose_all_in_prices(
+            prices_with_vat,
+            enwg14a_grid_fee_with_vat=grid_fee_with_vat,
+            grid_cost_fixed_components_with_vat=self._fixed_with_vat,
+            grid_cost_dynamic_markup_with_vat=self._dynamic_static_with_vat,
+        )
+        expected = (
+            prices_with_vat["2026-04-26T13:00:00Z"]
+            + self._fixed_with_vat
+            + grid_fee_with_vat["2026-04-26T13:00:00Z"]
+        )
+        assert out["2026-04-26T13:00:00Z"] == pytest.approx(expected, abs=1e-9)
+
+
+# ----------------------------------------------------------------------------
+# build_grid_fee_forecast
+# ----------------------------------------------------------------------------
+
+
+class TestBuildGridFeeForecast:
+    def test_empty_input(self) -> None:
+        assert build_grid_fee_forecast({}, {}, now=_at(2026, 4, 26, 10, 0)) == []
+
+    def test_pairs_net_and_vat(self) -> None:
+        net = {"2026-04-26T11:00:00Z": 0.08}
+        with_vat = {"2026-04-26T11:00:00Z": 0.0952}
+        result = build_grid_fee_forecast(net, with_vat, now=_at(2026, 4, 26, 10, 0))
+        assert len(result) == 1
+        assert result[0]["price"] == 0.08
+        assert result[0]["price_with_vat"] == 0.0952
+
+    def test_skips_slots_missing_from_vat_dict(self) -> None:
+        net = {"2026-04-26T11:00:00Z": 0.08, "2026-04-26T11:15:00Z": 0.09}
+        with_vat = {"2026-04-26T11:00:00Z": 0.0952}
+        result = build_grid_fee_forecast(net, with_vat, now=_at(2026, 4, 26, 10, 0))
+        assert len(result) == 1
+        assert result[0]["end"].startswith("2026-04-26T11:00:00")
+
+    def test_respects_horizon(self) -> None:
+        net = {"2026-04-26T11:00:00Z": 0.08, "2026-04-26T15:00:00Z": 0.09}
+        with_vat = {"2026-04-26T11:00:00Z": 0.0952, "2026-04-26T15:00:00Z": 0.1071}
+        result = build_grid_fee_forecast(
+            net, with_vat, horizon_hours=2, now=_at(2026, 4, 26, 10, 0)
+        )
+        ends = [s["end"] for s in result]
+        assert len(ends) == 1
+        assert ends[0].startswith("2026-04-26T11:00:00")
+
+    def test_sorted_by_start(self) -> None:
+        net = {
+            "2026-04-26T13:00:00Z": 0.09,
+            "2026-04-26T11:00:00Z": 0.07,
+            "2026-04-26T12:00:00Z": 0.08,
+        }
+        with_vat = {k: v * 1.19 for k, v in net.items()}
+        result = build_grid_fee_forecast(net, with_vat, now=_at(2026, 4, 26, 10, 0))
         starts = [s["start"] for s in result]
         assert starts == sorted(starts)
 

@@ -23,11 +23,20 @@ from custom_components.onekommafive.const import (
 
 
 def _market_prices_with(price: float | None) -> MagicMock:
-    """Build a MarketPrices mock that has either one future slot or no slots."""
+    """Build a Modul-1 MarketPrices mock (zero adders, empty §14a dict)."""
     if price is None:
         return MagicMock(
             prices_with_grid_costs_and_vat={},
             prices_with_grid_costs={},
+            prices_with_vat={},
+            enwg14a_grid_fee={},
+            enwg14a_grid_fee_with_vat={},
+            vat=0.0,
+            grid_cost_energy_tax=0.0,
+            grid_cost_purchasing=0.0,
+            grid_cost_fixed_tariff=0.0,
+            grid_cost_dynamic_markup=0.0,
+            grid_cost_feed_in_remuneration_adj=0.0,
             average_price_all_in=None,
             lowest_price_all_in=None,
             highest_price_all_in=None,
@@ -41,6 +50,15 @@ def _market_prices_with(price: float | None) -> MagicMock:
     return MagicMock(
         prices_with_grid_costs_and_vat=slots,
         prices_with_grid_costs=slots,
+        prices_with_vat=slots,
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
+        vat=0.0,
+        grid_cost_energy_tax=0.0,
+        grid_cost_purchasing=0.0,
+        grid_cost_fixed_tariff=0.0,
+        grid_cost_dynamic_markup=0.0,
+        grid_cost_feed_in_remuneration_adj=0.0,
         average_price_all_in=price,
         lowest_price_all_in=price,
         highest_price_all_in=price,

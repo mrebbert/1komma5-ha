@@ -39,11 +39,24 @@ def _live_overview(grid_consumption_power: float) -> MagicMock:
 
 
 def _market_prices(price_eur_per_kwh: float | None) -> MagicMock:
-    """Build a MarketPrices stub whose only future slot has the given price."""
+    """Build a Modul-1 MarketPrices stub (empty §14a dict, zero grid-cost adders).
+
+    ``compose_all_in_prices`` reconstructs the exact ``prices_with_vat`` dict
+    because every adder is zero and the VAT multiplier is 1.0.
+    """
     if price_eur_per_kwh is None:
         return MagicMock(
             prices_with_grid_costs_and_vat={},
             prices_with_grid_costs={},
+            prices_with_vat={},
+            enwg14a_grid_fee={},
+            enwg14a_grid_fee_with_vat={},
+            vat=0.0,
+            grid_cost_energy_tax=0.0,
+            grid_cost_purchasing=0.0,
+            grid_cost_fixed_tariff=0.0,
+            grid_cost_dynamic_markup=0.0,
+            grid_cost_feed_in_remuneration_adj=0.0,
             average_price_all_in=None,
             lowest_price_all_in=None,
             highest_price_all_in=None,
@@ -58,6 +71,15 @@ def _market_prices(price_eur_per_kwh: float | None) -> MagicMock:
     return MagicMock(
         prices_with_grid_costs_and_vat=slots,
         prices_with_grid_costs=slots,
+        prices_with_vat=slots,
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
+        vat=0.0,
+        grid_cost_energy_tax=0.0,
+        grid_cost_purchasing=0.0,
+        grid_cost_fixed_tariff=0.0,
+        grid_cost_dynamic_markup=0.0,
+        grid_cost_feed_in_remuneration_adj=0.0,
         average_price_all_in=price_eur_per_kwh,
         lowest_price_all_in=price_eur_per_kwh,
         highest_price_all_in=price_eur_per_kwh,

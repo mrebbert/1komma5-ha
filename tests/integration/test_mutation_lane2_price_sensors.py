@@ -99,8 +99,10 @@ def _market_prices_full(
         * (1 + vat),
         7,
     )
+    spot_with_vat = round(spot * (1 + vat), 7)
     return MagicMock(
         prices={slot: spot},
+        prices_with_vat={slot: spot_with_vat},
         prices_with_grid_costs={
             slot: round(
                 spot
@@ -113,6 +115,8 @@ def _market_prices_full(
             )
         },
         prices_with_grid_costs_and_vat={slot: all_in},
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
         average_price_all_in=all_in,
         lowest_price_all_in=all_in,
         highest_price_all_in=all_in,
@@ -132,8 +136,11 @@ def _market_prices_components_absent() -> MagicMock:
     slot = _slot()
     return MagicMock(
         prices={slot: 0.126},
+        prices_with_vat={slot: round(0.126 * 1.19, 7)},
         prices_with_grid_costs={slot: 0.126},
         prices_with_grid_costs_and_vat={slot: round(0.126 * 1.19, 7)},
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
         average_price_all_in=0.15,
         lowest_price_all_in=0.15,
         highest_price_all_in=0.15,
@@ -252,8 +259,11 @@ def _market_prices_empty() -> MagicMock:
     the restore path is forced on first boot."""
     return MagicMock(
         prices={},
+        prices_with_vat={},
         prices_with_grid_costs={},
         prices_with_grid_costs_and_vat={},
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
         average_price_all_in=None,
         lowest_price_all_in=None,
         highest_price_all_in=None,
@@ -262,7 +272,7 @@ def _market_prices_empty() -> MagicMock:
         grid_cost_fixed_tariff=None,
         grid_cost_dynamic_markup=None,
         grid_cost_feed_in_remuneration_adj=None,
-        vat=0.19,
+        vat=0.0,
         uses_fallback_grid_costs=False,
     )
 
@@ -271,8 +281,11 @@ def _market_prices_live(price: float = 0.30) -> MagicMock:
     slot = _slot()
     return MagicMock(
         prices={slot: price},
+        prices_with_vat={slot: price},
         prices_with_grid_costs={slot: price},
         prices_with_grid_costs_and_vat={slot: price},
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
         average_price_all_in=price,
         lowest_price_all_in=price,
         highest_price_all_in=price,
@@ -281,7 +294,7 @@ def _market_prices_live(price: float = 0.30) -> MagicMock:
         grid_cost_fixed_tariff=None,
         grid_cost_dynamic_markup=None,
         grid_cost_feed_in_remuneration_adj=None,
-        vat=0.19,
+        vat=0.0,
         uses_fallback_grid_costs=False,
     )
 
