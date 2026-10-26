@@ -237,7 +237,10 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
-        value_fn=lambda d: d.market_prices.average_price_all_in,
+        # Pulled from the composed per-slot series so Modul-3 variability
+        # feeds the daily average correctly; identical to the SDK scalar
+        # on Modul-1 sites (±float jitter).
+        value_fn=lambda d: d.today_average_price,
     ),
     OneKomma5PriceSensorDescription(
         key="lowest_electricity_price",
@@ -245,7 +248,7 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
-        value_fn=lambda d: d.market_prices.lowest_price_all_in,
+        value_fn=lambda d: d.today_lowest_price,
     ),
     OneKomma5PriceSensorDescription(
         key="highest_electricity_price",
@@ -253,7 +256,7 @@ PRICE_SENSORS: tuple[OneKomma5PriceSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=CURRENCY_EUR_PER_KWH,
         suggested_display_precision=4,
-        value_fn=lambda d: d.market_prices.highest_price_all_in,
+        value_fn=lambda d: d.today_highest_price,
     ),
     OneKomma5PriceSensorDescription(
         key="negative_price_slots_today",

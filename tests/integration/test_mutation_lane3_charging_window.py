@@ -35,6 +35,15 @@ def _market_prices(slot_prices: dict[datetime.datetime, float]) -> MagicMock:
     return MagicMock(
         prices_with_grid_costs_and_vat=iso,
         prices_with_grid_costs=iso,
+        prices_with_vat=iso,
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
+        vat=0.0,
+        grid_cost_energy_tax=0.0,
+        grid_cost_purchasing=0.0,
+        grid_cost_fixed_tariff=0.0,
+        grid_cost_dynamic_markup=0.0,
+        grid_cost_feed_in_remuneration_adj=0.0,
         average_price_all_in=(sum(slot_prices.values()) / len(slot_prices))
         if slot_prices
         else None,
@@ -48,6 +57,15 @@ def _empty_market_prices() -> MagicMock:
     return MagicMock(
         prices_with_grid_costs_and_vat={},
         prices_with_grid_costs={},
+        prices_with_vat={},
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
+        vat=0.0,
+        grid_cost_energy_tax=0.0,
+        grid_cost_purchasing=0.0,
+        grid_cost_fixed_tariff=0.0,
+        grid_cost_dynamic_markup=0.0,
+        grid_cost_feed_in_remuneration_adj=0.0,
         average_price_all_in=None,
         lowest_price_all_in=None,
         highest_price_all_in=None,

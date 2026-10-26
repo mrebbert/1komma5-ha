@@ -26,7 +26,12 @@ from custom_components.onekommafive.const import (
 
 
 def _market_prices(slot_prices: dict[datetime.datetime, float]) -> MagicMock:
-    """Build a MarketPrices mock from slot-END datetime → price."""
+    """Build a Modul-1 MarketPrices mock from slot-END datetime → all-in price.
+
+    Composition inputs are tuned so ``compose_all_in_prices`` reconstructs the
+    exact input dict: VAT at 0 %, zero fixed/dynamic grid-cost components, and
+    an empty §14a grid-fee dict (Modul-1 fallback).
+    """
     iso = {
         ts.astimezone(datetime.UTC).isoformat().replace("+00:00", "Z"): price
         for ts, price in slot_prices.items()
@@ -34,6 +39,15 @@ def _market_prices(slot_prices: dict[datetime.datetime, float]) -> MagicMock:
     return MagicMock(
         prices_with_grid_costs_and_vat=iso,
         prices_with_grid_costs=iso,
+        prices_with_vat=iso,
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
+        vat=0.0,
+        grid_cost_energy_tax=0.0,
+        grid_cost_purchasing=0.0,
+        grid_cost_fixed_tariff=0.0,
+        grid_cost_dynamic_markup=0.0,
+        grid_cost_feed_in_remuneration_adj=0.0,
         average_price_all_in=(sum(slot_prices.values()) / len(slot_prices))
         if slot_prices
         else None,

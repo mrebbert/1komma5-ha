@@ -119,6 +119,81 @@ def build_forecast(
     return slots
 
 
+def compose_all_in_prices(
+    prices_with_vat: dict[str, float],
+    *,
+    enwg14a_grid_fee_with_vat: dict[str, float] | None,
+    grid_cost_fixed_components_with_vat: float,
+    grid_cost_dynamic_markup_with_vat: float | None,
+) -> dict[str, float]:
+    """Compose per-slot all-in prices with Modul-3-aware dynamic grid fee.
+
+    The 1KOMMA5° backend's ``prices_with_grid_costs_and_vat`` dict carries the
+    static Modul-1 flat markup. On Modul-3 sites the dynamic HT/NT fee lives in
+    the separate ``enwg14a_grid_fee_with_vat`` dict and must be swapped in per
+    slot. Modul-1 sites pass an empty / None grid-fee dict and we fall back on
+    the static ``grid_cost_dynamic_markup_with_vat`` scalar — the result is
+    bit-identical to the SDK's own dict (±1e-9 float jitter).
+
+    All inputs are VAT-inclusive to keep the function free of VAT arithmetic
+    at the call site. The caller derives the two fixed-component scalars once
+    from ``MarketPrices`` and feeds them in.
+    """
+    dynamic_markup = grid_cost_dynamic_markup_with_vat or 0.0
+    gfees = enwg14a_grid_fee_with_vat or {}
+    composed: dict[str, float] = {}
+    for slot_end, spot_with_vat in prices_with_vat.items():
+        slot_dynamic = gfees.get(slot_end, dynamic_markup)
+        composed[slot_end] = (
+            spot_with_vat + grid_cost_fixed_components_with_vat + slot_dynamic
+        )
+    return composed
+
+
+def build_grid_fee_forecast(
+    net: dict[str, float],
+    with_vat: dict[str, float],
+    horizon_hours: int = 30,
+    now: datetime.datetime | None = None,
+) -> list[dict[str, Any]]:
+    """Build a forecast list carrying both net and VAT-inclusive prices per slot.
+
+    Mirrors :func:`build_forecast` but each entry additionally exposes
+    ``price_with_vat`` so Lovelace cards can key off either number. Slots are
+    emitted only when BOTH dicts carry the same end timestamp, so a lopsided
+    SDK payload never produces half-filled entries.
+    """
+    slot_duration = datetime.timedelta(minutes=15)
+    if now is None:
+        now = datetime.datetime.now(tz=datetime.UTC)
+    cutoff = now + datetime.timedelta(hours=horizon_hours)
+    slots: list[dict[str, Any]] = []
+
+    for key, net_value in net.items():
+        if key not in with_vat:
+            continue
+        try:
+            end = datetime.datetime.fromisoformat(key)
+            if end.tzinfo is None:
+                end = end.replace(tzinfo=datetime.UTC)
+            start = end - slot_duration
+            if end <= now or start >= cutoff:
+                continue
+            slots.append(
+                {
+                    "start": start.isoformat(),
+                    "end": end.isoformat(),
+                    "price": round(net_value, 6),
+                    "price_with_vat": round(with_vat[key], 6),
+                }
+            )
+        except ValueError:
+            continue
+
+    slots.sort(key=lambda s: s["start"])
+    return slots
+
+
 def split_prices_by_date(
     all_in_prices: dict[str, float], today: datetime.date, tomorrow: datetime.date
 ) -> tuple[list[float], list[float]]:

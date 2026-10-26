@@ -62,7 +62,12 @@ if TYPE_CHECKING:
     _DescriptionSensorBase = _CoordEntBase[DataUpdateCoordinator[Any]]
 else:
     _DescriptionSensorBase = object
-from .helpers import find_cheapest_window, get_current_price, trapezoidal_delta_kwh
+from .helpers import (
+    build_grid_fee_forecast,
+    find_cheapest_window,
+    get_current_price,
+    trapezoidal_delta_kwh,
+)
 from .sensor_descriptions import (
     OneKomma5EVSensorDescription,
     OneKomma5OptimizationSensorDescription,
@@ -188,17 +193,27 @@ class OneKomma5PriceSensor(
         """Decompose the current all-in price into spot + net grid costs + VAT.
 
         SDK's scalar ``grid_costs_total`` is VAT-inclusive; we expose the net
-        adder so ``spot + grid_costs`` reconciles to the pre-VAT price.
+        adder so ``spot + grid_costs`` reconciles to the pre-VAT price. On
+        Modul-3 sites the ``dynamic_markup`` component is pulled from the
+        per-slot ``enwg14a_grid_fee`` dict instead of the static scalar — so
+        the breakdown tracks the actual HT/NT rate for the active slot.
         """
         mp = getattr(data, "market_prices", None)
         if mp is None:
             return {}
         spot = get_current_price(getattr(mp, "prices", None) or {})
+        grid_fee_net = getattr(mp, "enwg14a_grid_fee", None) or {}
+        dynamic_slot = get_current_price(grid_fee_net) if grid_fee_net else None
+        dynamic_markup = (
+            dynamic_slot
+            if dynamic_slot is not None
+            else getattr(mp, "grid_cost_dynamic_markup", None)
+        )
         components = {
             "energy_tax": getattr(mp, "grid_cost_energy_tax", None),
             "purchasing": getattr(mp, "grid_cost_purchasing", None),
             "fixed_tariff": getattr(mp, "grid_cost_fixed_tariff", None),
-            "dynamic_markup": getattr(mp, "grid_cost_dynamic_markup", None),
+            "dynamic_markup": dynamic_markup,
             "feed_in_remuneration_adjustment": getattr(
                 mp, "grid_cost_feed_in_remuneration_adj", None
             ),
@@ -1454,4 +1469,12 @@ class OneKomma5Enwg14aGridFeeCurrentSensor(
         with_vat = get_current_price(self._grid_fees_with_vat() or {})
         if with_vat is None:
             return None
-        return {"price_with_vat": with_vat}
+        attrs: dict[str, Any] = {"price_with_vat": with_vat}
+        data = self.coordinator.data
+        net = getattr(data, "enwg14a_grid_fee", None) or {}
+        gross = getattr(data, "enwg14a_grid_fee_with_vat", None) or {}
+        if net and gross:
+            # 30 h HT/NT forecast so Lovelace cards can plot the rate alongside
+            # the spot-price curve. Horizon mirrors current_electricity_price.
+            attrs["forecast"] = build_grid_fee_forecast(net, gross, horizon_hours=30)
+        return attrs

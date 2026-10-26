@@ -5,6 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.75] - 2026-11-08 (armed)
+
+Composable per-slot all-in prices so §14a Modul 3 (variable Netzentgelte HT/NT) feeds the price sensor, forecast, cheapest-window, cost accumulation and price-breakdown attributes correctly. Modul-1 sites are bit-identical to v0.1.74.
+
+### Changed
+- **Per-slot all-in composition in the price coordinator.** `all_in_prices` is now built as `(spot_with_vat + fixed_components_with_vat + per_slot_dynamic_with_vat)` with the dynamic component pulled from `MarketPrices.enwg14a_grid_fee` when populated (Modul 3) and falling back to the static scalar otherwise (Modul 1).
+- **`dynamic_markup` attribute on `sensor.<sys>_current_electricity_price` tracks the active slot.** The grid-cost breakdown now reflects whatever HT/NT rate the active 15-min slot carries on Modul-3 sites.
+- **Today's `average/lowest/highest_electricity_price` sensors now derive from the composed per-slot series** instead of the SDK scalars, matching the aggregation path tomorrow's sensors already use.
+
+### Added
+- **30 h forecast on `sensor.<sys>_enwg14a_grid_fee_current`.** `extra_state_attributes` now carries a `forecast` list of `{start, end, price, price_with_vat}` entries over the next 30 hours (Modul-3 sites only).
+- **Tomorrow §14a-grid-fee series merged into `PriceData`.** `_fetch_today_and_tomorrow` merges tomorrow's `enwg14a_grid_fee` and `enwg14a_grid_fee_with_vat` alongside the spot price merge.
+
+### Fixed
+- **Cost accumulation on Modul-3 sites tracks HT/NT automatically** — `stable_electricity_price` reads the composed per-slot dict, and cost sensors multiply by `stable_price()` on every live tick.
+
 ## [0.1.74] - 2026-11-01 (armed)
 
 Three focused improvements on top of v0.1.73: calendar hygiene after the skill-audit, defensive Recorder-error-handling, and a new automation blueprint for the EV departure time.

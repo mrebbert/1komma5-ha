@@ -36,8 +36,11 @@ def _market_prices(*, uses_fallback: bool = False) -> MagicMock:
     )
     return MagicMock(
         prices={slot: SPOT},
+        prices_with_vat={slot: round(SPOT * (1 + VAT), 7)},
         prices_with_grid_costs={slot: round(SPOT + ENERGY_TAX, 7)},
         prices_with_grid_costs_and_vat={slot: ALL_IN},
+        enwg14a_grid_fee={},
+        enwg14a_grid_fee_with_vat={},
         average_price_all_in=ALL_IN,
         lowest_price_all_in=ALL_IN,
         highest_price_all_in=ALL_IN,
