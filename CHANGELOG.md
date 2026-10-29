@@ -5,7 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.75] - 2026-11-08 (armed)
+## [0.1.76] - 2026-11-01 (armed)
+
+Hotfix for a stale `device_class` on the §14a-Modul-3-grid-fee sensor that Home Assistant 2026.10 now rejects at setup.
+
+### Fixed
+- **`sensor.<sys>_enwg14a_grid_fee_current` no longer logs a config warning.** Dropped `device_class="monetary"` so HA 2026.10's new validator stops complaining about the `monetary` + `measurement` combination; the sensor keeps `state_class="measurement"` and `EUR/kWh` native unit, aligning with the sibling `current_electricity_price` sensor. No entity, `unique_id` or `entity_id` changes.
+
+## [0.1.75] - 2026-10-29
 
 Composable per-slot all-in prices so §14a Modul 3 (variable Netzentgelte HT/NT) feeds the price sensor, forecast, cheapest-window, cost accumulation and price-breakdown attributes correctly. Modul-1 sites are bit-identical to v0.1.74.
 

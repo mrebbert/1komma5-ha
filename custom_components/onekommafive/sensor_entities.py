@@ -1410,7 +1410,6 @@ class OneKomma5Enwg14aGridFeeCurrentSensor(
     """
 
     _attr_translation_key = "enwg14a_grid_fee_current"
-    _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 4
     _attr_icon = "mdi:transmission-tower-import"
