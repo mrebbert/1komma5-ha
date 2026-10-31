@@ -1,10 +1,12 @@
-"""Tier-2 tests for the Modul-3-aware all-in composition.
+"""Tier-2 tests for the Modul-3 price pipeline.
 
 Exercises the end-to-end path on a MarketPrices mock that carries a filled
-``enwg14a_grid_fee`` dict: the coordinator must compose the per-slot all-in
-from spot + static adders + the slot's §14a-net value, the price breakdown
-must surface the slot-current ``dynamic_markup``, and the enwg14a-sensor
-must publish a 30 h forecast list on ``extra_state_attributes``.
+``enwg14a_grid_fee`` dict. The SDK's own ``prices_with_grid_costs_and_vat``
+is the vendor-billed all-in number — ``enwg14a_grid_fee`` is a Modul-3
+forecast the backend publishes but does not yet bill, so the current-price
+sensor must read the SDK dict and the breakdown's ``dynamic_markup`` must
+stay on the billed scalar. The grid-fee sensor exposes the preview series
+on its own entity, including the 30 h forecast list.
 """
 
 from __future__ import annotations
@@ -126,27 +128,30 @@ def _grid_fee_state(hass: HomeAssistant):
 
 
 @freeze_time("2026-06-15T09:30:00+00:00")  # inside the HT slot ending 10:00
-async def test_breakdown_dynamic_markup_pulled_from_slot_ht(
+async def test_breakdown_dynamic_markup_stays_on_billed_scalar_ht(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """At 09:30 UTC the active slot ends 10:00 → dynamic_markup = HT fee."""
+    """Even in the HT preview slot the breakdown reports the billed scalar.
+
+    ``enwg14a_grid_fee`` is a Modul-3 forecast, not yet billed; the vendor
+    bills ``grid_cost_dynamic_markup``, so the breakdown must mirror that.
+    """
     await _setup(hass, mock_system_factory)
     attrs = _current_price_attrs(hass)
-    assert attrs["grid_cost_components"]["dynamic_markup"] == FEE_HT
-    # grid_costs = sum of the four fixed + the slot's §14a (net), rounded.
-    expected_total = FIXED_NET + FEE_HT
-    assert attrs["grid_costs"] == round(expected_total, 6)
+    assert attrs["grid_cost_components"]["dynamic_markup"] == DYNAMIC_SCALAR
+    # grid_costs = fixed components + scalar dynamic_markup (NO slot fee).
+    assert attrs["grid_costs"] == round(FIXED_NET + DYNAMIC_SCALAR, 6)
 
 
 @freeze_time("2026-06-15T21:30:00+00:00")  # inside the NT slot ending 22:00
-async def test_breakdown_dynamic_markup_pulled_from_slot_nt(
+async def test_breakdown_dynamic_markup_stays_on_billed_scalar_nt(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """At 21:30 UTC the active slot ends 22:00 → dynamic_markup = NT fee."""
+    """Same invariant at the NT slot — scalar wins over the preview."""
     await _setup(hass, mock_system_factory)
     attrs = _current_price_attrs(hass)
-    assert attrs["grid_cost_components"]["dynamic_markup"] == FEE_NT
-    assert attrs["grid_costs"] == round(FIXED_NET + FEE_NT, 6)
+    assert attrs["grid_cost_components"]["dynamic_markup"] == DYNAMIC_SCALAR
+    assert attrs["grid_costs"] == round(FIXED_NET + DYNAMIC_SCALAR, 6)
 
 
 @freeze_time("2026-06-15T09:30:00+00:00")
@@ -168,14 +173,19 @@ async def test_grid_fee_current_sensor_exposes_forecast(
 
 
 @freeze_time("2026-06-15T09:30:00+00:00")
-async def test_current_price_state_includes_slot_dynamic_fee(
+async def test_current_price_state_reads_sdk_dict_not_preview(
     hass: HomeAssistant, mock_system_factory
 ) -> None:
-    """The visible all-in state must be composed, not re-read from SDK."""
+    """The visible all-in state follows ``prices_with_grid_costs_and_vat``.
+
+    The SDK dict excludes ``enwg14a_grid_fee`` (preview-only, not billed),
+    so the sensor must land on the billed-scalar composition and ignore
+    the Modul-3 forecast delta.
+    """
     await _setup(hass, mock_system_factory)
     entity_id = er.async_get(hass).async_get_entity_id(
         "sensor", "onekommafive", "sys-1_current_electricity_price"
     )
     state = hass.states.get(entity_id)
-    expected_all_in = (SPOT_HT + FIXED_NET + FEE_HT) * (1 + VAT)
-    assert float(state.state) == round(expected_all_in, 6)
+    expected_all_in = (SPOT_HT + FIXED_NET + DYNAMIC_SCALAR) * (1 + VAT)
+    assert float(state.state) == round(expected_all_in, 7)

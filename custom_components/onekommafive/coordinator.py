@@ -416,16 +416,28 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         (
             market_prices,
             prices_with_vat,
+            prices_with_grid_costs_and_vat,
             enwg14a_grid_fee,
             enwg14a_grid_fee_with_vat,
         ) = await self._fetch_today_and_tomorrow(now)
-        all_in_prices = compose_all_in_prices(
-            prices_with_vat,
-            enwg14a_grid_fee_with_vat=enwg14a_grid_fee_with_vat,
-            grid_cost_fixed_components_with_vat=_fixed_grid_components_with_vat(
-                market_prices
-            ),
-            grid_cost_dynamic_markup_with_vat=_dynamic_markup_with_vat(market_prices),
+        # The SDK's own ``prices_with_grid_costs_and_vat`` is the backend-
+        # authoritative abzurechnende Zahl: it includes every component the
+        # vendor actually bills. ``enwg14a_grid_fee`` is a Modul-3 forecast
+        # that the backend reports but does not yet bill — so we expose it
+        # on its own sensor and never add it on top of the SDK's all-in.
+        all_in_prices = (
+            prices_with_grid_costs_and_vat
+            if prices_with_grid_costs_and_vat
+            else compose_all_in_prices(
+                prices_with_vat,
+                enwg14a_grid_fee_with_vat=enwg14a_grid_fee_with_vat,
+                grid_cost_fixed_components_with_vat=_fixed_grid_components_with_vat(
+                    market_prices
+                ),
+                grid_cost_dynamic_markup_with_vat=_dynamic_markup_with_vat(
+                    market_prices
+                ),
+            )
         )
         current_price = get_current_price(all_in_prices)
         forecast = build_forecast(all_in_prices, horizon_hours=30)
@@ -450,7 +462,13 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
 
     async def _fetch_today_and_tomorrow(
         self, now: datetime.datetime
-    ) -> tuple[MarketPrices, dict[str, float], dict[str, float], dict[str, float]]:
+    ) -> tuple[
+        MarketPrices,
+        dict[str, float],
+        dict[str, float],
+        dict[str, float],
+        dict[str, float],
+    ]:
         """Fetch today's price slots plus tomorrow's (gated on EPEX publication).
 
         EPEX publishes day-ahead prices at 12:00 UTC (13:00 CET winter / 14:00
@@ -461,10 +479,11 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         of 403 "Exceeded rate limits" bursts when the hourly refresh lines up
         with user activity. Skip it until EPEX has published.
 
-        Returns the today :class:`MarketPrices` plus three merged
-        today+tomorrow dicts: VAT-inclusive spot prices and the two §14a
-        grid-fee series (net + VAT-inclusive). The all-in composition happens
-        on the caller side.
+        Returns the today :class:`MarketPrices` plus four merged today+tomorrow
+        dicts: VAT-inclusive spot prices, the SDK's own all-in dict (what
+        1KOMMA5° actually bills), and the two §14a grid-fee preview series
+        (net + VAT-inclusive). The caller prefers the SDK dict as the billed
+        number and keeps the composition on hand only as a fallback.
         """
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=0)
@@ -472,6 +491,9 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             today_start, today_end, resolution="15m"
         )
         prices_with_vat: dict[str, float] = dict(market_prices.prices_with_vat)
+        prices_with_grid_costs_and_vat: dict[str, float] = dict(
+            market_prices.prices_with_grid_costs_and_vat
+        )
         enwg14a_grid_fee: dict[str, float] = dict(market_prices.enwg14a_grid_fee)
         enwg14a_grid_fee_with_vat: dict[str, float] = dict(
             market_prices.enwg14a_grid_fee_with_vat
@@ -483,6 +505,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             return (
                 market_prices,
                 prices_with_vat,
+                prices_with_grid_costs_and_vat,
                 enwg14a_grid_fee,
                 enwg14a_grid_fee_with_vat,
             )
@@ -496,6 +519,9 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
                 tomorrow_start, tomorrow_end, resolution="15m"
             )
             prices_with_vat.update(tomorrow_prices.prices_with_vat)
+            prices_with_grid_costs_and_vat.update(
+                tomorrow_prices.prices_with_grid_costs_and_vat
+            )
             enwg14a_grid_fee.update(tomorrow_prices.enwg14a_grid_fee)
             enwg14a_grid_fee_with_vat.update(tomorrow_prices.enwg14a_grid_fee_with_vat)
         except Exception:
@@ -503,6 +529,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         return (
             market_prices,
             prices_with_vat,
+            prices_with_grid_costs_and_vat,
             enwg14a_grid_fee,
             enwg14a_grid_fee_with_vat,
         )

@@ -193,27 +193,21 @@ class OneKomma5PriceSensor(
         """Decompose the current all-in price into spot + net grid costs + VAT.
 
         SDK's scalar ``grid_costs_total`` is VAT-inclusive; we expose the net
-        adder so ``spot + grid_costs`` reconciles to the pre-VAT price. On
-        Modul-3 sites the ``dynamic_markup`` component is pulled from the
-        per-slot ``enwg14a_grid_fee`` dict instead of the static scalar — so
-        the breakdown tracks the actual HT/NT rate for the active slot.
+        adder so ``spot + grid_costs`` reconciles to the pre-VAT price. The
+        ``dynamic_markup`` component is the vendor-billed scalar — the
+        per-slot ``enwg14a_grid_fee`` dict is a Modul-3 forecast that the
+        backend reports but does not yet bill, so it has its own sensor
+        (`enwg14a_grid_fee_current`) rather than feeding the breakdown here.
         """
         mp = getattr(data, "market_prices", None)
         if mp is None:
             return {}
         spot = get_current_price(getattr(mp, "prices", None) or {})
-        grid_fee_net = getattr(mp, "enwg14a_grid_fee", None) or {}
-        dynamic_slot = get_current_price(grid_fee_net) if grid_fee_net else None
-        dynamic_markup = (
-            dynamic_slot
-            if dynamic_slot is not None
-            else getattr(mp, "grid_cost_dynamic_markup", None)
-        )
         components = {
             "energy_tax": getattr(mp, "grid_cost_energy_tax", None),
             "purchasing": getattr(mp, "grid_cost_purchasing", None),
             "fixed_tariff": getattr(mp, "grid_cost_fixed_tariff", None),
-            "dynamic_markup": dynamic_markup,
+            "dynamic_markup": getattr(mp, "grid_cost_dynamic_markup", None),
             "feed_in_remuneration_adjustment": getattr(
                 mp, "grid_cost_feed_in_remuneration_adj", None
             ),

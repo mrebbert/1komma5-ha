@@ -5,7 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.76] - 2026-11-01 (armed)
+## [0.1.77] - 2026-11-01 (armed)
+
+Hotfix for a price-inflation regression introduced in v0.1.75 on Modul-1 sites that started receiving a §14a Modul-3 preview payload from the backend.
+
+### Fixed
+- **`sensor.<sys>_current_electricity_price` reads `prices_with_grid_costs_and_vat` directly again.** v0.1.75 composed the all-in price per-slot from `spot + fixed + enwg14a_grid_fee`, treating a non-empty `MarketPrices.enwg14a_grid_fee` as "Modul 3 live." Backend reality on Modul-1 sites: that dict is a flat Modul-3 preview that the vendor does **not** yet bill — the SDK's own `prices_with_grid_costs_and_vat` excludes it, matching the invoice. On an affected site v0.1.75 inflated the sensor by `enwg14a_grid_fee × (1 + VAT)` (`+0.085 €/kWh` for a 0.0717-net preview at VAT 0.19). The sensor now trusts the SDK dict verbatim; the composition stays only as a defensive fallback for empty-dict payloads.
+- **`grid_cost_components.dynamic_markup` surfaces the billed scalar.** The breakdown attribute mirrored the per-slot preview in v0.1.75; it now reports `grid_cost_dynamic_markup` (the Scalar the vendor bills), and `grid_costs` reconciles against the SDK's net adder.
+
+## [0.1.76] - 2026-10-29
 
 Hotfix for a stale `device_class` on the §14a-Modul-3-grid-fee sensor that Home Assistant 2026.10 now rejects at setup.
 
