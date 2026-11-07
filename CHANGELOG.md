@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.78] - 2026-11-08 (armed)
+
+Surfaces the new ``agreedTerms`` field that SDK 1.2.4 maps on customer subscriptions — the revision history of each contract's commercial terms, with the current revision marked by ``effective_until=None`` and any upcoming price change scheduled as a later revision.
+
+### Added
+- **New sensor `sensor.<sys>_next_subscription_price_change`.** Diagnostic timestamp on the system parent. State is the ISO-timestamp of the earliest future `effective_from` across all `ACTIVE` subscriptions, or `unknown` when no future revision exists. Attributes carry `subscription_type`, `next_price_amount_minor`/`next_price_currency`/`next_billing_frequency` for the upcoming revision and `current_price_amount_minor`/`current_price_currency` for the revision in force now.
+- **`agreed_terms` projection on `sensor.<sys>_active_subscriptions`.** Each entry in the `contracts` attribute now carries an `agreed_terms` list with `revision`, `reason`, `price_amount_minor`, `price_currency`, `billing_frequency`, `renewal`, `notice_period_interval`/`notice_period_number`, `effective_from` and `effective_until`. Older backend responses return an empty list; the attribute mirrors that as `[]`.
+
+### Changed
+- **SDK pin bumped to `onekommafive>=1.2.4,<2`** (manifest + pyproject) for the `AgreedTerm` mapping.
+
 ## [0.1.77] - 2026-11-01 (armed)
 
 Hotfix for a price-inflation regression introduced in v0.1.75 on Modul-1 sites that started receiving a §14a Modul-3 preview payload from the backend.

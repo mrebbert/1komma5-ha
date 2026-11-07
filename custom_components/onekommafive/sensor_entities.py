@@ -1040,6 +1040,84 @@ _SUBSCRIPTION_PII_SAFE_FIELDS: tuple[str, ...] = (
     "country_code",
 )
 
+# Fields of an AgreedTerm revision that are safe to surface alongside the
+# contract. ``id`` and ``product_subscription_id`` are UUIDs that re-identify
+# the contract/revision pair and stay out; ``terms_and_conditions`` carries
+# document links and stays with the raw record.
+_AGREED_TERM_PII_SAFE_FIELDS: tuple[str, ...] = (
+    "revision",
+    "reason",
+    "price_amount_minor",
+    "price_currency",
+    "billing_frequency",
+    "renewal",
+    "notice_period_interval",
+    "notice_period_number",
+    "effective_from",
+    "effective_until",
+)
+
+
+def _agreed_terms_pii_safe(sub: Subscription) -> list[dict[str, Any]]:
+    """Return the PII-safe revision list for a Subscription.
+
+    Older backend responses predate the field and :attr:`Subscription.agreed_terms`
+    is then an empty list, which this helper surfaces as ``[]`` on the attribute
+    so dashboards stay consistent.
+    """
+    return [
+        {field: getattr(term, field) for field in _AGREED_TERM_PII_SAFE_FIELDS}
+        for term in getattr(sub, "agreed_terms", []) or []
+    ]
+
+
+def _next_price_change(subscriptions: list[Subscription]) -> dict[str, Any] | None:
+    """Earliest future price revision across all ACTIVE contracts.
+
+    Returns ``None`` when no ACTIVE contract carries a revision whose
+    ``effective_from`` lies after now. On a tie the earliest wins; when the
+    chosen revision has no predecessor (rare, backend only publishes the
+    current revision) the ``current_price_*`` fields are ``None``.
+    """
+    now = dt_util.utcnow()
+    best: tuple[datetime, Subscription, Any] | None = None
+    for sub in subscriptions:
+        if sub.status != "ACTIVE":
+            continue
+        for term in getattr(sub, "agreed_terms", []) or []:
+            raw = term.effective_from
+            if not raw:
+                continue
+            try:
+                parsed = dt_util.parse_datetime(raw)
+            except (TypeError, ValueError):
+                parsed = None
+            if parsed is None or parsed <= now:
+                continue
+            if best is None or parsed < best[0]:
+                best = (parsed, sub, term)
+    if best is None:
+        return None
+    effective, sub, term = best
+    predecessors = [
+        t
+        for t in (sub.agreed_terms or [])
+        if t.effective_from
+        and (parsed := dt_util.parse_datetime(t.effective_from)) is not None
+        and parsed <= now
+    ]
+    predecessors.sort(key=lambda t: t.effective_from or "")
+    current = predecessors[-1] if predecessors else None
+    return {
+        "effective_from": effective,
+        "subscription_type": sub.type,
+        "next_price_amount_minor": term.price_amount_minor,
+        "next_price_currency": term.price_currency,
+        "next_billing_frequency": term.billing_frequency,
+        "current_price_amount_minor": current.price_amount_minor if current else None,
+        "current_price_currency": current.price_currency if current else None,
+    }
+
 
 class OneKomma5ActiveSubscriptionsSensor(OneKomma5SystemStatusEntity, SensorEntity):
     """Diagnostic sensor: number of active contracts; PII-safe contract list.
@@ -1072,7 +1150,13 @@ class OneKomma5ActiveSubscriptionsSensor(OneKomma5SystemStatusEntity, SensorEnti
     def extra_state_attributes(self) -> dict[str, Any]:
         return {
             "contracts": [
-                {field: getattr(sub, field) for field in _SUBSCRIPTION_PII_SAFE_FIELDS}
+                {
+                    **{
+                        field: getattr(sub, field)
+                        for field in _SUBSCRIPTION_PII_SAFE_FIELDS
+                    },
+                    "agreed_terms": _agreed_terms_pii_safe(sub),
+                }
                 for sub in self._subscriptions
             ]
         }
@@ -1114,6 +1198,53 @@ class OneKomma5SubscriptionEligibilitySensor(OneKomma5SystemStatusEntity, Sensor
                 for item in self._eligibility
                 if not item.eligible
             ],
+        }
+
+
+class OneKomma5NextPriceChangeSensor(OneKomma5SystemStatusEntity, SensorEntity):
+    """Diagnostic sensor: next planned subscription price change.
+
+    State is the ISO-timestamp of the earliest future ``effective_from`` across
+    all ACTIVE contract revisions, or ``None`` when no future revision exists.
+    The attribute dict carries the subscription type, the next price (minor
+    units + currency + billing frequency) and the current revision's price for
+    comparison. Setup-time captured, same lifecycle as ``active_subscriptions``.
+    """
+
+    _attr_translation_key = "next_subscription_price_change"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:cash-clock"
+
+    def __init__(
+        self,
+        coordinator: Any,
+        system_id: str,
+        system_name: str,
+        subscriptions: list[Subscription],
+    ) -> None:
+        super().__init__(
+            coordinator, system_id, system_name, "next_subscription_price_change"
+        )
+        self._subscriptions = subscriptions
+
+    @property
+    def native_value(self) -> datetime | None:
+        info = _next_price_change(self._subscriptions)
+        return info["effective_from"] if info else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        info = _next_price_change(self._subscriptions)
+        if not info:
+            return {}
+        return {
+            "subscription_type": info["subscription_type"],
+            "next_price_amount_minor": info["next_price_amount_minor"],
+            "next_price_currency": info["next_price_currency"],
+            "next_billing_frequency": info["next_billing_frequency"],
+            "current_price_amount_minor": info["current_price_amount_minor"],
+            "current_price_currency": info["current_price_currency"],
         }
 
 

@@ -606,6 +606,15 @@
         'unique_id': 'sys-1_negative_price_slots_tomorrow',
       }),
       dict({
+        'device_slug': 'onekommafive:sys-1',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'next_subscription_price_change',
+        'unique_id': 'sys-1_next_subscription_price_change',
+      }),
+      dict({
         'device_slug': 'onekommafive:sys-1_inverter',
         'disabled_by': None,
         'entity_category': None,
@@ -1433,6 +1442,15 @@
         'platform': 'onekommafive',
         'translation_key': 'negative_price_slots_tomorrow',
         'unique_id': 'sys-1_negative_price_slots_tomorrow',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'next_subscription_price_change',
+        'unique_id': 'sys-1_next_subscription_price_change',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1_inverter',
@@ -2273,6 +2291,15 @@
         'unique_id': 'sys-1_negative_price_slots_tomorrow',
       }),
       dict({
+        'device_slug': 'onekommafive:sys-1',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'next_subscription_price_change',
+        'unique_id': 'sys-1_next_subscription_price_change',
+      }),
+      dict({
         'device_slug': 'onekommafive:sys-1_inverter',
         'disabled_by': None,
         'entity_category': None,
@@ -3105,6 +3132,15 @@
         'platform': 'onekommafive',
         'translation_key': 'negative_price_slots_tomorrow',
         'unique_id': 'sys-1_negative_price_slots_tomorrow',
+      }),
+      dict({
+        'device_slug': 'onekommafive:sys-1',
+        'disabled_by': None,
+        'entity_category': 'diagnostic',
+        'hidden_by': None,
+        'platform': 'onekommafive',
+        'translation_key': 'next_subscription_price_change',
+        'unique_id': 'sys-1_next_subscription_price_change',
       }),
       dict({
         'device_slug': 'onekommafive:sys-1_inverter',

@@ -57,6 +57,7 @@ from .sensor_entities import (
     OneKomma5GridFeeReductionSensor,
     OneKomma5LiveSensor,
     OneKomma5Module3SavingsSensor,
+    OneKomma5NextPriceChangeSensor,
     OneKomma5OptimizationSensor,
     OneKomma5PriceSensor,
     OneKomma5StablePriceSensor,
@@ -381,6 +382,14 @@ async def async_setup_entry(
     if data.subscriptions is not None:
         entities.append(
             OneKomma5ActiveSubscriptionsSensor(
+                data.system_status_coordinator,
+                system_id,
+                system_name,
+                data.subscriptions,
+            )
+        )
+        entities.append(
+            OneKomma5NextPriceChangeSensor(
                 data.system_status_coordinator,
                 system_id,
                 system_name,

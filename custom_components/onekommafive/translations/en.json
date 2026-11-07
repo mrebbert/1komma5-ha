@@ -363,6 +363,9 @@
       "active_subscriptions": {
         "name": "Active subscriptions"
       },
+      "next_subscription_price_change": {
+        "name": "Next price change"
+      },
       "subscription_eligibility": {
         "name": "Add-on eligibility"
       },

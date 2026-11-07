@@ -363,6 +363,9 @@
       "active_subscriptions": {
         "name": "Suscripciones activas"
       },
+      "next_subscription_price_change": {
+        "name": "Próximo cambio de precio"
+      },
       "subscription_eligibility": {
         "name": "Elegibilidad de complementos"
       },

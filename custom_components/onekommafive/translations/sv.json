@@ -363,6 +363,9 @@
       "active_subscriptions": {
         "name": "Aktiva abonnemang"
       },
+      "next_subscription_price_change": {
+        "name": "Nästa prisändring"
+      },
       "subscription_eligibility": {
         "name": "Tillgängliga tillägg"
       },

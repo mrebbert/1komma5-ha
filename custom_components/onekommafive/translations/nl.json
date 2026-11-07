@@ -363,6 +363,9 @@
       "active_subscriptions": {
         "name": "Actieve abonnementen"
       },
+      "next_subscription_price_change": {
+        "name": "Volgende prijswijziging"
+      },
       "subscription_eligibility": {
         "name": "Beschikbare add-ons"
       },

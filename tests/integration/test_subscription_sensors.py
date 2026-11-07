@@ -94,9 +94,37 @@ def _subscription(
         "price_guarantee_version": None,
         "terms_and_conditions_url": "https://example/terms",
         "raw": {"paymentIban": "DE89...", "statusHistory": []},
+        "agreed_terms": [],
     }
     base.update(overrides)
     return MagicMock(**base)
+
+
+def _term(
+    *,
+    revision: int,
+    effective_from: str | None,
+    effective_until: str | None = None,
+    price_amount_minor: int = 2999,
+    price_currency: str = "EUR",
+    billing_frequency: str = "MONTHLY",
+    renewal: str = "AUTOMATIC",
+    notice_period_interval: str = "MONTHS",
+    notice_period_number: int = 1,
+    reason: str | None = "INITIAL",
+) -> MagicMock:
+    return MagicMock(
+        revision=revision,
+        reason=reason,
+        price_amount_minor=price_amount_minor,
+        price_currency=price_currency,
+        billing_frequency=billing_frequency,
+        renewal=renewal,
+        notice_period_interval=notice_period_interval,
+        notice_period_number=notice_period_number,
+        effective_from=effective_from,
+        effective_until=effective_until,
+    )
 
 
 def _eligibility(type_: str, eligible: bool, reason: str | None = None) -> MagicMock:
@@ -267,3 +295,128 @@ async def test_active_subscriptions_attribute_dict_excludes_pii(
         "metadata",
     ):
         assert leak not in serialised, f"PII leaked into contracts attr: {leak!r}"
+
+
+async def test_contracts_attribute_carries_agreed_terms(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """The ``agreed_terms`` projection sits alongside the PII-safe contract fields.
+
+    Older backend responses predate the field — then the SDK's
+    ``Subscription.agreed_terms`` is an empty list and the attribute mirrors
+    that as ``[]`` so dashboards render consistently.
+    """
+    system = mock_system_factory(
+        system_id="sys-1",
+        details=MagicMock(customer_id="cust-1", emp_type="1K5"),
+        subscriptions=[
+            _subscription(
+                status="ACTIVE",
+                type_="HEARTBEAT",
+                agreed_terms=[
+                    _term(
+                        revision=1,
+                        effective_from="2026-01-01T00:00:00+00:00",
+                        effective_until="2026-11-30T23:59:59+00:00",
+                        price_amount_minor=2999,
+                    ),
+                    _term(
+                        revision=2,
+                        effective_from="2026-12-01T00:00:00+00:00",
+                        price_amount_minor=3499,
+                        reason="PRICE_INCREASE",
+                    ),
+                ],
+            ),
+        ],
+    )
+    await _setup(hass, system)
+    state = _state(hass, "active_subscriptions")
+    contracts = state.attributes["contracts"]
+    assert len(contracts) == 1
+    terms = contracts[0]["agreed_terms"]
+    assert [t["revision"] for t in terms] == [1, 2]
+    assert terms[1]["price_amount_minor"] == 3499
+    assert terms[1]["reason"] == "PRICE_INCREASE"
+    assert "id" not in terms[0] and "product_subscription_id" not in terms[0]
+
+
+async def test_next_price_change_future_revision_wins(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """State is the earliest future ``effective_from`` across all ACTIVE contracts."""
+    system = mock_system_factory(
+        system_id="sys-1",
+        details=MagicMock(customer_id="cust-1", emp_type="1K5"),
+        subscriptions=[
+            _subscription(
+                status="ACTIVE",
+                type_="HEARTBEAT",
+                agreed_terms=[
+                    _term(
+                        revision=1,
+                        effective_from="2026-01-01T00:00:00+00:00",
+                        price_amount_minor=2999,
+                    ),
+                    _term(
+                        revision=2,
+                        effective_from="2099-01-01T00:00:00+00:00",
+                        price_amount_minor=3499,
+                        reason="PRICE_INCREASE",
+                    ),
+                ],
+            ),
+            _subscription(
+                status="CANCELLED",
+                type_="ENERGY_TRADER",
+                agreed_terms=[
+                    _term(
+                        revision=1,
+                        effective_from="2027-01-01T00:00:00+00:00",
+                        price_amount_minor=1499,
+                    ),
+                ],
+            ),
+        ],
+    )
+    await _setup(hass, system)
+    state = _state(hass, "next_subscription_price_change")
+
+    assert state.state == "2099-01-01T00:00:00+00:00"
+    attrs = state.attributes
+    assert attrs["subscription_type"] == "HEARTBEAT"
+    assert attrs["next_price_amount_minor"] == 3499
+    assert attrs["current_price_amount_minor"] == 2999
+    assert attrs["next_price_currency"] == "EUR"
+    assert attrs["device_class"] == SensorDeviceClass.TIMESTAMP.value
+    assert _entity_category(hass, "next_subscription_price_change") == (
+        EntityCategory.DIAGNOSTIC
+    )
+
+
+async def test_next_price_change_none_when_no_future_revision(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """Without any future revision the state is ``unknown`` and attrs are empty."""
+    system = mock_system_factory(
+        system_id="sys-1",
+        details=MagicMock(customer_id="cust-1", emp_type="1K5"),
+        subscriptions=[
+            _subscription(
+                status="ACTIVE",
+                type_="HEARTBEAT",
+                agreed_terms=[
+                    _term(
+                        revision=1,
+                        effective_from="2026-01-01T00:00:00+00:00",
+                        price_amount_minor=2999,
+                    ),
+                ],
+            ),
+        ],
+    )
+    await _setup(hass, system)
+    state = _state(hass, "next_subscription_price_change")
+
+    assert state.state == "unknown"
+    assert state.attributes.get("subscription_type") is None
