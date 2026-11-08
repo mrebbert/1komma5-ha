@@ -45,8 +45,8 @@ instance — note the HA version and any hardware specifics that matter.
 <!--
 Skip this block for PRs without test changes.
 
-Full pattern list in `project_mutation_backlog.md` / `feedback_mutation_test_patterns.md`.
-These five questions catch the mutations our MagicMock-based tests used to miss.
+These five questions capture the review patterns distilled from the earlier
+mutation-testing lanes; the Mutmut gate itself was retired in v0.1.78.
 -->
 
 - [ ] Assertions check a **concrete value** (specific number, string, dict key), not just "something came back".

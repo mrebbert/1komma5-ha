@@ -16,12 +16,6 @@ test = [
     "interrogate>=1.7,<2",
 ]
 
-# Mutation testing. Opt-in extra; the mutation CI job installs it on top of
-# the integration extras. Not pulled into the standard test run.
-test-mutation = [
-    "mutmut>=3.0,<4",
-]
-
 # Tier-2 integration tests against a real HA instance.  Heavyweight — the
 # plugin pulls in homeassistant itself, pinned to a specific version.
 # pytest-cov and pytest are NOT listed here because
@@ -101,29 +95,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]  # asserts in tests are fine
 
-[tool.mutmut]
-# Targeted mutation testing on the pure-logic hotspots. Projekt-weit wäre
-# der Lauf 30+ min; die reine Entity-Boilerplate ist zudem besser durch
-# Integration-Tests gedeckt. Scope: helpers.py (window-search, price math,
-# kWh integration) + sensor_entities.py (entity state computation).
-# mutmut 3.x key names: source_paths + pytest_add_cli_args_test_selection
-# (the pre-3.x keys paths_to_mutate / tests_dir are deprecated and crash on
-# `mutmut results` with a list/str concat TypeError).
-source_paths = [
-    "custom_components/onekommafive/helpers.py",
-    "custom_components/onekommafive/sensor_entities.py",
-]
-# mutmut 3.x only copies the files in `source_paths` into its sandbox
-# `mutants/` directory. Without `also_copy`, siblings like __init__.py,
-# const.py and the rest of the package are missing and pytest crashes with
-# `ModuleNotFoundError: No module named 'custom_components.onekommafive.const'`
-# before any mutant runs. Pointing it at the top-level `custom_components/`
-# dir copies the full package tree alongside the mutated files.
-also_copy = ["custom_components"]
-pytest_add_cli_args_test_selection = ["tests/"]
-runner = "pytest -x --timeout=60"
-backup = false
-
 [tool.interrogate]
 # Docstring-coverage gate. We care about public classes and top-level
 # functions; the formatter already pins style, so interrogate only measures
@@ -137,5 +108,5 @@ ignore-nested-functions = true
 ignore-private = true
 ignore-property-decorators = true   # HA property contracts carry the semantics
 fail-under = 85
-exclude = ["tests", "dashboard", "blueprints", "mutants"]
+exclude = ["tests", "dashboard", "blueprints"]
 verbose = 1
