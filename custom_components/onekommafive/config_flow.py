@@ -221,7 +221,9 @@ class OneKomma5ConfigFlow(ConfigFlow, domain=DOMAIN):
         from onekommafive.systems import Systems
 
         session = async_get_clientsession(self.hass)
-        client = Client(username, password, session=session)
+        # Match the runtime client in __init__.py: BFF gateway by default,
+        # ``ONEKOMMAFIVE_GATEWAY=direct`` for the per-service fallback.
+        client = Client(username, password, session=session, gateway="bff")
         try:
             systems = await Systems(client).get_systems()
             entries: list[_SystemEntry] = []
