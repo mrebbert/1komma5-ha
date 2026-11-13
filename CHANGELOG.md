@@ -5,13 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.79] - 2026-11-15 (armed)
+## [0.1.80] - 2026-11-14 (armed)
 
-Follows the vendor's 2026-11 move of its web app to the single BFF gateway `heartbeat-bff.1komma5grad.com`. SDK 1.4.0 makes that gateway its default route; both the runtime and the config-flow validation client use it.
+Follows the SDK's switch of its default route to the vendor's BFF gateway `heartbeat-bff.1komma5grad.com`, the route the vendor's web app uses.
 
 ### Changed
-- **API host routing is now the BFF gateway.** Both `Client(...)` instances use the SDK default (`gateway="bff"` since SDK 1.4.0); the SDK rewrites `heartbeat.1komma5grad.com/api/vN/…` and `customer-identity.1komma5grad.com/api/vN/…` requests to `heartbeat-bff.1komma5grad.com/{heartbeat,customer-identity}/vN/…`. `ONEKOMMAFIVE_GATEWAY=direct` reverts to the per-service hosts without a code change if needed for triage.
+- **Both `Client(...)` instances follow the SDK default.** SDK 1.4.0 routes through the BFF gateway by default, so the explicit `gateway="bff"` argument is gone. `ONEKOMMAFIVE_GATEWAY=direct` now reverts to the per-service hosts as documented; the explicit argument used to override it.
 - **SDK pin bumped to `onekommafive>=1.4.0,<2`** (manifest + pyproject).
+
+## [0.1.79] - 2026-11-15 (armed)
+
+Follows the vendor's 2026-11 move of its web app to the single BFF gateway `heartbeat-bff.1komma5grad.com`. SDK 1.3.0 adds the opt-in route; this release picks it up for both the runtime and the config-flow validation client.
+
+### Changed
+- **API host routing is now the BFF gateway.** Both `Client(...)` instances pass `gateway="bff"`; the SDK rewrites `heartbeat.1komma5grad.com/api/vN/…` and `customer-identity.1komma5grad.com/api/vN/…` requests to `heartbeat-bff.1komma5grad.com/{heartbeat,customer-identity}/vN/…`. `ONEKOMMAFIVE_GATEWAY=direct` reverts to the per-service hosts without a code change if needed for triage.
+- **SDK pin bumped to `onekommafive>=1.3.0,<2`** (manifest + pyproject).
 
 ## [0.1.78] - 2026-11-08 (armed)
 
