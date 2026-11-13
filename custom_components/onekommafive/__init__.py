@@ -325,10 +325,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: OneKomma5ConfigEntry) ->
     system_id: str = entry.data[CONF_SYSTEM_ID]
 
     session = async_get_clientsession(hass)
-    # The vendor migrated its web app to the BFF gateway in 2026-11; we
-    # follow that route. ``ONEKOMMAFIVE_GATEWAY=direct`` reverts without
-    # a code change if the per-service hosts are needed for triage.
-    client = Client(username, password, session=session, gateway="bff")
+    # SDK 1.4.0 routes through the vendor's BFF gateway by default, the
+    # route its web app uses. ``ONEKOMMAFIVE_GATEWAY=direct`` reverts to the
+    # per-service hosts for triage.
+    client = Client(username, password, session=session)
     try:
         system = await Systems(client).get_system(system_id)
         info = await system.info()
