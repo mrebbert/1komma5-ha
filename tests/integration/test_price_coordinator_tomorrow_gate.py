@@ -78,3 +78,29 @@ async def test_tomorrow_fetch_runs_after_12_utc(
     assert system.get_prices.await_count == 2
     tomorrow_arg_start: datetime.datetime = system.get_prices.await_args_list[1].args[0]
     assert tomorrow_arg_start.day == 25
+
+
+@freeze_time("2026-10-24 12:01:00", tz_offset=0)
+async def test_missing_tomorrow_shortens_poll_interval(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """Tomorrow absent after 12 UTC: re-poll in 10 minutes, not in an hour."""
+    system = mock_system_factory(system_id="sys-1")
+    entry = await _setup_and_refresh(hass, system)
+
+    price = entry.runtime_data.price_coordinator
+    assert price.data.tomorrow_average_price is None
+    assert price.update_interval == datetime.timedelta(minutes=10)
+
+
+@freeze_time("2026-10-24 11:59:00", tz_offset=0)
+async def test_regular_poll_interval_before_12_utc(
+    hass: HomeAssistant, mock_system_factory
+) -> None:
+    """Before EPEX publishes, the price coordinator keeps its hourly cadence."""
+    system = mock_system_factory(system_id="sys-1")
+    entry = await _setup_and_refresh(hass, system)
+
+    assert entry.runtime_data.price_coordinator.update_interval == datetime.timedelta(
+        hours=1
+    )

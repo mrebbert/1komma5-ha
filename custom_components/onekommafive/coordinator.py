@@ -143,6 +143,12 @@ class OptimizationData:
     last_event: OptimizationEvent | None
 
 
+# EPEX publishes day-ahead prices at 12:00 UTC. Until tomorrow's slots arrive,
+# the price coordinator re-polls at this cadence instead of hourly.
+_EPEX_PUBLICATION_HOUR_UTC = 12
+_TOMORROW_RETRY_INTERVAL_SECONDS = 600
+
+
 class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
     """Base coordinator handling executor dispatch and error wrapping.
 
@@ -160,6 +166,10 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
     # the coroutine when the SDK stalls; without it a hung request would keep
     # the coordinator stuck since DataUpdateCoordinator imposes no timeout.
     _fetch_timeout_seconds: float = 30.0
+    # Retry cadence while no data has loaded yet. A transient upstream error on
+    # the first fetch would otherwise leave an hourly coordinator's entities
+    # unavailable until the next full interval.
+    _retry_interval_seconds: int = 300
 
     def __init__(self, hass: HomeAssistant, system: System) -> None:
         """Initialize the coordinator."""
@@ -172,6 +182,20 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
         self._system = system
 
     async def _async_update_data(self) -> T:
+        """Fetch data; retry sooner than the regular interval until data exists."""
+        regular = datetime.timedelta(seconds=self._interval_seconds)
+        try:
+            data = await self._fetch_wrapped()
+        except UpdateFailed:
+            if self.data is None:
+                retry = datetime.timedelta(seconds=self._retry_interval_seconds)
+                self.update_interval = min(regular, retry)
+            raise
+        self.update_interval = regular
+        await self._on_data(data)
+        return data
+
+    async def _fetch_wrapped(self) -> T:
         """Await the async SDK fetch, wrapping errors and timeouts as UpdateFailed."""
         try:
             async with asyncio.timeout(self._fetch_timeout_seconds):
@@ -185,7 +209,6 @@ class OneKomma5BaseCoordinator[T](DataUpdateCoordinator[T]):
             raise UpdateFailed(f"API error fetching {self._data_label}: {err}") from err
         except Exception as err:
             raise UpdateFailed(f"Error fetching {self._data_label}: {err}") from err
-        await self._on_data(data)
         return data
 
     async def _fetch(self) -> T:
@@ -500,7 +523,7 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         )
 
         utc_now = datetime.datetime.now(datetime.UTC)
-        if utc_now.hour < 12:
+        if utc_now.hour < _EPEX_PUBLICATION_HOUR_UTC:
             # EPEX day-ahead publication is 12:00 UTC; skip the empty call.
             return (
                 market_prices,
@@ -524,8 +547,8 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
             )
             enwg14a_grid_fee.update(tomorrow_prices.enwg14a_grid_fee)
             enwg14a_grid_fee_with_vat.update(tomorrow_prices.enwg14a_grid_fee_with_vat)
-        except Exception:
-            _LOGGER.debug("Tomorrow's prices not yet available")
+        except Exception as err:
+            _LOGGER.debug("Tomorrow's prices not yet available: %s", err)
         return (
             market_prices,
             prices_with_vat,
@@ -535,8 +558,17 @@ class OneKomma5PriceCoordinator(OneKomma5BaseCoordinator[PriceData]):
         )
 
     async def _on_data(self, data: PriceData) -> None:
-        """Fire HA bus events for negative-price edge transitions."""
+        """Fire negative-price events; poll sooner while tomorrow's prices are due."""
         self._fire_negative_price_edge_events(data)
+        # EPEX has published from 12:00 UTC on. A tomorrow fetch that failed or
+        # came back empty would otherwise wait for the next hourly refresh.
+        if (
+            data.tomorrow_average_price is None
+            and datetime.datetime.now(datetime.UTC).hour >= _EPEX_PUBLICATION_HOUR_UTC
+        ):
+            self.update_interval = datetime.timedelta(
+                seconds=_TOMORROW_RETRY_INTERVAL_SECONDS
+            )
 
     def _fire_negative_price_edge_events(self, data: PriceData) -> None:
         """Fire negative-price edge events (granularity = refresh interval)."""

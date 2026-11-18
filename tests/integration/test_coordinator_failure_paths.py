@@ -8,6 +8,7 @@ and the next interval can recover.
 
 from __future__ import annotations
 
+import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant
@@ -21,7 +22,10 @@ from custom_components.onekommafive.const import (
     CONF_USERNAME,
     DOMAIN,
 )
-from custom_components.onekommafive.coordinator import OneKomma5LiveCoordinator
+from custom_components.onekommafive.coordinator import (
+    OneKomma5BaseCoordinator,
+    OneKomma5LiveCoordinator,
+)
 
 
 async def test_api_error_marks_update_failed(
@@ -111,3 +115,39 @@ async def test_all_none_live_payload_yields_unknown_not_crash(
     )
     assert entity_id is not None
     assert hass.states.get(entity_id).state == "unknown"
+
+
+class _HourlyStub(OneKomma5BaseCoordinator[int]):
+    _interval_seconds = 3600
+    _retry_interval_seconds = 300
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        super().__init__(hass, MagicMock())
+        self.outcomes: list[object] = []
+
+    async def _fetch(self) -> int:
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return int(outcome)  # type: ignore[call-overload]
+
+
+async def test_failed_first_fetch_retries_before_regular_interval(
+    hass: HomeAssistant,
+) -> None:
+    coordinator = _HourlyStub(hass)
+    coordinator.outcomes = [ApiError("timeout"), 1, ApiError("later")]
+
+    await coordinator.async_refresh()
+    assert coordinator.data is None
+    assert coordinator.update_interval == datetime.timedelta(seconds=300)
+
+    await coordinator.async_refresh()
+    assert coordinator.data == 1
+    assert coordinator.update_interval == datetime.timedelta(seconds=3600)
+
+    # A later failure keeps the stale data and the regular cadence.
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success is False
+    assert coordinator.data == 1
+    assert coordinator.update_interval == datetime.timedelta(seconds=3600)

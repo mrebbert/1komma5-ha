@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.81] - 2026-11-18
+
+Price sensors recover faster after a single failed fetch from the 1KOMMA5° API.
+
+### Fixed
+- **Price sensors stayed `unavailable` for up to an hour after a failed first fetch.** A coordinator without data now retries after 5 minutes instead of waiting for its regular interval; the regular interval resumes with the first successful fetch.
+- **Tomorrow's prices could arrive an hour late.** From 12:00 UTC on, the price coordinator re-polls every 10 minutes until tomorrow's slots are present, then returns to the hourly cadence. A failed tomorrow fetch now logs its error at debug level.
+
 ## [0.1.80] - 2026-11-14 (armed)
 
 Follows the SDK's switch of its default route to the vendor's BFF gateway `heartbeat-bff.1komma5grad.com`, the route the vendor's web app uses.
