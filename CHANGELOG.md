@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.82] - 2026-11-26
+
+The charging-mode select offers the modes the 1KOMMA5° API lists for your site.
+
+### Changed
+- **Charging modes come from the API.** The select reads the site's list of offered modes instead of a fixed list of three. Sites in an early registration stage, which offer `PROGRAM_CHARGE` instead of `SMART_CHARGE`, now show that mode and keep working. A mode the integration does not know yet stays selectable while it is active. If the list cannot be fetched, the select falls back to Smart, Quick and Solar Charge. Thanks to the author of discussion #83.
+- **SDK pin bumped to `onekommafive>=1.5.0,<2`** (manifest + pyproject).
+
 ## [0.1.81] - 2026-11-18
 
 Price sensors recover faster after a single failed fetch from the 1KOMMA5° API.
