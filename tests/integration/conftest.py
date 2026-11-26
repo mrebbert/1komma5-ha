@@ -108,6 +108,7 @@ def mock_system_factory():
 
         system.get_ev_chargers = AsyncMock(return_value=ev_chargers or [])
         system.get_wallboxes = AsyncMock(return_value=wallboxes or [])
+        system.get_displayed_ev_charging_modes = AsyncMock(return_value=[])
         system.get_device_gateways = AsyncMock(return_value=device_gateways or [])
 
         if ems_settings is None:

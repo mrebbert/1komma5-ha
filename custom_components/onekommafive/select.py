@@ -40,7 +40,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 # HA translation keys must be lowercase; the API uses UPPER_CASE enum values.
-CHARGING_MODE_OPTIONS = ["smart_charge", "quick_charge", "solar_charge"]
+# Fallback until the vendor's list of offered modes has been fetched.
+DEFAULT_CHARGING_MODE_OPTIONS = ["smart_charge", "quick_charge", "solar_charge"]
 
 # Coordinator-based reads; see binary_sensor.py for the rationale.
 PARALLEL_UPDATES = 0
@@ -107,7 +108,6 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
     """Select entity to control the EV charging mode."""
 
     _attr_translation_key = "ev_charging_mode"
-    _attr_options = CHARGING_MODE_OPTIONS
 
     def __init__(
         self,
@@ -121,6 +121,19 @@ class OneKomma5ChargingModeSelect(OneKomma5EVEntity, SelectEntity):
         super().__init__(
             coordinator, system_id, system_name, ev, "charging_mode_select", data
         )
+
+    @property
+    def options(self) -> list[str]:
+        """Return the modes the site offers, plus the active mode if missing."""
+        data = self.coordinator.data
+        offered = [m.value.lower() for m in data.charging_modes] if data else []
+        options = offered or list(DEFAULT_CHARGING_MODE_OPTIONS)
+        ev = self._get_ev()
+        if ev is not None:
+            active = ev.charging_mode().value.lower()
+            if active not in options:
+                options.append(active)
+        return options
 
     @property
     def current_option(self) -> str | None:

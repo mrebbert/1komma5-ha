@@ -17,6 +17,7 @@ from onekommafive.errors import ApiError
 from onekommafive.ev_charger import EVCharger
 from onekommafive.models import (
     Asset,
+    ChargingMode,
     EmsSettings,
     EnergyData,
     HeartbeatPrices,
@@ -67,6 +68,10 @@ class LiveData:
     # live cadence so app-side assignment changes surface in HA within one
     # tick instead of waiting for the 5-min system-status coordinator.
     wallboxes: list[Wallbox]
+    # Charging modes the vendor currently offers for this site (enabled ones
+    # only). Empty until the first successful fetch; the select then falls
+    # back to the default modes.
+    charging_modes: list[ChargingMode] = field(default_factory=list)
 
 
 @dataclass
@@ -254,6 +259,19 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
         # triggers exactly one reload. Reload rebuilds the coordinator, so the
         # baseline resets naturally.
         self._known_wallbox_ids: frozenset[str] | None = None
+        # The offered modes change rarely, so one successful fetch suffices.
+        self._charging_modes: list[ChargingMode] = []
+
+    async def _fetch_charging_modes(self) -> list[ChargingMode]:
+        """Return the modes the site offers, retrying on later ticks if empty."""
+        if not self._charging_modes:
+            try:
+                self._charging_modes = list(
+                    await self._system.get_displayed_ev_charging_modes() or []
+                )
+            except Exception as err:
+                _LOGGER.debug("Displayed EV charging modes fetch failed: %s", err)
+        return self._charging_modes
 
     async def _fetch(self) -> LiveData:
         """Fetch all live data via the async SDK."""
@@ -283,6 +301,7 @@ class OneKomma5LiveCoordinator(OneKomma5BaseCoordinator[LiveData]):
             ev_chargers=ev_chargers,
             ems_settings=ems_settings,
             wallboxes=wallboxes,
+            charging_modes=await self._fetch_charging_modes(),
         )
 
     async def _on_data(self, data: LiveData) -> None:

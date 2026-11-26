@@ -437,7 +437,8 @@
         "state": {
           "smart_charge": "Smart opladning",
           "quick_charge": "Hurtig opladning",
-          "solar_charge": "Solcelle-opladning"
+          "solar_charge": "Solcelle-opladning",
+          "program_charge": "Program Charge"
         }
       },
       "wallbox_assigned_vehicle": {

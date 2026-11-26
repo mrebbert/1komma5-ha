@@ -437,7 +437,8 @@
         "state": {
           "smart_charge": "Smart Charge",
           "quick_charge": "Schnellladen",
-          "solar_charge": "Solar Charge"
+          "solar_charge": "Solar Charge",
+          "program_charge": "Programmladen"
         }
       },
       "wallbox_assigned_vehicle": {
